@@ -32,6 +32,7 @@ Material:
     - _AmbientBrightness: 0
     - _ConeAngle: 60
     - _HalfStrengthDistance: 10
+    - _PlayerLightRadius: 0.1
     - _SelfBlocker: -1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

@@ -14,6 +14,8 @@ namespace DivingPrototype
         [SerializeField, Range(0f, 1f)] private float ambientBrightness;
         [SerializeField, Range(2f, 180f)] private float coneAngle = 60f;
         [SerializeField, Min(.001f)] private float halfStrengthDistance = 10f;
+        [SerializeField, Min(0f), Tooltip("Fully bright circle radius in world units. Used directly, independent of player sprite size. Zero disables the circle.")]
+        private float playerLightRadius = .1f;
         [SerializeField] private Material spriteMaterial;
         [SerializeField] private Transform map;
         [SerializeField] private BoxCollider2D[] blockers = new BoxCollider2D[0];
@@ -23,6 +25,7 @@ namespace DivingPrototype
         private static readonly int AmbientId = Shader.PropertyToID("_AmbientBrightness");
         private static readonly int AngleId = Shader.PropertyToID("_ConeAngle");
         private static readonly int DistanceId = Shader.PropertyToID("_HalfStrengthDistance");
+        private static readonly int RadiusId = Shader.PropertyToID("_PlayerLightRadius");
         private static readonly int CountId = Shader.PropertyToID("_BlockerCount");
         private static readonly int BoxesXId = Shader.PropertyToID("_BlockerRowsX");
         private static readonly int BoxesYId = Shader.PropertyToID("_BlockerRowsY");
@@ -92,6 +95,7 @@ namespace DivingPrototype
             instance.SetFloat(AmbientId, Mathf.Clamp01(ambientBrightness));
             instance.SetFloat(AngleId, Mathf.Clamp(coneAngle, 2f, 180f));
             instance.SetFloat(DistanceId, Mathf.Max(.001f, halfStrengthDistance));
+            instance.SetFloat(RadiusId, Mathf.Max(0f, playerLightRadius));
             int count = Mathf.Min(blockers.Length, FlashlightMath.MaxBlockers);
             for (int i = 0; i < count; i++) FlashlightMath.PackBox(blockers[i], out rowsX[i], out rowsY[i]);
             instance.SetInt(CountId, count);
@@ -112,6 +116,7 @@ namespace DivingPrototype
             ambientBrightness = Mathf.Clamp01(ambientBrightness);
             coneAngle = Mathf.Clamp(coneAngle, 2f, 180f);
             halfStrengthDistance = Mathf.Max(.001f, halfStrengthDistance);
+            playerLightRadius = Mathf.Max(0f, playerLightRadius);
             ValidateBlockers();
         }
 

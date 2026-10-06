@@ -7,6 +7,7 @@ Shader "Diving Prototype/Ocean Flashlight"
         _AmbientBrightness ("Ambient Brightness", Range(0,1)) = 0
         _ConeAngle ("Cone Angle", Range(2,180)) = 60
         _HalfStrengthDistance ("Half Strength Distance", Float) = 10
+        _PlayerLightRadius ("Player Light Radius", Float) = 0.1
         _FlashlightOrigin ("Origin", Vector) = (0,0,0,0)
         _FlashlightDirection ("Direction", Vector) = (1,0,0,0)
         [HideInInspector] _SelfBlocker ("Self Blocker", Float) = -1
@@ -54,6 +55,7 @@ Shader "Diving Prototype/Ocean Flashlight"
                 float _AmbientBrightness;
                 float _ConeAngle;
                 float _HalfStrengthDistance;
+                float _PlayerLightRadius;
                 float _SelfBlocker;
                 float _EnableExternalAlpha;
                 int _BlockerCount;
@@ -110,11 +112,21 @@ Shader "Diving Prototype/Ocean Flashlight"
                 float2 displacement = input.worldPosition - _FlashlightOrigin.xy;
                 float distance = length(displacement);
                 float halfAngle = radians(clamp(_ConeAngle, 2.0, 180.0) * 0.5);
-                float outer = cos(halfAngle);
-                float inner = cos(halfAngle - radians(1.0));
-                float cone = distance < 0.001 ? 1.0 : smoothstep(outer, inner,
-                    dot(displacement / distance, _FlashlightDirection.xy));
-                float light = cone * exp2(-distance / max(0.001, _HalfStrengthDistance));
+                float radius = max(0.0, _PlayerLightRadius);
+                float forward = dot(displacement, _FlashlightDirection.xy);
+                float across = abs(displacement.x * _FlashlightDirection.y - displacement.y * _FlashlightDirection.x);
+                // Both shapes share an outward world-space feather and one brightness field.
+                // Side lines lie exactly one radius from the center, tangent to the circle.
+                // Place the hidden short base through both tangent points behind the center.
+                float sideDistance = across * max(0.0, cos(halfAngle)) - forward * sin(halfAngle) - radius;
+                float baseDistance = -forward - radius * sin(halfAngle);
+                float beamDistance = max(baseDistance, sideDistance);
+                float shapeDistance = radius > 0.0 ? min(distance - radius, beamDistance) : beamDistance;
+                float shape = 1.0 - smoothstep(0.0, 0.12, shapeDistance);
+                float beyondCircle = max(0.0, distance - radius);
+                float fadeDistance = radius <= 0.0 ? distance : (beyondCircle < 0.5
+                    ? beyondCircle * beyondCircle : beyondCircle - 0.25);
+                float light = shape * exp2(-fadeDistance / max(0.001, _HalfStrengthDistance));
                 if (light > 0.0)
                 {
                     [loop] for (int i = 0; i < min(_BlockerCount, 32); i++)

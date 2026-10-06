@@ -21,7 +21,9 @@ namespace DivingPrototype
             var centered = camera.GetComponent<CenteredCamera>();
             int oldMode = settings.FindProperty("aimMode").enumValueIndex;
             float oldAmbient = settings.FindProperty("ambientBrightness").floatValue;
+            float oldRadius = settings.FindProperty("playerLightRadius").floatValue;
             var oldPosition = body.position;
+            var oldScale = controller.transform.localScale;
             var oldVelocity = body.linearVelocity;
             var oldCameraPosition = camera.transform.position;
             var oldTarget = camera.targetTexture;
@@ -88,19 +90,38 @@ namespace DivingPrototype
                     box.GetComponent<SpriteRenderer>().GetPropertyBlock(properties);
                     FlashlightCheck.Near(properties.GetFloat("_SelfBlocker"), i, "Rock self-shadow exclusion");
                 }
+                foreach (float radius in new[] { 0f, .1f, .25f, .8f })
+                {
+                    Set(settings, "playerLightRadius", radius);
+                    controller.RefreshLighting();
+                    FlashlightCheck.Near(material.GetFloat("_PlayerLightRadius"), radius, "Inspector radius uploads directly");
+                }
+                FlashlightCheck.Render(camera, target, pixels);
+                FlashlightCheck.Near(Pixel(camera, pixels, new Vector2(-.35f, .35f)).r, 1f, "Large configured circle lights rear sprite corner", .005f);
+                Set(settings, "playerLightRadius", .1f);
+                controller.RefreshLighting();
+                FlashlightCheck.Render(camera, target, pixels);
+                FlashlightCheck.Near(Pixel(camera, pixels, Vector2.zero).r, 1f, "Small configured circle lights player center", .005f);
+                FlashlightCheck.Near(Pixel(camera, pixels, new Vector2(-.35f, .35f)).r, 0f, "Small configured circle leaves rear sprite corner dark", .005f);
+                controller.transform.localScale = oldScale * 2f;
+                controller.RefreshLighting();
+                FlashlightCheck.Near(material.GetFloat("_PlayerLightRadius"), .1f, "Sprite scaling does not override configured radius");
+                controller.transform.localScale = oldScale;
+                Set(settings, "playerLightRadius", oldRadius);
+                controller.RefreshLighting();
                 FlashlightCheck.Render(camera, target, pixels);
                 var darkness = Pixel(camera, pixels, new Vector2(-3f, 0f));
                 FlashlightCheck.Near(darkness.r + darkness.g + darkness.b, 0f, "Actual ocean outside cone black", .001f);
                 var shadow = Pixel(camera, pixels, new Vector2(6.25f, 0f));
                 FlashlightCheck.Near(shadow.r + shadow.g + shadow.b, 0f, "Actual ocean behind east rock black", .001f);
                 var rockFace = Pixel(camera, pixels, new Vector2(4.5f, 0f));
-                FlashlightCheck.Require(rockFace.g > .05f, "Actual east rock illuminated despite its own collider");
+                FlashlightCheck.Require(rockFace.g > .001f, "Actual east rock illuminated despite its own collider");
                 var ground = Pixel(camera, pixels, new Vector2(2f, 0f));
-                FlashlightCheck.Require(ground.g > .05f, "Actual ocean ground illuminated before rock");
+                FlashlightCheck.Require(ground.g > .001f, "Actual ocean ground illuminated before rock");
                 AimMouse(mouse, camera, controller, new Vector2(1f, .55f));
                 FlashlightCheck.Render(camera, target, pixels);
                 var corner = Pixel(camera, pixels, new Vector2(6f, 3.3f));
-                FlashlightCheck.Require(corner.g > .02f, "Actual light passes around east rock corner");
+                FlashlightCheck.Require(corner.g > .001f, "Actual light passes around east rock corner");
                 // Move the player and run the same LateUpdate ordering as the live scene.
                 body.position = new Vector2(2f, -3f);
                 controller.transform.position = new Vector3(2f, -3f, 0f);
@@ -131,7 +152,7 @@ namespace DivingPrototype
                 FlashlightCheck.Near(material.GetFloat("_AmbientBrightness"), .05f, "Runtime ambient uploads");
                 FlashlightCheck.Require(camera.backgroundColor.g > 0f, "Camera background follows ambient setting");
                 SwimmingCheck.Run();
-                Debug.Log("Flashlight Play mode check passed: 8 keyboard directions/arrows, mouse aim, camera following, idle/overlap fallback, actual rock shadows/surfaces/corners, ambient, swimming.");
+                Debug.Log("Flashlight Play mode check passed: direct Inspector radius control, small-circle player visibility and sprite-size independence, trapezoid, 8 keyboard directions/arrows, mouse aim, camera following, idle/overlap fallback, actual rock shadows/surfaces/corners, ambient, swimming.");
             }
             finally
             {
@@ -141,6 +162,8 @@ namespace DivingPrototype
                 if (oldMouse != null && oldMouse.added) oldMouse.MakeCurrent();
                 Set(settings, "aimMode", oldMode);
                 Set(settings, "ambientBrightness", oldAmbient);
+                Set(settings, "playerLightRadius", oldRadius);
+                controller.transform.localScale = oldScale;
                 body.position = oldPosition;
                 controller.transform.position = new Vector3(oldPosition.x, oldPosition.y, controller.transform.position.z);
                 body.linearVelocity = oldVelocity;

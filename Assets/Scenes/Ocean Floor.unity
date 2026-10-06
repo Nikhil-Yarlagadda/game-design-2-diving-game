@@ -5312,9 +5312,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc04124610c433a4b8c60ed9aea5dd47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.SwimmerController
-  maxSpeed: 5
-  acceleration: 8
-  deceleration: 7
+  maxSpeed: 2.5
+  acceleration: 1
+  deceleration: 1.5
 --- !u!50 &1243325441
 Rigidbody2D:
   serializedVersion: 5
@@ -8289,6 +8289,7 @@ MonoBehaviour:
   ambientBrightness: 0
   coneAngle: 60
   halfStrengthDistance: 2
+  playerLightRadius: 0.5
   spriteMaterial: {fileID: 2100000, guid: 57d642bebfae4fa38cdc702b5ff002d3, type: 2}
   map: {fileID: 506044665}
   blockers:

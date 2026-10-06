@@ -21,7 +21,7 @@ namespace DivingPrototype
             CheckScene();
             CheckRenderedPixels();
             SwimmingCheck.Run();
-            Debug.Log("Flashlight check passed: cone, exponential fade, ambient, transformed blockers, GPU pixels, scene wiring, swimming.");
+            Debug.Log("Flashlight check passed: player circle, trapezoid, exponential fade, ambient, transformed blockers, GPU pixels, scene wiring, swimming.");
         }
 
         private static void CheckMath()
@@ -30,14 +30,32 @@ namespace DivingPrototype
             Near(FlashlightMath.Strength(10f, 10f), .5f, "Half strength at 10 units");
             Near(FlashlightMath.Strength(20f, 10f), .25f, "Quarter strength at 20 units");
             Require(FlashlightMath.Strength(100f, 10f) > 0f, "No distance cutoff");
-            Near(FlashlightMath.ConeMask(Vector2.right, Vector2.right, 60f), 1f, "Cone center");
-            Near(FlashlightMath.ConeMask(AtAngle(28f), Vector2.right, 60f), 1f, "Cone inner edge");
-            float feather = FlashlightMath.ConeMask(AtAngle(29.5f), Vector2.right, 60f);
-            Require(feather > 0f && feather < 1f, "Cone feather");
-            Near(FlashlightMath.ConeMask(AtAngle(30f), Vector2.right, 60f), 0f, "Cone outer edge");
-            Near(FlashlightMath.ConeMask(AtAngle(-31f), Vector2.right, 60f), 0f, "Outside cone");
+            Near(FlashlightMath.BeamMask(Vector2.right, Vector2.right, 60f, 0f), 1f, "Beam center");
+            Near(FlashlightMath.BeamMask(AtAngle(30f) * 10f, Vector2.right, 60f, 0f), 1f, "Beam core edge");
+            float feather = FlashlightMath.BeamMask(AtAngle(30.3f) * 10f, Vector2.right, 60f, 0f);
+            Require(feather > 0f && feather < 1f, "Shared outward beam feather");
+            Near(FlashlightMath.BeamMask(AtAngle(-32f) * 10f, Vector2.right, 60f, 0f), 0f, "Outside feathered beam");
             Require(FlashlightMath.RetainDirection(Vector2.zero, Vector2.up) == Vector2.up, "Retain idle direction");
             Near(FlashlightMath.RetainDirection(Vector2.one, Vector2.right).magnitude, 1f, "Normalized diagonal aim");
+            Near(FlashlightMath.Illumination(new Vector2(-.35f, .35f), Vector2.right, 60f, 10f, .8f), 1f, "Player rear corner fully bright");
+            Near(FlashlightMath.Illumination(new Vector2(.35f, .35f), Vector2.right, 60f, 10f, .8f), 1f, "Player front corner fully bright");
+            Near(FlashlightMath.CircleMask(.86f, .8f), .5f, "Circle outer feather");
+            Near(FlashlightMath.BeamMask(new Vector2(-.6f, 1f), Vector2.right, 60f, .8f), 0f, "Trapezoid rejects points behind its tangent base");
+            Near(FlashlightMath.BeamMask(new Vector2(1f, .85f), Vector2.right, 60f, .8f), 1f, "Trapezoid wider than a triangle near player");
+            Near(FlashlightMath.BeamMask(new Vector2(2f, (.8f + 2f * Mathf.Sin(30f * Mathf.Deg2Rad)) / Mathf.Cos(30f * Mathf.Deg2Rad)), Vector2.right, 60f, .8f), 1f, "Trapezoid full-bright side boundary");
+            Near(FlashlightMath.Illumination(Vector2.up * .35f, Vector2.down, 60f, 10f, .8f), 1f, "Circle brightness independent of aim");
+            float halfAngle = 30f * Mathf.Deg2Rad;
+            var tangent = new Vector2(-.8f * Mathf.Sin(halfAngle), .8f * Mathf.Cos(halfAngle));
+            var sideNormal = new Vector2(-Mathf.Sin(halfAngle), Mathf.Cos(halfAngle));
+            Near(tangent.magnitude, .8f, "Tangent point on circle");
+            Near(Vector2.Dot(tangent, sideNormal), .8f, "Side line one radius from center");
+            Near(Vector2.Dot(sideNormal, new Vector2(Mathf.Cos(halfAngle), Mathf.Sin(halfAngle))), 0f, "Circle radius perpendicular to beam side");
+            Near(FlashlightMath.BeamMask(tangent, Vector2.right, 60f, .8f), 1f, "Upper circle-beam tangent joins");
+            Near(FlashlightMath.BeamMask(new Vector2(tangent.x, -tangent.y), Vector2.right, 60f, .8f), 1f, "Lower circle-beam tangent joins");
+            Near(FlashlightMath.BeamMask(tangent + sideNormal * .13f, Vector2.right, 60f, .8f), 0f, "Outside tangent-side feather");
+            Near(FlashlightMath.Illumination(new Vector2(.8f, 0f), Vector2.right, 60f, 2f, .8f), 1f, "No brightness step at circle-beam join");
+            Require(FlashlightMath.Illumination(new Vector2(.81f, 0f), Vector2.right, 60f, 2f, .8f) > .999f, "Smooth brightness immediately beyond circle");
+            Near(FlashlightMath.FadeDistance(1.3f, .8f), .25f, "Smooth fade reaches linear section");
             var go = new GameObject("Flashlight math check") { hideFlags = HideFlags.HideAndDontSave };
             try
             {
@@ -90,7 +108,8 @@ namespace DivingPrototype
                 Require(settings.FindProperty("aimMode").enumValueIndex == 0, "Mouse aim default");
                 Near(settings.FindProperty("ambientBrightness").floatValue, 0f, "Black ambient default");
                 Near(settings.FindProperty("coneAngle").floatValue, 60f, "60 degree cone");
-                Near(settings.FindProperty("halfStrengthDistance").floatValue, 10f, "10 unit half-strength distance");
+                Require(settings.FindProperty("halfStrengthDistance").floatValue > 0f, "Positive tunable half-strength distance");
+                Require(settings.FindProperty("playerLightRadius").floatValue >= 0f, "Nonnegative tunable player circle radius");
                 Require(settings.FindProperty("aimCamera").objectReferenceValue != null, "Camera assigned");
                 Require(settings.FindProperty("map").objectReferenceValue != null, "Map assigned");
                 Require(settings.FindProperty("spriteMaterial").objectReferenceValue != null, "Material assigned");
@@ -148,17 +167,48 @@ namespace DivingPrototype
                 material.SetFloat("_AmbientBrightness", 0f);
                 material.SetFloat("_ConeAngle", 60f);
                 material.SetFloat("_HalfStrengthDistance", 10f);
+                material.SetFloat("_PlayerLightRadius", 0f);
                 Render(camera, target, pixels);
                 CheckPixel(camera, pixels, new Vector2(1f, 0f), Expected, "GPU near strength");
                 CheckPixel(camera, pixels, new Vector2(10f, 0f), Expected, "GPU half strength");
                 CheckPixel(camera, pixels, new Vector2(20f, 0f), Expected, "GPU quarter strength");
                 CheckPixel(camera, pixels, new Vector2(-2f, 0f), _ => 0f, "GPU outside cone black");
-                CheckPixel(camera, pixels, AtAngle(29.5f) * 10f, Expected, "GPU angular feather");
-                CheckPixel(camera, pixels, AtAngle(31f) * 10f, _ => 0f, "GPU cone limit");
+                CheckPixel(camera, pixels, AtAngle(30.3f) * 10f, Expected, "GPU outward edge feather");
+                CheckPixel(camera, pixels, AtAngle(32f) * 10f, _ => 0f, "GPU beam limit");
+                material.SetFloat("_PlayerLightRadius", .8f);
+                Render(camera, target, pixels);
+                foreach (var point in new[] { new Vector2(-.35f, -.35f), new Vector2(-.35f, .35f),
+                    new Vector2(.35f, -.35f), new Vector2(.35f, .35f) })
+                    CheckPixel(camera, pixels, point, _ => 1f, "GPU player corner fully bright");
+                CheckPixel(camera, pixels, new Vector2(-.86f, 0f), CircleExpected, "GPU circle feather");
+                CheckPixel(camera, pixels, new Vector2(1f, .85f), CircleExpected, "GPU trapezoid near width");
+                CheckPixel(camera, pixels, new Vector2(-.2f, 1.1f), _ => 0f, "GPU trapezoid flat base");
+                CheckPixel(camera, pixels, new Vector2(2f, 2.3f), _ => 0f, "GPU outside widened beam");
+                var upperTangent = new Vector2(-.4f, .8f * Mathf.Cos(30f * Mathf.Deg2Rad));
+                var lowerTangent = new Vector2(upperTangent.x, -upperTangent.y);
+                foreach (var tangentPoint in new[] { upperTangent, lowerTangent })
+                    foreach (float offset in new[] { -.1f, 0f, .1f })
+                        CheckPixel(camera, pixels, tangentPoint + new Vector2(offset, 0f), CircleExpected, "GPU smooth tangent join");
+                material.SetFloat("_HalfStrengthDistance", 2f);
+                Render(camera, target, pixels);
+                foreach (float forward in new[] { .7f, .79f, .8f, .81f, .9f, 1.1f, 1.3f, 2f })
+                    CheckPixel(camera, pixels, new Vector2(forward, 0f),
+                        p => FlashlightMath.Illumination(p, Vector2.right, 60f, 2f, .8f), "GPU seamless join at short fade distance");
+                material.SetFloat("_HalfStrengthDistance", 10f);
+                material.SetFloat("_PlayerLightRadius", .1f);
+                Render(camera, target, pixels);
+                CheckPixel(camera, pixels, Vector2.zero, _ => 1f, "GPU small circle keeps player center bright");
+                CheckPixel(camera, pixels, new Vector2(-.35f, .35f), _ => 0f, "GPU small circle leaves rear sprite corner unexposed");
+                material.SetFloat("_PlayerLightRadius", .8f);
+                material.SetVector("_FlashlightDirection", Vector2.up);
+                Render(camera, target, pixels);
+                CheckPixel(camera, pixels, new Vector2(-.35f, -.35f), _ => 1f, "GPU circle remains bright after aiming up");
+                CheckPixel(camera, pixels, new Vector2(.85f, 1f), p => FlashlightMath.Illumination(p, Vector2.up, 60f, 10f, .8f), "GPU trapezoid rotates with aim");
+                material.SetVector("_FlashlightDirection", Vector2.right);
                 material.SetFloat("_AmbientBrightness", .05f);
                 Render(camera, target, pixels);
                 CheckPixel(camera, pixels, new Vector2(-2f, 0f), _ => .05f, "GPU adjustable ambient");
-                CheckPixel(camera, pixels, new Vector2(10f, 0f), p => .05f + .95f * Expected(p), "GPU ambient plus flashlight");
+                CheckPixel(camera, pixels, new Vector2(10f, 0f), p => .05f + .95f * CircleExpected(p), "GPU ambient plus flashlight");
                 var boxObject = new GameObject("GPU check blocker");
                 SceneManager.MoveGameObjectToScene(boxObject, scene);
                 boxObject.transform.position = new Vector3(5f, 0f, 0f);
@@ -175,11 +225,11 @@ namespace DivingPrototype
                 material.SetFloat("_AmbientBrightness", 0f);
                 Render(camera, target, pixels);
                 CheckPixel(camera, pixels, new Vector2(10f, 0f), _ => 0f, "GPU solid shadow black");
-                CheckPixel(camera, pixels, new Vector2(3f, 0f), Expected, "GPU light before obstacle");
-                CheckPixel(camera, pixels, new Vector2(6f, 3f), Expected, "GPU light around corner");
+                CheckPixel(camera, pixels, new Vector2(3f, 0f), CircleExpected, "GPU light before obstacle");
+                CheckPixel(camera, pixels, new Vector2(6f, 3f), CircleExpected, "GPU light around corner");
                 material.SetFloat("_SelfBlocker", 0f);
                 Render(camera, target, pixels);
-                CheckPixel(camera, pixels, new Vector2(5f, 0f), Expected, "GPU rock ignores own collider");
+                CheckPixel(camera, pixels, new Vector2(5f, 0f), CircleExpected, "GPU rock ignores own collider");
                 xs[1] = xs[0]; ys[1] = ys[0];
                 material.SetInt("_BlockerCount", 2);
                 material.SetVectorArray("_BlockerRowsX", xs);
@@ -200,7 +250,7 @@ namespace DivingPrototype
                 FlashlightMath.PackBox(box, out xs[0], out ys[0]);
                 material.SetVectorArray("_BlockerRowsX", xs);
                 Render(camera, target, pixels);
-                CheckPixel(camera, pixels, new Vector2(10f, 0f), Expected, "GPU disabled blocker transmits");
+                CheckPixel(camera, pixels, new Vector2(10f, 0f), CircleExpected, "GPU disabled blocker transmits");
                 renderer.color = new Color(.4f, .7f, .2f, .6f);
                 material.SetFloat("_AmbientBrightness", 1f);
                 Render(camera, target, pixels);
@@ -233,8 +283,8 @@ namespace DivingPrototype
             RenderTexture.active = previous;
         }
 
-        private static float Expected(Vector2 point) => FlashlightMath.Strength(point.magnitude, 10f)
-            * FlashlightMath.ConeMask(point, Vector2.right, 60f);
+        private static float CircleExpected(Vector2 point) => FlashlightMath.Illumination(point, Vector2.right, 60f, 10f, .8f);
+        private static float Expected(Vector2 point) => FlashlightMath.Illumination(point, Vector2.right, 60f, 10f, 0f);
         private static Vector2 AtAngle(float degrees) => new Vector2(Mathf.Cos(degrees * Mathf.Deg2Rad), Mathf.Sin(degrees * Mathf.Deg2Rad));
         private static Color ReadPixel(Camera camera, Texture2D pixels, Vector2 point, out Vector2 sampledWorld)
         {
