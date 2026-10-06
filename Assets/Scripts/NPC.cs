@@ -9,8 +9,9 @@ public class NPC : MonoBehaviour, IClickable
 
     public void OnClicked()
     {
-        if(! DialogueManager.Instance.dialoguePanel.activeSelf){
-            DialogueManager.Instance.StartDialogue(dialogueLine);
+        if (!DialogueRunnerAccessor.Instance.IsDialogueRunning)
+        {
+            DialogueRunnerAccessor.Instance.StartDialogue(dialogueStartNode);
         }
     }
 }
