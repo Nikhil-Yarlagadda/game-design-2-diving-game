@@ -14,5 +14,17 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Interior.unity
     guid: bfb4df49235f91c4b9da55dae5564e6b
+  - enabled: 1
+    path: Assets/Scenes/Mineral Lab.unity
+    guid: d29e7842ba8ea8448b01caa407dd7bac
+  - enabled: 1
+    path: Assets/Scenes/Shared Space.unity
+    guid: de5869682791c9646b4ff6bf633990dd
+  - enabled: 1
+    path: Assets/Scenes/Storage Closet.unity
+    guid: 3d7cdbf2c885e2043899b78b55717928
+  - enabled: 1
+    path: Assets/Scenes/Airlock.unity
+    guid: 165248db35e7e2f48b06d2b9eb08fb7b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

@@ -16,10 +16,11 @@ public class Room : MonoBehaviour, IClickable
     public void OnClicked()
     {
         Debug.Log("Room clicked: " + roomName);
-        RoomManager.Instance.EnterRoom(this);
+        SceneChanger.ChangeScene(roomName);
+        //RoomManager.Instance.EnterRoom(this);
 
-        Transform target = cameraTarget != null ? cameraTarget : transform;
-        CameraController.Instance.MoveToRoom(target);
+        //Transform target = cameraTarget != null ? cameraTarget : transform;
+        //CameraController.Instance.MoveToRoom(target);
     }
 
     public void SetActiveState(bool isActive)
