@@ -12,6 +12,7 @@ namespace DivingPrototype
 
         private Rigidbody2D body;
         private Vector2 input;
+        public Vector2 MovementInput => input;
 
         private void Awake() => body = GetComponent<Rigidbody2D>();
 
