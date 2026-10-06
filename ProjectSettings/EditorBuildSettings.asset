@@ -8,5 +8,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Ocean Floor.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Sleeping Quarters.unity
+    guid: 9a9f84f50976633419efcf1e12fb238e
+  - enabled: 1
+    path: Assets/Scenes/Interior.unity
+    guid: bfb4df49235f91c4b9da55dae5564e6b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
