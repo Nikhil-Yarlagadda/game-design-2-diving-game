@@ -11,7 +11,7 @@ public class NPC : MonoBehaviour, IClickable
     public void OnClicked()
     {
 
-        DialogueContext.nodeName = dialogueStartNode;
+        DialogueContext.nodeName = dialogueStartNode + GameState.days;
 
         if (portrait != null)
         {

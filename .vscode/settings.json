@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "game-design-2-diving-game.slnx"
+    "dotnet.defaultSolution": "Submarine Survival.slnx"
 }
