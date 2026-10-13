@@ -11,6 +11,7 @@ Shader "Diving Prototype/Ocean Flashlight"
         _FlashlightOrigin ("Origin", Vector) = (0,0,0,0)
         _FlashlightDirection ("Direction", Vector) = (1,0,0,0)
         [HideInInspector] _SelfBlocker ("Self Blocker", Float) = -1
+        [PerRendererData] _Reveal ("Highlight Reveal", Range(0,1)) = 0
         [HideInInspector] _RendererColor ("Renderer Color", Color) = (1,1,1,1)
         [HideInInspector] _AlphaTex ("External Alpha", 2D) = "white" {}
         [HideInInspector] _EnableExternalAlpha ("Enable External Alpha", Float) = 0
@@ -57,10 +58,14 @@ Shader "Diving Prototype/Ocean Flashlight"
                 float _HalfStrengthDistance;
                 float _PlayerLightRadius;
                 float _SelfBlocker;
+                float _Reveal;
                 float _EnableExternalAlpha;
                 int _BlockerCount;
                 float4 _BlockerRowsX[32];
                 float4 _BlockerRowsY[32];
+                int _EdgeCount;
+                float4 _PolygonEdges[256];
+                float _EdgeOwners[256];
             CBUFFER_END
 
             Varyings FlashlightVertex(Attributes input)
@@ -131,8 +136,21 @@ Shader "Diving Prototype/Ocean Flashlight"
                 {
                     [loop] for (int i = 0; i < min(_BlockerCount, 32); i++)
                         if (Blocked(input.worldPosition, i)) { light = 0.0; break; }
+                    [loop] for (int e = 0; e < min(_EdgeCount, 256) && light > 0.0; e++)
+                    {
+                        if ((int)_EdgeOwners[e] == (int)_SelfBlocker) continue;
+                        float2 a = _PolygonEdges[e].xy;
+                        float2 edge = _PolygonEdges[e].zw - a;
+                        float2 ray = input.worldPosition - _FlashlightOrigin.xy;
+                        float2 offset = a - _FlashlightOrigin.xy;
+                        float divisor = ray.x * edge.y - ray.y * edge.x;
+                        if (abs(divisor) < 0.000001) continue;
+                        float t = (offset.x * edge.y - offset.y * edge.x) / divisor;
+                        float u = (offset.x * ray.y - offset.y * ray.x) / divisor;
+                        if (t > 0.00001 && t < 0.99999 && u >= 0.0 && u <= 1.0) light = 0.0;
+                    }
                 }
-                color.rgb *= saturate(_AmbientBrightness) + (1.0 - saturate(_AmbientBrightness)) * light;
+                color.rgb *= max(saturate(_Reveal), saturate(_AmbientBrightness) + (1.0 - saturate(_AmbientBrightness)) * light);
                 return color;
             }
             ENDHLSL

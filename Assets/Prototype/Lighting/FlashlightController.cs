@@ -19,6 +19,11 @@ namespace DivingPrototype
         [SerializeField] private Material spriteMaterial;
         [SerializeField] private Transform map;
         [SerializeField] private BoxCollider2D[] blockers = new BoxCollider2D[0];
+        [SerializeField] private PolygonCollider2D[] polygonBlockers = new PolygonCollider2D[0];
+        private const int MaxEdges = 256;
+        private readonly Vector4[] edges = new Vector4[MaxEdges];
+        private readonly float[] edgeOwners = new float[MaxEdges];
+        private readonly System.Collections.Generic.List<Vector2> path = new System.Collections.Generic.List<Vector2>();
 
         private static readonly int OriginId = Shader.PropertyToID("_FlashlightOrigin");
         private static readonly int DirectionId = Shader.PropertyToID("_FlashlightDirection");
@@ -65,6 +70,8 @@ namespace DivingPrototype
                 int self = -1;
                 for (int b = 0; b < blockers.Length; b++)
                     if (blockers[b] != null && blockers[b].gameObject == sprites[i].gameObject) self = b;
+                for (int b = 0; b < polygonBlockers.Length; b++)
+                    if (polygonBlockers[b] != null && polygonBlockers[b].gameObject == sprites[i].gameObject) self = 32 + b;
                 properties.SetFloat(SelfId, self);
                 sprites[i].SetPropertyBlock(properties);
             }
@@ -101,6 +108,26 @@ namespace DivingPrototype
             instance.SetInt(CountId, count);
             instance.SetVectorArray(BoxesXId, rowsX);
             instance.SetVectorArray(BoxesYId, rowsY);
+            int edgeCount = 0;
+            for (int p = 0; p < polygonBlockers.Length; p++)
+            {
+                var polygon = polygonBlockers[p];
+                if (polygon == null || !polygon.isActiveAndEnabled) continue;
+                for (int part = 0; part < polygon.pathCount; part++)
+                {
+                    polygon.GetPath(part, path);
+                    for (int e = 0; e < path.Count && edgeCount < MaxEdges; e++)
+                    {
+                        Vector2 a = polygon.transform.TransformPoint(path[e] + polygon.offset);
+                        Vector2 b = polygon.transform.TransformPoint(path[(e + 1) % path.Count] + polygon.offset);
+                        edges[edgeCount] = new Vector4(a.x, a.y, b.x, b.y);
+                        edgeOwners[edgeCount++] = 32 + p;
+                    }
+                }
+            }
+            instance.SetInt("_EdgeCount", edgeCount);
+            instance.SetVectorArray("_PolygonEdges", edges);
+            instance.SetFloatArray("_EdgeOwners", edgeOwners);
             if (aimCamera != null)
             {
                 Color background = originalBackground;
@@ -122,6 +149,14 @@ namespace DivingPrototype
 
         private bool ValidateBlockers()
         {
+            int edgeCount = 0;
+            foreach (var polygon in polygonBlockers)
+                if (polygon != null) edgeCount += polygon.GetTotalPointCount();
+            if (edgeCount > MaxEdges)
+            {
+                Debug.LogError("Flashlight supports at most 256 polygon edges.", this);
+                return false;
+            }
             if (blockers.Length > FlashlightMath.MaxBlockers)
             {
                 Debug.LogError("Flashlight supports at most 32 blockers. Remove excess entries before enabling it.", this);

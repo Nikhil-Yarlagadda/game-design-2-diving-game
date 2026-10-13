@@ -13,6 +13,8 @@ namespace DivingPrototype
         private Rigidbody2D body;
         private Vector2 input;
         public Vector2 MovementInput => input;
+        [SerializeField] private PolygonCollider2D[] kelpZones = new PolygonCollider2D[0];
+        public float SpeedMultiplier { get; private set; } = 1f;
 
         private void Awake() => body = GetComponent<Rigidbody2D>();
 
@@ -29,8 +31,14 @@ namespace DivingPrototype
 
         private void FixedUpdate()
         {
-            body.linearVelocity = StepVelocity(body.linearVelocity, input, maxSpeed,
+            SpeedMultiplier = 1f;
+            foreach (var kelp in kelpZones)
+                if (kelp != null && kelp.isActiveAndEnabled && kelp.OverlapPoint(body.position))
+                { SpeedMultiplier = .5f; break; }
+            body.linearVelocity = StepVelocity(body.linearVelocity, input, maxSpeed * SpeedMultiplier,
                 acceleration, deceleration, Time.fixedDeltaTime);
+            if (SpeedMultiplier < 1f)
+                body.linearVelocity = Vector2.ClampMagnitude(body.linearVelocity, maxSpeed * SpeedMultiplier);
         }
 
         public static Vector2 StepVelocity(Vector2 velocity, Vector2 direction,
