@@ -16,7 +16,7 @@ public class RoomManager : MonoBehaviour
         // all rooms start grayed out / inactive
         Debug.Log("RoomManager Start - initializing " + allRooms.Count + " rooms");
         foreach (var r in allRooms)
-            r.SetActiveState(false);
+            r.SetHovered(false);
     }
 
     public void EnterRoom(Room room)

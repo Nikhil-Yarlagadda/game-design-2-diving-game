@@ -26,5 +26,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Airlock.unity
     guid: 165248db35e7e2f48b06d2b9eb08fb7b
+  - enabled: 1
+    path: Assets/Scenes/Dialogue.unity
+    guid: 0fb8a44c44b23134a97a56f7dc713506
+  - enabled: 1
+    path: Assets/Scenes/Shop.unity
+    guid: 429c39cc4442c1e438ff4d9686041ed0
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

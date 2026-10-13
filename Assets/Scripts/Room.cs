@@ -26,10 +26,16 @@ public class Room : MonoBehaviour, IClickable
     public void SetActiveState(bool isActive)
     {
         Debug.Log(roomName + " SetActiveState: " + isActive);
-        backgroundSprite.color = isActive ? activeColor : inactiveColor;
 
         if (roomContents != null)
             foreach (var c in roomContents)
                 c.SetActive(isActive);
+    }
+
+    public void SetHovered(bool hovered)
+    {
+        backgroundSprite.color = hovered ? activeColor : inactiveColor;
+
+        SetActiveState(hovered);
     }
 }

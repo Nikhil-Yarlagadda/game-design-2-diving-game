@@ -1,17 +1,23 @@
-﻿title: NPC1
+﻿title: Medic
 ---
-This is placeholder text.
-This is another one.
+This is placeholder text for medic.
 ===
 
-title: NPC2
+title: ApprenticeDiver
 ---
-This is a placeholder text.
-This is another one.
+This is a placeholder text for apprentice diver.
 ===
 
-title: NPC3
+title: MineralProcessor
 ---
-This is a placeholder text.
-This is another one.
+This is a placeholder text for mineral processor.
+===
+
+title: Bed
+---
+Do you want to start a new day?
+
+-> Yes
+    <<NewDay>>
+-> No
 ===

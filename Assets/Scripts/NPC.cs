@@ -1,17 +1,36 @@
 using UnityEngine;
+using Yarn.Unity;
 
 public class NPC : MonoBehaviour, IClickable
 {
     public string npcId;
-    public string dialogueStartNode; // for Yarn Spinner / Ink poetntially
-    [TextArea(2, 5)]
-    public string dialogueLine; //set text in inteface(placeholder for now)
+    public string dialogueStartNode;
+    public Sprite portrait;
+    
 
     public void OnClicked()
     {
-        if (!DialogueRunnerAccessor.Instance.IsDialogueRunning)
+
+        DialogueContext.nodeName = dialogueStartNode;
+
+        if (portrait != null)
         {
-            DialogueRunnerAccessor.Instance.StartDialogue(dialogueStartNode);
+            DialogueContext.portrait = portrait;
         }
+        else
+        {
+            SpriteRenderer sr = GetComponent<SpriteRenderer>();
+            DialogueContext.portrait = sr != null ? sr.sprite : null;
+        }
+
+        DialogueContext.scene = SceneChanger.getScene();
+
+        SceneChanger.ChangeScene("Dialogue");
+    /*
+
+        if (!runner.IsDialogueRunning)
+        {
+            runner.StartDialogue(dialogueStartNode);
+        }*/
     }
 }

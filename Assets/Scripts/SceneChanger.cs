@@ -9,4 +9,9 @@ public class SceneChanger : MonoBehaviour
         Debug.Log("Change scene to " + sceneName);
         SceneManager.LoadScene(sceneName);
     }
+
+    public static string getScene()
+    {
+        return SceneManager.GetActiveScene().name;
+    }
 }
