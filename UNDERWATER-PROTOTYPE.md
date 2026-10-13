@@ -88,7 +88,7 @@ The existing Ocean Floor global light is disabled. The flashlight uses a runtime
 
 ## Scope and Collaboration
 
-Oxygen, economy, story, dialogue, and persistent saves are not implemented. Coordinate before editing shared scenes, packages, or project settings. Commit Unity asset `.meta` files together with their assets; generated `Library`, `Temp`, logs, and local editor settings are excluded by the existing `.gitignore`.
+Economy, story, dialogue, and persistent saves are not implemented. The hydrox tank in Ocean Interactables is described below. Coordinate before editing shared scenes, packages, or project settings. Commit Unity asset `.meta` files together with their assets; generated `Library`, `Temp`, logs, and local editor settings are excluded by the existing `.gitignore`.
 
 ## Ocean Interactables
 
@@ -117,3 +117,18 @@ Verification on Windows / Unity 6000.6.4f1 / D3D12:
 Requirement acceptance and pending machine-tracking, key-comfort and indicator ideas are recorded in [OCEAN-INTERACTABLES-NOTES.md](OCEAN-INTERACTABLES-NOTES.md).
 
 The previously missing `Assets/Welcome/2d-template.png` was restored locally with a SHA256 matching its existing Git LFS pointer and successfully reimported as a 1400 x 400 texture. The existing LFS object was uploaded to origin and retrieved into a separate local verification cache; the downloaded object matched the expected SHA256.
+
+## Hydrox Tank
+
+The Ocean Interactables player starts with a full hydrox tank. It consumes **1 unit per second** from a default **180-unit capacity**, allowing three minutes of ocean gameplay. At zero, the player automatically enters Interior from any location. Manual and forced entry share the same guarded additive transition; inventory, pickup positions, deployed machines, and the player's ocean position survive. Every departure from Interior refills the tank before swimming resumes. Consumption stops in Interior, during transitions, and when game time is paused.
+
+Select **Player > Hydrox Tank** outside Play mode to tune **Max Capacity** and **Consumption Rate**. Dive duration is capacity divided by consumption rate; doubling capacity doubles the duration. Both settings clamp to positive values. No refill cost, upgrades, save persistence, or resource penalties are added.
+
+The top-left HUD has a dark 240 × 20 reference-pixel track, inset 20 pixels from the top and left, with a light blue (`#8CD9F2`) fill. Its right edge shrinks as hydrox is consumed. Status text sits below it. The bar hides inside Interior and does not intercept pointer input. Ocean Floor is unchanged.
+
+Interior must remain enabled in the build scene list. If unavailable, entry reports a configuration error once. An empty tank stays empty, stops ocean controls and interactions, and displays “Submarine scene is unavailable.” without repeatedly requesting loads.
+
+- Run **Diving Prototype > Check Hydrox** outside Play mode for default timing, larger tanks, configurable consumption, refill, invalid values, clamping, and saved HUD wiring.
+- Run **Diving Prototype > Check Hydrox In Play Mode** in an unpaused, disposable Ocean Interactables session for paused consumption, live bar width, forced entry far from the submarine, hidden UI and stopped consumption in Interior, refill before control restoration, duplicate-entry guards, inventory/mining preservation, and unavailable-scene handling. The check temporarily uses a 0.12-unit tank. It intentionally logs one missing-scene error and restores settings afterward; restart Play to reset the disposable session.
+
+Verified on Unity **6000.6.4f1 / macOS Metal**: Hydrox editor checks passed; all **16 Hydrox Play checks** and **35 existing Ocean Play checks** passed, along with the Ocean Interaction editor/GPU checks. Actual Game view renders at **1280 × 720** and **1024 × 768** passed bar placement/scale checks and visual inspection. Script compilation passed; the intentional unavailable-scene error is part of the failure-handling check. Standalone player builds have not been tested.

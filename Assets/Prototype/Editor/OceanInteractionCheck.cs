@@ -17,6 +17,7 @@ namespace DivingPrototype
             try
             {
                 var interactions = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanInteractions>()).First(o => o != null);
+                interactions.Hydrox.Refill();
                 var targets = interactions.targets;
                 var mines = targets.Where(t => t.kind == OceanTarget.TargetKind.MiningSpot).ToArray();
                 var hud = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanHud>()).First(o => o != null);

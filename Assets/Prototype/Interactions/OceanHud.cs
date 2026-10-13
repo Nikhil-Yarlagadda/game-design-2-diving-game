@@ -9,6 +9,7 @@ namespace DivingPrototype
         public OceanInteractions interactions;
         public TMP_Text status, prompt, message, interior;
         public RectTransform radarRoot;
+        public RectTransform hydroxRoot, hydroxFill;
         public Sprite arrowSprite;
         public TMP_FontAsset font;
         [Min(.1f)] public float nearDistance = 10f;
@@ -67,6 +68,8 @@ namespace DivingPrototype
         {
             if (arrows == null) return;
             bool inside = interactions.InsideSubmarine;
+            hydroxRoot.gameObject.SetActive(!inside);
+            hydroxFill.anchorMax = new Vector2(interactions.Hydrox.NormalizedFill, 1f);
             interior.gameObject.SetActive(inside);
             status.text = "OCEAN EXCURSION\nItems  " + interactions.ItemsCollected + "     Tellurium  " + interactions.Tellurium
                 + "     Machines  " + interactions.availableMachines;

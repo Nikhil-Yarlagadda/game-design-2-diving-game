@@ -9,6 +9,7 @@ These features are implemented in the prototype. Radar text follows the agreed r
 - [x] Polygon kelp is passable and halves maximum swimming speed. Play checks measured 2.5 in open water and 1.25 inside kelp. Overlapping kelp does not stack the slowdown.
 - [x] Polygon rocks block movement. Play checks verify actual collision contact and prevent the player from entering the rock.
 - [x] The closest interactable has a yellow outline. Selection currently considers unobstructed targets within 1.8 units.
+- [x] The hydrox tank starts full at 180 units and consumes 1 unit per second. Depletion forces submarine entry from any position; every return to the ocean refills fully. The top-left light blue bar shows remaining capacity and hides inside Interior.
 - [x] The central submarine is at `(0, 0)`. Press Space nearby to load the existing Interior scene; press Space inside to return to the ocean.
 - [x] Placeholder pickup items receive random positions each new Play session, avoiding obstacles and other targets. Space collects an item and removes it from the scene.
 - [x] There are 28 fixed circular tellurium mining spots, with levels 1–5. Each level produces that many items per minute.
