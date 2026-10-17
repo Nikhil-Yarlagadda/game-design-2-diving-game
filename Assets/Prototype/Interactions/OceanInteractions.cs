@@ -34,6 +34,7 @@ namespace DivingPrototype
         private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted;
         private SwimmerController swimmer;
         private Rigidbody2D body;
+        private Vector3 oceanStart;
         private FlashlightController flashlight;
         private readonly RaycastHit2D[] hits = new RaycastHit2D[32];
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
@@ -44,6 +45,7 @@ namespace DivingPrototype
         {
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
+            oceanStart = transform.position;
             flashlight = GetComponent<FlashlightController>();
             Hydrox.Refill();
             var items = new System.Collections.Generic.List<OceanTarget>();
@@ -286,6 +288,9 @@ namespace DivingPrototype
             transitioning = true;
             SceneManager.SetActiveScene(gameObject.scene);
             yield return SceneManager.UnloadSceneAsync(interiorScene);
+            transform.position = oceanStart;
+            body.position = oceanStart;
+            body.linearVelocity = Vector2.zero;
             oceanMap.SetActive(true);
             oceanCamera.gameObject.SetActive(true);
             GetComponent<SpriteRenderer>().enabled = true;

@@ -24,6 +24,7 @@ namespace DivingPrototype
             FlashlightCheck.Require(EditorApplication.isPlaying, "Enter Play in Ocean Interactables first");
             var ocean = UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
             FlashlightCheck.Require(ocean != null && !ocean.InsideSubmarine && ocean.ItemsCollected == 0, "Start a fresh ocean session");
+            Vector2 oceanStart = ocean.transform.position;
             var body = ocean.GetComponent<Rigidbody2D>();
             var swimmer = ocean.GetComponent<SwimmerController>();
             var hud = UnityEngine.Object.FindAnyObjectByType<OceanHud>();
@@ -200,6 +201,7 @@ namespace DivingPrototype
                 require(hud.minimapRoot.gameObject.activeInHierarchy,"Minimap returns on ocean re-entry");
                 require(hud.hydroxRoot.gameObject.activeInHierarchy && ocean.Hydrox.CurrentCapacity>ocean.Hydrox.MaxCapacity-2,"Return refills Hydrox and restores its bar");
                 require(!ocean.InsideSubmarine && SceneManager.GetActiveScene().name=="Ocean Interactables" && body.simulated && swimmer.enabled, "Left click returns to playable ocean");
+                require(Vector2.Distance(body.position,oceanStart)<.05f && Vector2.Distance(ocean.transform.position,oceanStart)<.05f && body.linearVelocity.sqrMagnitude<.001f,"Manual departure starts at original map spawn without momentum");
                 require(ocean.ItemsCollected==1 && ocean.Tellurium==5 && mine.HasMachine, "Inventory and placed mine survive scene round trip");
                 require(remaining.SequenceEqual(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item && t.isActiveAndEnabled).Select(t=>t.transform.position)), "Random items do not respawn on return");
                 mine.Retrieve(Time.time);
@@ -262,7 +264,7 @@ namespace DivingPrototype
                     System.IO.File.WriteAllBytes("Temp/coverage-analysis/cross-chasm-check.png",bankPixels.EncodeToPNG());
                 }
                 finally {ocean.oceanCamera.targetTexture=previousTarget;ocean.oceanCamera.rect=previousRect;UnityEngine.Object.DestroyImmediate(bankRt);UnityEngine.Object.DestroyImmediate(bankPixels);}
-                var forcedPosition=body.position;
+                require(Vector2.Distance(body.position,oceanStart)>10,"Depletion test starts far from original spawn");
                 int keptItems=ocean.ItemsCollected,keptTellurium=ocean.Tellurium,keptMachines=ocean.availableMachines;
                 mine.Place(Time.time);
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
@@ -277,7 +279,8 @@ namespace DivingPrototype
                 await click();
                 for(int i=0;i<40&&(ocean.InsideSubmarine||ocean.IsTransitioning);i++)await Task.Delay(100);
                 require(!ocean.InsideSubmarine && swimmer.enabled && ocean.Hydrox.CurrentCapacity>ocean.Hydrox.MaxCapacity-2,"Forced round trip refills before restoring controls");
-                require(Vector2.Distance(body.position,forcedPosition)<.05f && mine.HasMachine && ocean.ItemsCollected==keptItems && ocean.Tellurium==keptTellurium,"Forced round trip preserves ocean position, inventory and deployed machine");
+                require(Vector2.Distance(body.position,oceanStart)<.05f && Vector2.Distance(ocean.transform.position,oceanStart)<.05f && body.linearVelocity.sqrMagnitude<.001f,"Departure after depletion starts at original map spawn without momentum");
+                require(mine.HasMachine && ocean.ItemsCollected==keptItems && ocean.Tellurium==keptTellurium && ocean.availableMachines==keptMachines,"Forced round trip preserves inventory and deployed machine");
                 require(remaining.SequenceEqual(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item && t.isActiveAndEnabled).Select(t=>t.transform.position)),"Forced return preserves randomized item positions");
                 mine.Retrieve(Time.time);
                 ocean.interiorScene="Missing Hydrox Check Scene";

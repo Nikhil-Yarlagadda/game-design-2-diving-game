@@ -141,3 +141,11 @@ At three 1080p desktop Editor sample locations, the active edge count fell from 
 ## Hydrox Integration Validation
 
 The Hydrox System from PR #2 is integrated with the current mouse controls and minimap. Existing Ocean editor checks now cover tank timing, configurable/invalid values and saved HUD layout. The updated Play check passed **147 assertions**, including forced return from a distant location, refill, preserved ocean state and duplicate-entry prevention. Its missing-scene case intentionally logs one configuration error. Depletion uses simulated elapsed time; a complete three-minute endurance dive and standalone build were not tested. See [the demo handoff](OCEAN-DEMO-PROTOTYPE.md#hydrox-tank) for behavior and configuration.
+
+## Demo Dive Departure
+
+Every departure from the Interior placeholder starts at the original map spawn (currently `(0, -1.5)`), with a full Hydrox tank and zero velocity. This applies to both manual submarine visits and forced entry after depletion. Inventory, deployed machines and their timers, and remaining pickup positions persist. The placeholder stands in for future submarine activities; no death penalty, dropped resources or rescue fee is defined.
+
+The four outer boundary colliders retain collision while their leftover default Square sprites are hidden.
+
+Departure validation: **150 Play assertions passed** on Unity 6000.6.4f1 / Windows D3D12, including manual departure and depletion at a distant location followed by original-spawn departure with zero velocity. Inventory, mining and randomized pickup persistence still pass. Ocean editor and polygon GPU checks also passed. The depletion check accelerates elapsed consumption; it intentionally logs one missing-scene configuration error in its separate failure case. No standalone build or full three-minute endurance run was performed.
