@@ -88,7 +88,7 @@ The existing Ocean Floor global light is disabled. The flashlight uses a runtime
 
 ## Scope and Collaboration
 
-Oxygen, economy, story, dialogue, and persistent saves are not implemented. Coordinate before editing shared scenes, packages, or project settings. Commit Unity asset `.meta` files together with their assets; generated `Library`, `Temp`, logs, and local editor settings are excluded by the existing `.gitignore`.
+Economy, story, dialogue, and persistent saves are not implemented. Ocean Interactables now includes the Hydrox tank described below. Coordinate before editing shared scenes, packages, or project settings. Commit Unity asset `.meta` files together with their assets; generated `Library`, `Temp`, logs, and local editor settings are excluded by the existing `.gitignore`.
 
 ## Ocean Interactables
 
@@ -132,3 +132,9 @@ Minimap acceptance: the current editor-menu Play check passed **122 assertions**
 The flashlight retains the global 256-edge validation limit but submits only edges whose bounds can intersect the current gameplay viewport/origin rectangle. This conservatively reduces shadow work without changing the reference gameplay pixels. Transparent and fully revealed fragments skip redundant lighting work. See [performance notes](OCEAN-PERFORMANCE-NOTES.md) for the short desktop Editor comparison; this is not standalone or low-end performance acceptance.
 
 For the consolidated demo handoff, see [Ocean Scene Demo Prototype](OCEAN-DEMO-PROTOTYPE.md).
+
+## Hydrox Tank
+
+Ocean Interactables includes the Hydrox System from PR #2: 180 capacity, 1 unit consumed per second outside Interior, automatic submarine entry at zero, and full refill before ocean controls resume. Player position, pickups, inventory and deployed machines survive the round trip. The top-left light blue bar hides inside Interior. Max Capacity and Consumption Rate are editable on Player > Hydrox Tank.
+
+Hydrox checks are part of **Diving Prototype > Check Ocean Interactions** and **Check Ocean In Play Mode**. There are no separate Hydrox check menus. The integrated Windows run passed 147 Play assertions plus editor/GPU and flashlight regression checks. The Play check accelerates depletion and intentionally emits one missing-scene error; restart Play afterward. See [the current demo handoff](OCEAN-DEMO-PROTOTYPE.md#hydrox-tank) for complete behavior, configuration and limits.

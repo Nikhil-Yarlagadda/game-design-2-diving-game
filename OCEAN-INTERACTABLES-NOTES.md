@@ -9,6 +9,7 @@ These features are implemented in the prototype. Mouse interactions and the alwa
 - [x] Polygon kelp is passable and halves maximum swimming speed. Play checks measured 2.5 in open water and 1.25 inside kelp. Overlapping kelp does not stack the slowdown.
 - [x] Polygon rocks block movement. Play checks verify actual collision contact and prevent the player from entering the rock.
 - [x] The closest interactable has a yellow outline. Selection currently considers unobstructed targets within 1.8 units.
+- [x] The Hydrox tank starts at 180 units and consumes 1 unit per second outside the submarine. Depletion forces submarine entry; returning refills it. The light blue HUD bar hides inside Interior.
 - [x] The central submarine is at `(0, 0)`. Left-click nearby to load the existing Interior scene; left-click inside to return to the ocean.
 - [x] Initially 15 placeholder pickup items receive random positions each new Play session, avoiding obstacles and other targets. Left-click collects the closest highlighted item. Change Player > Ocean Interactions > Item Count before entering Play to adjust quantity.
 - [x] There are 37 fixed circular tellurium mining spots matching the reference map, with levels 1–5. Each level produces that many items per minute.
@@ -136,3 +137,7 @@ The flashlight now filters polygon edges against a conservative rectangle enclos
 
 At three 1080p desktop Editor sample locations, the active edge count fell from 197 to 14-43 and median GPU frame time fell by approximately 49-68%. Whole-frame medians overlap across runs; no comparable overall FPS gain is claimed. Three deterministic world-only before/after captures matched exactly, with zero changed pixels. See [performance notes](OCEAN-PERFORMANCE-NOTES.md) for method, raw-artifact locations and limits.
 - Final performance-pass regression: 122 Play assertions passed, plus ocean editor/GPU and original flashlight checks. A preceding synthetic mouse-offset test failure did not reproduce in a fresh session; diagnostics were expanded without changing production input logic. Full context is recorded in the performance notes.
+
+## Hydrox Integration Validation
+
+The Hydrox System from PR #2 is integrated with the current mouse controls and minimap. Existing Ocean editor checks now cover tank timing, configurable/invalid values and saved HUD layout. The updated Play check passed **147 assertions**, including forced return from a distant location, refill, preserved ocean state and duplicate-entry prevention. Its missing-scene case intentionally logs one configuration error. Depletion uses simulated elapsed time; a complete three-minute endurance dive and standalone build were not tested. See [the demo handoff](OCEAN-DEMO-PROTOTYPE.md#hydrox-tank) for behavior and configuration.

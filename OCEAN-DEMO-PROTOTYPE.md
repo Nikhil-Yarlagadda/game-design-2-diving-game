@@ -15,6 +15,16 @@ The original `Ocean Floor` scene remains available for flashlight regression che
 - **Right click:** scan all mining spots currently on screen. Highlights fade over 1.5 seconds, with a 2-second cooldown. Holding the button does not repeat scanning.
 - **Z, X and Space:** the former radar/interaction bindings have been removed.
 
+## Hydrox Tank
+
+The player starts with a full **180-unit Hydrox tank**, consuming **1 unit per second** during ocean gameplay (a three-minute default dive). At zero, the player automatically enters the submarine from any ocean position. Manual and forced entry use the same guarded additive transition. Returning to the ocean refills the tank before swimming resumes. Consumption stops inside Interior, during transitions, and while game time is paused.
+
+Inventory, randomized pickup positions, deployed machines and the player's ocean position survive both kinds of round trip. There is no death penalty, refill cost, upgrade system or save persistence. Tune **Max Capacity** and **Consumption Rate** on **Player > Hydrox Tank**; dive duration is capacity divided by consumption rate. Invalid settings clamp positive or restore finite defaults.
+
+A 240 x 20 reference-pixel light blue bar shows remaining Hydrox at the top left, inset 20 pixels. Status text sits below it. The bar hides inside Interior and ignores pointer input. The current minimap, mouse controls, view, map and flashlight optimizations are retained when integrating [Hydrox System PR #2](https://github.com/Nikhil-Yarlagadda/game-design-2-diving-game/pull/2).
+
+Interior must remain enabled in the build scene list. If unavailable, entry reports one configuration error. A depleted player stays stopped with a persistent message rather than repeatedly requesting loads.
+
 ## Minimap
 
 The circular minimap is always visible at the top right while outside the submarine. It is north-up and player-centered, with a 25-unit radius and a diameter of 180 reference pixels. Its center arrow follows flashlight aim without rotating the map.
@@ -51,6 +61,8 @@ The flashlight excludes shadow edges that cannot intersect any ray from the play
 On an RTX 5070 Ti Laptop GPU, short 1080p Editor samples at three locations reduced active edges from 197 to 14-43 and median GPU frame time by approximately 49-68%. Overall frame-time samples overlap, so this is not a claim of the same improvement in FPS. Three fixed world-only before/after renderings matched exactly, with zero changed pixels.
 
 The final performance-pass Play run passed 122 assertions. It covers input, minimap behavior, all mining routes, pickup/mining accounting, submarine state preservation, a real cross-chasm sightline, and 720p/1080p/16:10/ultrawide layouts. Ocean editor/polygon GPU checks and the original flashlight regression also passed. A preceding synthetic mouse-offset assertion failed once and did not reproduce in the fresh final run; its diagnostics were expanded without changing production input logic.
+
+The Hydrox integration passed **147 Play assertions** on Windows / Unity 6000.6.4f1 / D3D12, including paused consumption, live bar fill at all four window sizes, manual and forced submarine round trips, refill, preserved inventory/mining/pickup positions, duplicate-entry prevention and missing-scene handling. Ocean editor checks (tank timing, configurable/invalid settings, saved HUD layout and polygon GPU rendering) and the original flashlight regression also passed. Depletion is accelerated with simulated elapsed time; this is not a full three-minute endurance run. The unavailable-scene test intentionally logs exactly one configuration error.
 
 Repeat the checks outside Play with **Diving Prototype > Check Ocean Interactions**. For the full Play check, start a fresh, unpaused ocean session and choose **Diving Prototype > Check Ocean In Play Mode**. The Play check changes session inventory; restart Play afterward for manual testing.
 

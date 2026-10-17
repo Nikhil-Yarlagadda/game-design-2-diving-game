@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 namespace DivingPrototype
 {
     [DefaultExecutionOrder(-50)]
-    [RequireComponent(typeof(SwimmerController))]
+    [RequireComponent(typeof(SwimmerController), typeof(HydroxTank))]
     public sealed class OceanInteractions : MonoBehaviour
     {
         public Camera oceanCamera;
@@ -22,12 +22,16 @@ namespace DivingPrototype
         public string interiorScene = "Interior";
         public OceanTarget Closest { get; private set; }
         public bool InsideSubmarine { get; private set; }
+        public bool IsTransitioning => transitioning;
+        public HydroxTank Hydrox => hydrox != null ? hydrox : (hydrox = GetComponent<HydroxTank>());
         public int ItemsCollected { get; private set; }
         public int Tellurium { get; private set; }
         public float CooldownRemaining => Mathf.Max(0f, nextProspect - Time.time);
         public string Message { get; private set; }
         private float messageUntil, nextProspect;
-        private bool transitioning;
+        private bool transitioning, sceneUnavailable;
+        private HydroxTank hydrox;
+        private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted;
         private SwimmerController swimmer;
         private Rigidbody2D body;
         private FlashlightController flashlight;
@@ -41,6 +45,7 @@ namespace DivingPrototype
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             flashlight = GetComponent<FlashlightController>();
+            Hydrox.Refill();
             var items = new System.Collections.Generic.List<OceanTarget>();
             var all = new System.Collections.Generic.List<OceanTarget>();
             foreach (var target in targets)
@@ -148,6 +153,18 @@ namespace DivingPrototype
                 if (pointerInside && mouse.leftButton.wasPressedThisFrame) StartCoroutine(ReturnToOcean());
                 return;
             }
+            Hydrox.Advance(Time.deltaTime);
+            if (Hydrox.IsDepleted)
+            {
+                StopOceanControls();
+                if (sceneUnavailable)
+                {
+                    Message = "Submarine scene is unavailable.";
+                    messageUntil = float.PositiveInfinity;
+                }
+                RequestEnterSubmarine();
+                return;
+            }
             RefreshClosest();
             if (!pointerInside) return;
             if (mouse.rightButton.wasPressedThisFrame) Prospect(Time.time);
@@ -180,7 +197,7 @@ namespace DivingPrototype
 
         public bool Prospect(float now)
         {
-            if (now < nextProspect || InsideSubmarine) return false;
+            if (now < nextProspect || !CanActInOcean) return false;
             nextProspect = now + prospectCooldown;
             foreach (var target in targets)
             {
@@ -193,6 +210,7 @@ namespace DivingPrototype
 
         public bool PlaceMachine()
         {
+            if (!CanActInOcean) return false;
             RefreshClosest();
             if (Closest == null || Closest.kind != OceanTarget.TargetKind.MiningSpot || InsideSubmarine) return false;
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
@@ -204,6 +222,7 @@ namespace DivingPrototype
 
         public void Interact()
         {
+            if (!CanActInOcean) return;
             RefreshClosest();
             if (Closest == null || InsideSubmarine || transitioning) return;
             if (Closest.kind == OceanTarget.TargetKind.Item)
@@ -220,17 +239,36 @@ namespace DivingPrototype
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
-            else if (Closest.kind == OceanTarget.TargetKind.Submarine) StartCoroutine(EnterSubmarine());
+            else if (Closest.kind == OceanTarget.TargetKind.Submarine) RequestEnterSubmarine();
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
 
-        private IEnumerator EnterSubmarine()
+        public bool RequestEnterSubmarine()
         {
-            if (!Application.CanStreamedLevelBeLoaded(interiorScene)) { Notify("Submarine scene is unavailable."); yield break; }
+            if (InsideSubmarine || transitioning || sceneUnavailable) return false;
+            if (!Application.CanStreamedLevelBeLoaded(interiorScene))
+            {
+                sceneUnavailable = true;
+                Notify("Submarine scene is unavailable.");
+                if (Hydrox.IsDepleted) messageUntil = float.PositiveInfinity;
+                Debug.LogError("Submarine scene is unavailable: " + interiorScene + ". Include it in the build scene list.", this);
+                return false;
+            }
             transitioning = true;
+            StopOceanControls();
+            StartCoroutine(EnterSubmarine());
+            return true;
+        }
+
+        private void StopOceanControls()
+        {
             body.linearVelocity = Vector2.zero;
             swimmer.enabled = false;
+        }
+
+        private IEnumerator EnterSubmarine()
+        {
             var operation = SceneManager.LoadSceneAsync(interiorScene, LoadSceneMode.Additive);
             yield return operation;
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(interiorScene));
@@ -252,6 +290,7 @@ namespace DivingPrototype
             oceanCamera.gameObject.SetActive(true);
             GetComponent<SpriteRenderer>().enabled = true;
             flashlight.enabled = true;
+            Hydrox.Refill();
             body.simulated = true;
             swimmer.enabled = true;
             InsideSubmarine = false;

@@ -22,6 +22,35 @@ namespace DivingPrototype
             try
             {
                 var interactions = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanInteractions>()).First(o => o != null);
+                interactions.Hydrox.Refill();
+                var tank = interactions.Hydrox;
+                FlashlightCheck.Near(tank.MaxCapacity,180,"Default Hydrox capacity",.001f);
+                FlashlightCheck.Near(tank.ConsumptionRate,1,"Default Hydrox rate",.001f);
+                tank.Advance(60);
+                FlashlightCheck.Near(tank.CurrentCapacity,120,"One minute consumes 60 units",.001f);
+                tank.Advance(-1); tank.Advance(float.NaN);
+                FlashlightCheck.Near(tank.CurrentCapacity,120,"Invalid elapsed time is ignored",.001f);
+                tank.Advance(1000);
+                FlashlightCheck.Require(tank.IsDepleted && tank.NormalizedFill==0,"Capacity clamps at zero");
+                tank.Refill();
+                FlashlightCheck.Require(tank.NormalizedFill==1,"Refill restores full capacity");
+                var settings = new SerializedObject(tank);
+                settings.FindProperty("maxCapacity").floatValue=360;
+                settings.FindProperty("consumptionRate").floatValue=2;
+                settings.ApplyModifiedPropertiesWithoutUndo(); tank.Refill(); tank.Advance(60);
+                FlashlightCheck.Near(tank.CurrentCapacity,240,"Configured capacity and consumption",.001f);
+                settings.Update();settings.FindProperty("maxCapacity").floatValue=float.NaN;
+                settings.FindProperty("consumptionRate").floatValue=float.PositiveInfinity;
+                settings.ApplyModifiedPropertiesWithoutUndo();tank.Refill();
+                FlashlightCheck.Near(tank.MaxCapacity,180,"Invalid capacity restores default",.001f);
+                FlashlightCheck.Near(tank.ConsumptionRate,1,"Invalid rate restores default",.001f);
+                settings.Update();settings.FindProperty("maxCapacity").floatValue=-1;
+                settings.FindProperty("consumptionRate").floatValue=0;
+                settings.ApplyModifiedPropertiesWithoutUndo();tank.Refill();
+                FlashlightCheck.Require(tank.MaxCapacity>0 && tank.ConsumptionRate>0,"Settings clamp positive");
+                settings.Update();settings.FindProperty("maxCapacity").floatValue=180;
+                settings.FindProperty("consumptionRate").floatValue=1;
+                settings.ApplyModifiedPropertiesWithoutUndo();tank.Refill();
                 var targets = interactions.targets;
                 FlashlightCheck.Near(interactions.transform.localScale.x,.75f,"Smaller player and matching collider scale",.001f);
                 FlashlightCheck.Near(interactions.oceanCamera.orthographicSize,9f,"Trial camera height is 18 units",.001f);
@@ -37,6 +66,11 @@ namespace DivingPrototype
                     "Saved map previews in terrain colors without gameplay lighting");
                 var mines = targets.Where(t => t.kind == OceanTarget.TargetKind.MiningSpot).ToArray();
                 var hud = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanHud>()).First(o => o != null);
+                FlashlightCheck.Require(hud.hydroxRoot!=null && hud.hydroxFill.parent==hud.hydroxRoot,"Hydrox HUD is saved and wired");
+                FlashlightCheck.Require(hud.hydroxRoot.sizeDelta==new Vector2(240,20),"Hydrox bar reference size");
+                FlashlightCheck.Require(!hud.hydroxRoot.GetComponent<UnityEngine.UI.Image>().raycastTarget && !hud.hydroxFill.GetComponent<UnityEngine.UI.Image>().raycastTarget,"Hydrox HUD ignores clicks");
+                float statusTop=hud.status.rectTransform.anchoredPosition.y + hud.status.rectTransform.rect.yMax;
+                FlashlightCheck.Require(statusTop < hud.hydroxRoot.anchoredPosition.y-20,"Status sits below tank bar");
                 FlashlightCheck.Near(hud.minimapRange,25,"Minimap range",.001f);
                 FlashlightCheck.Require(hud.minimapRoot.anchorMin==Vector2.one && hud.minimapRoot.anchorMax==Vector2.one,"Minimap anchored top right");
                 FlashlightCheck.Require(hud.minimapRoot.sizeDelta==Vector2.one*180,"Minimap diameter is 180 reference pixels");

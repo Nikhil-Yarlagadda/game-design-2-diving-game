@@ -32,6 +32,8 @@ namespace DivingPrototype
             var oldBackgroundBehavior = InputSystem.settings.backgroundBehavior;
             bool oldRunInBackground = Application.runInBackground;
             int originalWidth=Screen.width,originalHeight=Screen.height;
+            float originalTimeScale=Time.timeScale;
+            string originalInterior=ocean.interiorScene;
             Keyboard keyboard = null;
             Mouse mouse = null;
             Action keepTestKeyboardCurrent = () =>
@@ -82,9 +84,17 @@ namespace DivingPrototype
                 mouse.MakeCurrent();
                 keyboard.MakeCurrent();
                 InputSystem.onAfterUpdate += keepTestKeyboardCurrent;
+                ocean.Hydrox.Refill();
+                float initialHydrox=ocean.Hydrox.CurrentCapacity;
                 int frame = Time.frameCount;
                 await Task.Delay(200);
                 require(Time.frameCount > frame, "Real player loop is advancing");
+                require(ocean.Hydrox.CurrentCapacity < initialHydrox,"Hydrox consumes during ocean gameplay");
+                Time.timeScale=0;
+                float pausedCapacity=ocean.Hydrox.CurrentCapacity;
+                await Task.Delay(200);
+                require(ocean.Hydrox.CurrentCapacity==pausedCapacity,"Paused game time does not consume Hydrox");
+                Time.timeScale=originalTimeScale;
                 require(ocean.oceanMap.GetComponentsInChildren<SpriteRenderer>(true)
                     .All(r=>r.sharedMaterial.shader.name=="Diving Prototype/Ocean Flashlight"),
                     "Play mode replaces preview materials with gameplay flashlight");
@@ -181,9 +191,14 @@ namespace DivingPrototype
                 for(int i=0;i<40&&!ocean.InsideSubmarine;i++)await Task.Delay(100);
                 require(!hud.minimapRoot.gameObject.activeInHierarchy,"Minimap hides inside submarine");
                 require(ocean.InsideSubmarine && SceneManager.GetActiveScene().name=="Interior" && !body.simulated, "Left click enters actual Interior scene");
+                require(!hud.hydroxRoot.gameObject.activeInHierarchy,"Hydrox bar hides inside submarine");
+                float interiorCapacity=ocean.Hydrox.CurrentCapacity;await Task.Delay(200);
+                require(ocean.Hydrox.CurrentCapacity==interiorCapacity,"Hydrox consumption stops inside submarine");
+                require(!ocean.RequestEnterSubmarine(),"Duplicate entry is rejected inside submarine");
                 await click();
                 for(int i=0;i<40&&ocean.InsideSubmarine;i++)await Task.Delay(100);
                 require(hud.minimapRoot.gameObject.activeInHierarchy,"Minimap returns on ocean re-entry");
+                require(hud.hydroxRoot.gameObject.activeInHierarchy && ocean.Hydrox.CurrentCapacity>ocean.Hydrox.MaxCapacity-2,"Return refills Hydrox and restores its bar");
                 require(!ocean.InsideSubmarine && SceneManager.GetActiveScene().name=="Ocean Interactables" && body.simulated && swimmer.enabled, "Left click returns to playable ocean");
                 require(ocean.ItemsCollected==1 && ocean.Tellurium==5 && mine.HasMachine, "Inventory and placed mine survive scene round trip");
                 require(remaining.SequenceEqual(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item && t.isActiveAndEnabled).Select(t=>t.transform.position)), "Random items do not respawn on return");
@@ -204,6 +219,9 @@ namespace DivingPrototype
                     var mapCorners=new Vector3[4];hud.minimapRoot.GetWorldCorners(mapCorners);
                     require(mapCorners.All(c=>camera.pixelRect.Contains(RectTransformUtility.WorldToScreenPoint(camera,c))),"Minimap stays inside fitted viewport "+size);
                     require(Mathf.Abs(hud.minimapRoot.rect.width-180)<.01f,"Stable reference minimap size "+size);
+                    var barCorners=new Vector3[4];hud.hydroxRoot.GetWorldCorners(barCorners);
+                    require(barCorners.All(c=>camera.pixelRect.Contains(RectTransformUtility.WorldToScreenPoint(camera,c))),"Hydrox bar stays inside fitted viewport "+size);
+                    require(Mathf.Abs(hud.hydroxFill.anchorMax.x-ocean.Hydrox.NormalizedFill)<.01f,"Live Hydrox fill tracks remaining capacity "+size);
                 }
                 PlayModeWindow.SetCustomRenderingResolution(1920,1200,"Ocean Demo Check");await Task.Delay(250);
                 jump(mine.transform.position);
@@ -244,8 +262,38 @@ namespace DivingPrototype
                     System.IO.File.WriteAllBytes("Temp/coverage-analysis/cross-chasm-check.png",bankPixels.EncodeToPNG());
                 }
                 finally {ocean.oceanCamera.targetTexture=previousTarget;ocean.oceanCamera.rect=previousRect;UnityEngine.Object.DestroyImmediate(bankRt);UnityEngine.Object.DestroyImmediate(bankPixels);}
+                var forcedPosition=body.position;
+                int keptItems=ocean.ItemsCollected,keptTellurium=ocean.Tellurium,keptMachines=ocean.availableMachines;
+                mine.Place(Time.time);
+                ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
+                require(!ocean.Prospect(Time.time+10) && !ocean.PlaceMachine(),"Empty tank blocks scanning and placement");
+                ocean.Interact();
+                require(ocean.ItemsCollected==keptItems && ocean.Tellurium==keptTellurium && ocean.availableMachines==keptMachines,"Empty tank blocks interactions");
+                await Task.Delay(50);
+                require(ocean.IsTransitioning || ocean.InsideSubmarine,"Empty tank starts forced return from far bank");
+                require(!ocean.RequestEnterSubmarine(),"Forced entry cannot be requested twice");
+                for(int i=0;i<40&&!ocean.InsideSubmarine;i++)await Task.Delay(100);
+                require(ocean.InsideSubmarine && !swimmer.enabled && !body.simulated,"Depletion enters Interior and stops swimming");
+                await click();
+                for(int i=0;i<40&&(ocean.InsideSubmarine||ocean.IsTransitioning);i++)await Task.Delay(100);
+                require(!ocean.InsideSubmarine && swimmer.enabled && ocean.Hydrox.CurrentCapacity>ocean.Hydrox.MaxCapacity-2,"Forced round trip refills before restoring controls");
+                require(Vector2.Distance(body.position,forcedPosition)<.05f && mine.HasMachine && ocean.ItemsCollected==keptItems && ocean.Tellurium==keptTellurium,"Forced round trip preserves ocean position, inventory and deployed machine");
+                require(remaining.SequenceEqual(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item && t.isActiveAndEnabled).Select(t=>t.transform.position)),"Forced return preserves randomized item positions");
+                mine.Retrieve(Time.time);
+                ocean.interiorScene="Missing Hydrox Check Scene";
+                int missingErrors=0;
+                Application.LogCallback countMissing=(text,trace,type)=>{if(type==LogType.Error && text.StartsWith("Submarine scene is unavailable:"))missingErrors++;};
+                Application.logMessageReceived+=countMissing;
+                try
+                {
+                    require(!ocean.RequestEnterSubmarine(),"Unavailable scene rejects manual entry");
+                    ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);await Task.Delay(200);
+                    require(missingErrors==1 && !ocean.RequestEnterSubmarine(),"Unavailable scene reports once without repeated load attempts");
+                    require(!swimmer.enabled && ocean.Hydrox.IsDepleted && !ocean.InsideSubmarine && ocean.Message=="Submarine scene is unavailable.","Unavailable scene keeps depleted player stopped with a visible error");
+                }
+                finally {Application.logMessageReceived-=countMissing;}
                 jump(new Vector2(0,-1.5f));
-                return new { checks,openSpeed,kelpSpeed,minimapLabels=2,sceneRoundTrip=true };
+                return new { checks,openSpeed,kelpSpeed,minimapLabels=2,sceneRoundTrip=true,hydroxForcedReturn=true,expectedMissingSceneErrors=missingErrors };
             }
             finally
             {
@@ -258,6 +306,12 @@ namespace DivingPrototype
                 if(originalKeyboard!=null && originalKeyboard.added)originalKeyboard.MakeCurrent();
                 if(originalMouse!=null && originalMouse.added)originalMouse.MakeCurrent();
                 PlayModeWindow.SetCustomRenderingResolution((uint)originalWidth,(uint)originalHeight,"Ocean Demo Check");
+                Time.timeScale=originalTimeScale;
+                ocean.interiorScene=originalInterior;
+                typeof(OceanInteractions).GetField("sceneUnavailable",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).SetValue(ocean,false);
+                ocean.Hydrox.Refill();
+                if(!ocean.InsideSubmarine && !ocean.IsTransitioning)swimmer.enabled=true;
+                ocean.Notify("Ocean checks finished; restart Play for a clean session.");
                 body.linearVelocity=Vector2.zero;
             }
         }
