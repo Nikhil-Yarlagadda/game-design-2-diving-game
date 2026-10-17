@@ -13,16 +13,36 @@ namespace DivingPrototype
         public static void Run()
         {
             FlashlightCheck.Require(!EditorApplication.isPlaying, "Run outside Play mode.");
+            var view = new Rect(-1, -1, 2, 2);
+            FlashlightCheck.Require(FlashlightController.EdgeIntersectsView(new Vector2(-10,0),new Vector2(10,0),view), "Crossing edge stays even when both endpoints are off-screen");
+            FlashlightCheck.Require(FlashlightController.EdgeIntersectsView(new Vector2(1,-10),new Vector2(1,10),view), "Boundary-touching shadow edge stays");
+            FlashlightCheck.Require(!FlashlightController.EdgeIntersectsView(new Vector2(2,2),new Vector2(3,3),view), "Distant shadow edge is excluded");
+            FlashlightCheck.Require(FlashlightController.EdgeIntersectsView(Vector2.zero,Vector2.zero,view), "Degenerate visible edge remains conservative");
             var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/Ocean Interactables.unity");
             try
             {
                 var interactions = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanInteractions>()).First(o => o != null);
                 var targets = interactions.targets;
+                FlashlightCheck.Near(interactions.transform.localScale.x,.75f,"Smaller player and matching collider scale",.001f);
+                FlashlightCheck.Near(interactions.oceanCamera.orthographicSize,9f,"Trial camera height is 18 units",.001f);
+                var smooth=interactions.oceanMap.GetComponentsInChildren<PolygonCollider2D>();
+                FlashlightCheck.Require(smooth.All(p=>p.GetComponent<SpriteRenderer>().sprite.pixelsPerUnit==40),"Terrain silhouettes use 40 PPU");
+                foreach(var name in new[]{"Circle","Ring"})
+                    FlashlightCheck.Require(AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Prototype/Interactions/Art/"+name+".asset").rect.width==256,"Smooth marker resolution: "+name);
+                var grid = interactions.oceanMap.transform.Cast<Transform>().Where(t=>t.name.StartsWith("Grid X "))
+                    .OrderBy(t=>t.position.x).Take(2).ToArray();
+                FlashlightCheck.Near(grid[1].position.x-grid[0].position.x,1.6f,"Draft reference square is 1.6 world units",.001f);
+                FlashlightCheck.Require(interactions.oceanMap.GetComponentsInChildren<SpriteRenderer>(true)
+                    .All(r=>r.sharedMaterial.shader.name=="Universal Render Pipeline/2D/Sprite-Unlit-Default"),
+                    "Saved map previews in terrain colors without gameplay lighting");
                 var mines = targets.Where(t => t.kind == OceanTarget.TargetKind.MiningSpot).ToArray();
                 var hud = scene.GetRootGameObjects().Select(o => o.GetComponent<OceanHud>()).First(o => o != null);
-                FlashlightCheck.Require(hud.DistanceBand(0) == 0 && hud.DistanceBand(9.99f) == 0
-                    && hud.DistanceBand(10) == 1 && hud.DistanceBand(19.99f) == 1
-                    && hud.DistanceBand(20) == 2 && hud.DistanceBand(100) == 2, "Radar distance bands and exact boundaries");
+                FlashlightCheck.Near(hud.minimapRange,25,"Minimap range",.001f);
+                FlashlightCheck.Require(hud.minimapRoot.anchorMin==Vector2.one && hud.minimapRoot.anchorMax==Vector2.one,"Minimap anchored top right");
+                FlashlightCheck.Require(hud.minimapRoot.sizeDelta==Vector2.one*180,"Minimap diameter is 180 reference pixels");
+                FlashlightCheck.Require(OceanHud.MinimapPosition(Vector2.zero,25,84)==Vector2.zero,"Coincident target stays centered");
+                FlashlightCheck.Near(OceanHud.MinimapPosition(Vector2.right*12.5f,25,84).x,42,"Linear in-range distance",.001f);
+                FlashlightCheck.Near(OceanHud.MinimapPosition(Vector2.one*50,25,84).magnitude,84,"Diagonal distant target clamps to border",.001f);
                 FlashlightCheck.Require(targets.Count(t => t.kind == OceanTarget.TargetKind.Submarine) == 1, "One central submarine");
                 FlashlightCheck.Require(mines.Select(t => t.level).Distinct().Count() == 5, "All five mining tiers exist");
                 foreach (var mine in mines)
@@ -32,21 +52,18 @@ namespace DivingPrototype
                     FlashlightCheck.Require(mine.YieldAt(69) == Mathf.FloorToInt(59f * mine.level / 60f), "Partial minutes use tier rate");
                     FlashlightCheck.Require(mine.Retrieve(130) == 2 * mine.level && !mine.HasMachine && !mine.machine.activeSelf, "Retrieve two minutes and machine");
                     FlashlightCheck.Require(mine.Retrieve(200) == 0, "Retrieving twice cannot duplicate resources");
-                    FlashlightCheck.Require(interactions.obstacles.All(b => Vector2.Distance(mine.transform.position, b.ClosestPoint(mine.transform.position)) >= .9f), "Mining location accessible: " + mine.name);
+                    FlashlightCheck.Require(interactions.obstacles.All(b => Vector2.Distance(mine.transform.position, b.ClosestPoint(mine.transform.position)) >= .6f), "Mining center has 0.6-unit clearance: " + mine.name);
                 }
-                interactions.HandleProspectInput(true, true, false, 100);
-                interactions.HandleProspectInput(false, false, true, 100.1f);
-                FlashlightCheck.Require(!interactions.RadarActive && !interactions.Prospect(101), "Tap scans and starts cooldown");
+                var nearby = mines.OrderBy(m=>Vector2.Distance(m.transform.position, interactions.transform.position)).First();
+                interactions.oceanCamera.transform.position = nearby.transform.position + new Vector3(0,0,-10);
+                FlashlightCheck.Require(interactions.Prospect(100.1f), "Prospecting starts directly");
+                FlashlightCheck.Require(!interactions.Prospect(101), "Prospect starts cooldown");
                 FlashlightCheck.Require(interactions.Prospect(102.1f), "Scan is available after two seconds");
                 var visible = mines.Where(t => { var v = interactions.oceanCamera.WorldToViewportPoint(t.transform.position); return v.z > 0 && v.x >= 0 && v.x <= 1 && v.y >= 0 && v.y <= 1; }).ToArray();
                 FlashlightCheck.Require(visible.Length > 0 && visible.Length < mines.Length, "Test includes on-screen and off-screen mines");
                 FlashlightCheck.Require(visible.All(t => t.RevealAlpha(102.1f) > .99f && t.RevealAlpha(102.85f) > .49f && t.RevealAlpha(103.6f) == 0), "Reveal fades to zero");
                 FlashlightCheck.Require(mines.Except(visible).All(t => t.RevealAlpha(102.1f) == 0), "Off-screen mines stay hidden");
-                interactions.HandleProspectInput(true, true, false, 110);
-                interactions.HandleProspectInput(false, true, false, 110.5f);
-                FlashlightCheck.Require(interactions.RadarActive, "Hold activates radar");
-                interactions.HandleProspectInput(false, false, true, 110.6f);
-                FlashlightCheck.Require(!interactions.RadarActive && interactions.Prospect(110.6f), "Release hides radar without consuming prospect cooldown");
+                FlashlightCheck.Require(interactions.Prospect(110.6f), "A later scan is available");
                 var light = new SerializedObject(interactions.GetComponent<FlashlightController>());
                 var polygons = light.FindProperty("polygonBlockers");
                 int edgeCount = 0;
@@ -60,7 +77,13 @@ namespace DivingPrototype
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Kelp")).All(b => b.isTrigger), "Kelp passable");
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Rock") || b.name.StartsWith("Chasm")).All(b => !b.isTrigger), "Rocks and chasms solid");
                 FlashlightCheck.Require(EditorBuildSettings.scenes.Any(s => s.enabled && s.path == "Assets/Scenes/Interior.unity"), "Interior included in build");
-                Debug.Log("Ocean interaction check passed: tiers, resource accounting, accessible positions, tap/hold, cooldown, screen filtering, reveal fade, obstacle and scene wiring.");
+                FlashlightCheck.Require(mines.Length == 37 && interactions.itemCount == 15 && targets.Count(t=>t.kind==OceanTarget.TargetKind.Item)>=interactions.itemCount, "Full reference map and initial item count");
+                foreach (var size in new[] {new Vector2(1920,1080),new Vector2(1280,720),new Vector2(1920,1200),new Vector2(2560,1080)})
+                {
+                    var r=FixedOceanView.Viewport(size.x,size.y);
+                    FlashlightCheck.Near(r.width*size.x/(r.height*size.y),16f/9f,"Fitted 16:9 viewport",.001f);
+                }
+                Debug.Log("Ocean interaction check passed: full draft map, tiers, resource accounting, minimap geometry, cooldown, screen filtering, reveal fade, obstacle and scene wiring, fixed aspect ratios.");
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
             CheckPolygonPixels();
