@@ -2551,6 +2551,7 @@ GameObject:
   - component: {fileID: 519420029}
   - component: {fileID: 519420030}
   - component: {fileID: 519420033}
+  - component: {fileID: 519420034}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2689,6 +2690,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.CenteredCamera
   target: {fileID: 1243325444}
+--- !u!114 &519420034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5ecdc904ac8304dbf5abd3faa0513b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseManager
 --- !u!1 &578365819
 GameObject:
   m_ObjectHideFlags: 0
@@ -5315,6 +5328,7 @@ MonoBehaviour:
   maxSpeed: 2.5
   acceleration: 1
   deceleration: 1.5
+  kelpZones: []
 --- !u!50 &1243325441
 Rigidbody2D:
   serializedVersion: 5
@@ -8304,6 +8318,7 @@ MonoBehaviour:
   - {fileID: 1849013522}
   - {fileID: 1983589775}
   - {fileID: 2042727545}
+  polygonBlockers: []
 --- !u!1 &1925375289
 GameObject:
   m_ObjectHideFlags: 0

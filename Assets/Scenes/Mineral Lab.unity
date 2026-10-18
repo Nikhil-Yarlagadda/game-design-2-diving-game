@@ -479,7 +479,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: 
   dialogueStartNode: MineralProcessor
-  runner: {fileID: 895084163}
   portrait: {fileID: 0}
 --- !u!1 &574710978
 GameObject:
@@ -820,6 +819,7 @@ GameObject:
   - component: {fileID: 969622933}
   - component: {fileID: 969622936}
   - component: {fileID: 969622937}
+  - component: {fileID: 969622938}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -963,6 +963,18 @@ MonoBehaviour:
   roomLayer:
     serializedVersion: 2
     m_Bits: 512
+--- !u!114 &969622938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969622932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5ecdc904ac8304dbf5abd3faa0513b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PauseManager
 --- !u!1 &1143719630
 GameObject:
   m_ObjectHideFlags: 0

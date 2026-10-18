@@ -35,5 +35,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Shop.unity
     guid: 429c39cc4442c1e438ff4d9686041ed0
+  - enabled: 1
+    path: Assets/Scenes/Title Screen.unity
+    guid: ead9bf03853ab11418f5f35f903373ef
+  - enabled: 1
+    path: Assets/Scenes/Pause Screen.unity
+    guid: eb0894f45ae50bc4297c387627662042
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
