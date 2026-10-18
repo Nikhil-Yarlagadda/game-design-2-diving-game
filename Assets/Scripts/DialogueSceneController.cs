@@ -12,6 +12,9 @@ public class DialogueSceneController : MonoBehaviour
         characterImage.sprite = DialogueContext.portrait;
         characterImage.preserveAspect = true;
 
+        Debug.Log("Dialogue Node: " + DialogueContext.nodeName);
+        Debug.Log("Previous scene is " + DialogueContext.scene);
+
         runner.onDialogueComplete.AddListener(CloseScene);
         runner.StartDialogue(DialogueContext.nodeName);
     }
