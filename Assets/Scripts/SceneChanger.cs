@@ -14,4 +14,9 @@ public class SceneChanger : MonoBehaviour
     {
         return SceneManager.GetActiveScene().name;
     }
+
+    public static void ResetWrapper()
+    {
+        GameState.reset();
+    }
 }
