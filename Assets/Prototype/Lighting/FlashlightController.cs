@@ -93,7 +93,7 @@ namespace DivingPrototype
                     Vector2 screen = Mouse.current.position.ReadValue();
                     var ray = aimCamera.ScreenPointToRay(screen);
                     var plane = new Plane(Vector3.forward, transform.position);
-                    if (plane.Raycast(ray, out float distance)) candidate = (Vector2)(ray.GetPoint(distance) - transform.position);
+                    if (aimCamera.pixelRect.Contains(screen) && plane.Raycast(ray, out float distance)) candidate = (Vector2)(ray.GetPoint(distance) - transform.position);
                 }
                 direction = FlashlightMath.RetainDirection(candidate, direction);
             }
@@ -108,6 +108,20 @@ namespace DivingPrototype
             instance.SetInt(CountId, count);
             instance.SetVectorArray(BoxesXId, rowsX);
             instance.SetVectorArray(BoxesYId, rowsY);
+            Vector2 viewMin = transform.position, viewMax = transform.position;
+            var ground = new Plane(Vector3.forward, transform.position);
+            bool boundedView = aimCamera != null;
+            if (boundedView)
+                for (int x = 0; x <= 1; x++)
+                    for (int y = 0; y <= 1; y++)
+                    {
+                        var ray = aimCamera.ViewportPointToRay(new Vector3(x, y, 0));
+                        if (!ground.Raycast(ray, out float depth)) { boundedView = false; continue; }
+                        Vector2 corner = ray.GetPoint(depth);
+                        viewMin = Vector2.Min(viewMin, corner);
+                        viewMax = Vector2.Max(viewMax, corner);
+                    }
+            var rayBounds = Rect.MinMaxRect(viewMin.x - .01f, viewMin.y - .01f, viewMax.x + .01f, viewMax.y + .01f);
             int edgeCount = 0;
             for (int p = 0; p < polygonBlockers.Length; p++)
             {
@@ -120,6 +134,8 @@ namespace DivingPrototype
                     {
                         Vector2 a = polygon.transform.TransformPoint(path[e] + polygon.offset);
                         Vector2 b = polygon.transform.TransformPoint(path[(e + 1) % path.Count] + polygon.offset);
+                        // Every ray to a visible fragment stays inside this rectangle, including its origin.
+                        if (boundedView && !EdgeIntersectsView(a, b, rayBounds)) continue;
                         edges[edgeCount] = new Vector4(a.x, a.y, b.x, b.y);
                         edgeOwners[edgeCount++] = 32 + p;
                     }
@@ -137,6 +153,10 @@ namespace DivingPrototype
                 aimCamera.backgroundColor = background;
             }
         }
+
+        public static bool EdgeIntersectsView(Vector2 a, Vector2 b, Rect view)
+            => Mathf.Max(a.x, b.x) >= view.xMin && Mathf.Min(a.x, b.x) <= view.xMax
+                && Mathf.Max(a.y, b.y) >= view.yMin && Mathf.Min(a.y, b.y) <= view.yMax;
 
         private void OnValidate()
         {

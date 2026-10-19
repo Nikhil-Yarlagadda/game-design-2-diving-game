@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace DivingPrototype
 {
@@ -8,129 +9,108 @@ namespace DivingPrototype
     {
         public OceanInteractions interactions;
         public TMP_Text status, prompt, message, interior;
-        public RectTransform radarRoot;
-        public Sprite arrowSprite;
+        public RectTransform hydroxRoot, hydroxFill;
+        [FormerlySerializedAs("radarRoot")] public RectTransform minimapRoot;
+        public Sprite arrowSprite, circleSprite, squareSprite;
         public TMP_FontAsset font;
-        [Min(.1f)] public float nearDistance = 10f;
-        [Min(.2f)] public float farDistance = 20f;
-        private RectTransform[] arrows;
-        private TMP_Text[] labels;
-        private RadarRings rings;
+        [Min(1f)] public float minimapRange = 25f;
+        private UnityEngine.UI.Image[] markers;
+        private RectTransform playerDirection;
+        private TMP_Text submarineDistance;
 
-        public int DistanceBand(float distance) => distance < nearDistance ? 0 : distance < farDistance ? 1 : 2;
+        public static Vector2 MinimapPosition(Vector2 offset, float range, float radius)
+            => Vector2.ClampMagnitude(offset / Mathf.Max(.001f, range), 1f) * radius;
 
-        private void OnValidate() => farDistance = Mathf.Max(nearDistance + .1f, farDistance);
+        private UnityEngine.UI.Image Image(string name, Sprite sprite, float size, Color color)
+        {
+            var image = new GameObject(name, typeof(RectTransform), typeof(UnityEngine.UI.Image)).GetComponent<UnityEngine.UI.Image>();
+            image.rectTransform.SetParent(minimapRoot, false);
+            image.rectTransform.sizeDelta = Vector2.one * size;
+            image.sprite = sprite;
+            image.color = color;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        private TMP_Text Label(string name, float size, Vector2 position)
+        {
+            var text = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
+            text.rectTransform.SetParent(minimapRoot, false);
+            text.rectTransform.sizeDelta = new Vector2(180, 24);
+            text.rectTransform.anchoredPosition = position;
+            text.font = font;
+            text.fontSize = size;
+            text.alignment = TextAlignmentOptions.Center;
+            text.raycastTarget = false;
+            text.outlineWidth = .15f;
+            text.outlineColor = Color.black;
+            return text;
+        }
 
         private void Start()
         {
-            var guides = new GameObject("Radar Distance Rings", typeof(RectTransform), typeof(RadarRings));
-            var rect = guides.GetComponent<RectTransform>();
-            rect.SetParent(radarRoot, false);
-            rect.SetAsFirstSibling();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-            rings = guides.GetComponent<RadarRings>();
-            rings.color = Color.clear;
-            rings.raycastTarget = false;
-            arrows = new RectTransform[interactions.targets.Length];
-            labels = new TMP_Text[arrows.Length];
-            for (int i = 0; i < arrows.Length; i++)
+            float diameter = minimapRoot.rect.width;
+            Image("Minimap Border", circleSprite, diameter, new Color(.4f, .65f, .7f, .85f));
+            Image("Minimap Background", circleSprite, diameter - 4f, new Color(.015f, .04f, .055f, .96f));
+            Label("Minimap North", 13, new Vector2(0, diameter * .5f + 13)).text = "N";
+            submarineDistance = Label("Submarine Distance", 14, new Vector2(0, -diameter * .5f - 17));
+            submarineDistance.color = new Color(.55f, .9f, 1f);
+            markers = new UnityEngine.UI.Image[interactions.targets.Length];
+            for (int i = 0; i < markers.Length; i++)
             {
                 var target = interactions.targets[i];
                 if (target.kind == OceanTarget.TargetKind.MiningSpot) continue;
-                var arrow = new GameObject(target.name + " Radar Arrow", typeof(RectTransform), typeof(UnityEngine.UI.Image));
-                arrows[i] = arrow.GetComponent<RectTransform>();
-                arrows[i].SetParent(radarRoot, false);
-                arrows[i].sizeDelta = new Vector2(18, 22);
-                var image = arrow.GetComponent<UnityEngine.UI.Image>();
-                image.sprite = arrowSprite;
-                image.useSpriteMesh = true;
-                image.raycastTarget = false;
-                var outline = arrow.AddComponent<UnityEngine.UI.Outline>();
-                outline.effectColor = new Color(0f, 0f, 0f, .85f);
-                outline.effectDistance = new Vector2(1f, -1f);
-                var label = new GameObject(target.name + " Radar Label", typeof(RectTransform), typeof(TextMeshProUGUI));
-                label.transform.SetParent(radarRoot, false);
-                labels[i] = label.GetComponent<TextMeshProUGUI>();
-                labels[i].font = font;
-                labels[i].fontSize = 20;
-                labels[i].alignment = TextAlignmentOptions.Center;
-                labels[i].raycastTarget = false;
-                labels[i].rectTransform.sizeDelta = new Vector2(160, 60);
-                labels[i].outlineWidth = .2f;
-                labels[i].outlineColor = Color.black;
+                bool submarine = target.kind == OceanTarget.TargetKind.Submarine;
+                markers[i] = Image(target.name + " Minimap Marker", submarine ? squareSprite : circleSprite,
+                    submarine ? 7 : 4, submarine ? new Color(.55f, .9f, 1f) : Color.white);
+                if (submarine) markers[i].rectTransform.localRotation = Quaternion.Euler(0,0,45);
             }
+            // Keep the home marker above overlapping item dots without changing its bearing.
+            foreach (var marker in markers)
+                if (marker != null && marker.name.StartsWith("Submarine")) marker.transform.SetAsLastSibling();
+            Image("Minimap Player", circleSprite, 6, Color.white);
+            playerDirection = Image("Minimap Facing", arrowSprite, 7, Color.white).rectTransform;
+            playerDirection.sizeDelta = new Vector2(6,9);
         }
 
         private void LateUpdate()
         {
-            if (arrows == null) return;
+            if (markers == null) return;
             bool inside = interactions.InsideSubmarine;
+            hydroxRoot.gameObject.SetActive(!inside);
+            hydroxFill.anchorMax = new Vector2(interactions.Hydrox.NormalizedFill, 1f);
             interior.gameObject.SetActive(inside);
+            minimapRoot.gameObject.SetActive(!inside);
             status.text = "OCEAN EXCURSION\nItems  " + interactions.ItemsCollected + "     Tellurium  " + interactions.Tellurium
                 + "     Machines  " + interactions.availableMachines;
             message.text = interactions.Message;
             var target = interactions.Closest;
-            prompt.text = inside ? "SPACE  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
-                ? "SPACE  Enter submarine" : target.kind == OceanTarget.TargetKind.Item ? "SPACE  Pick up item"
-                : target.HasMachine ? "SPACE  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
-                : "Tier " + target.level + "  |  " + target.level + " / min  |  X  Place machine";
-            if (!inside) status.text += "\nWASD  Swim    SPACE  Interact    X  Mine\nTap Z  Prospect"
-                + (interactions.CooldownRemaining > 0f ? " (" + interactions.CooldownRemaining.ToString("0.0") + "s)" : " (ready)")
-                + "    Hold Z  Radar";
-            rings.gameObject.SetActive(!inside && interactions.RadarActive);
-            if (interactions.RadarActive && !inside)
-                status.text += "\nRadar rings: <" + nearDistance.ToString("0.#") + "m  |  "
-                    + nearDistance.ToString("0.#") + "-" + farDistance.ToString("0.#") + "m  |  "
-                    + farDistance.ToString("0.#") + "m+";
-            Vector2 origin = interactions.oceanCamera.WorldToScreenPoint(interactions.transform.position);
-            OceanTarget nearestItem = null;
-            float nearestDistance = float.PositiveInfinity;
-            foreach (var item in interactions.targets)
+            prompt.text = inside ? "LEFT CLICK  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
+                ? "LEFT CLICK  Enter submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
+                : target.HasMachine ? "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
+                : "Tier " + target.level + "  |  " + target.level + " / min  |  LEFT CLICK  Place machine";
+            if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\nRIGHT CLICK  Prospect"
+                + (interactions.CooldownRemaining > 0f ? " (" + interactions.CooldownRemaining.ToString("0.0") + "s)" : " (ready)");
+            if (inside) return;
+            float radius = Mathf.Min(minimapRoot.rect.width, minimapRoot.rect.height) * .5f - 6;
+            for (int i = 0; i < markers.Length; i++)
             {
-                if (item == null || !item.isActiveAndEnabled || item.kind != OceanTarget.TargetKind.Item) continue;
-                float distance = Vector2.Distance(interactions.transform.position, item.transform.position);
-                if (distance < nearestDistance) { nearestDistance = distance; nearestItem = item; }
-            }
-            Vector2 submarineLabel = Vector2.zero;
-            bool hasSubmarineLabel = false;
-            for (int i = 0; i < arrows.Length; i++)
-            {
-                if (arrows[i] == null) continue;
+                if (markers[i] == null) continue;
                 var tracked = interactions.targets[i];
-                bool visible = !inside && interactions.RadarActive && tracked != null && tracked.isActiveAndEnabled;
-                arrows[i].gameObject.SetActive(visible);
-                bool showLabel = visible && (tracked.kind == OceanTarget.TargetKind.Submarine || tracked == nearestItem);
-                labels[i].gameObject.SetActive(showLabel);
+                bool visible = tracked != null && tracked.isActiveAndEnabled;
+                markers[i].gameObject.SetActive(visible);
                 if (!visible) continue;
-                Vector2 direction = ((Vector2)interactions.oceanCamera.WorldToScreenPoint(tracked.transform.position) - origin).normalized;
-                if (direction == Vector2.zero) direction = Vector2.up;
-                float distance = Vector2.Distance(interactions.transform.position, tracked.transform.position);
-                int band = DistanceBand(distance);
-                float lane = RadarRings.Radius(radarRoot.rect.size, band);
-                arrows[i].sizeDelta = band == 0 ? new Vector2(22, 26)
-                    : band == 1 ? new Vector2(16, 20) : new Vector2(12, 14);
-                arrows[i].anchoredPosition = direction * lane;
-                arrows[i].localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
-                Vector2 labelPosition = direction * (lane + 55f);
+                Vector2 offset = tracked.transform.position - interactions.transform.position;
+                markers[i].rectTransform.anchoredPosition = MinimapPosition(offset, minimapRange, radius);
+                var color = markers[i].color;
+                color.a = offset.magnitude > minimapRange ? .65f : 1f;
+                markers[i].color = color;
                 if (tracked.kind == OceanTarget.TargetKind.Submarine)
-                {
-                    submarineLabel = labelPosition;
-                    hasSubmarineLabel = true;
-                }
-                else if (showLabel && hasSubmarineLabel && Mathf.Abs(labelPosition.x - submarineLabel.x) < 160f
-                    && Mathf.Abs(labelPosition.y - submarineLabel.y) < 65f)
-                    labelPosition.y = submarineLabel.y + (submarineLabel.y > 0f ? -70f : 70f);
-                labelPosition.x = Mathf.Clamp(labelPosition.x, -radarRoot.rect.width * .5f + 85f, radarRoot.rect.width * .5f - 85f);
-                labelPosition.y = Mathf.Clamp(labelPosition.y, -radarRoot.rect.height * .5f + 35f, radarRoot.rect.height * .5f - 35f);
-                labels[i].rectTransform.anchoredPosition = labelPosition;
-                labels[i].text = tracked.displayName + "\n" + distance.ToString("0") + "m";
-                labels[i].color = tracked.kind == OceanTarget.TargetKind.Submarine ? new Color(.55f, .9f, 1f) : Color.white;
-                Color arrowColor = labels[i].color;
-                arrowColor.a = band == 0 ? 1f : band == 1 ? .7f : .45f;
-                arrows[i].GetComponent<UnityEngine.UI.Image>().color = arrowColor;
+                    submarineDistance.text = "Submarine  " + offset.magnitude.ToString("0") + "m";
             }
+            Vector2 direction = interactions.GetComponent<FlashlightController>().AimDirection;
+            playerDirection.anchoredPosition = direction * 10;
+            playerDirection.localRotation = Quaternion.Euler(0,0,Mathf.Atan2(direction.y,direction.x)*Mathf.Rad2Deg-90);
         }
     }
 }

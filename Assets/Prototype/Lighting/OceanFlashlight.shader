@@ -114,6 +114,7 @@ Shader "Diving Prototype/Ocean Flashlight"
                 if (_EnableExternalAlpha > 0.0)
                     sampled.a = lerp(sampled.a, SAMPLE_TEXTURE2D(_AlphaTex, sampler_AlphaTex, input.uv).r, _EnableExternalAlpha);
                 half4 color = sampled * input.color;
+                if (color.a == 0.0 || _Reveal >= 1.0 || _AmbientBrightness >= 1.0) return color;
                 float2 displacement = input.worldPosition - _FlashlightOrigin.xy;
                 float distance = length(displacement);
                 float halfAngle = radians(clamp(_ConeAngle, 2.0, 180.0) * 0.5);
