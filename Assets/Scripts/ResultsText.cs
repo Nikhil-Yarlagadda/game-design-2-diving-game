@@ -1,0 +1,27 @@
+using UnityEngine;
+using TMPro;
+
+public class ResultsText : MonoBehaviour
+{
+   private TextMeshProUGUI label;
+   public int text;
+
+    void Awake()
+    {
+        label = GetComponent<TextMeshProUGUI>();
+    }
+
+    void Update()
+    {
+        if(text == 1)
+            label.text = GameState.tellurium + " Tellurium Samples Collected = " + GameState.tellurium*10 +" Credits";
+        if(text == 2)
+            label.text = "Total credits: " +  (GameState.credits + (GameState.tellurium*10) - 50);
+    }
+
+    public void onLeave(){
+        GameState.credits += (GameState.tellurium*10) - 50;
+        GameState.tellurium = 0;
+        GameState.days++;
+    }
+}
