@@ -24,7 +24,7 @@ public class NPC : MonoBehaviour, IClickable
         }
 
         DialogueContext.scene = SceneChanger.getScene();
-
+        GameState.npcsTalks.Add(npcId);
         SceneChanger.ChangeScene("Dialogue");
     /*
 
@@ -32,5 +32,14 @@ public class NPC : MonoBehaviour, IClickable
         {
             runner.StartDialogue(dialogueStartNode);
         }*/
+    }
+
+    void Start()
+    {
+        if (npcId == "Apprentice Diver")
+        {
+            if(GameState.npcsTalks.Count < 2)
+                gameObject.SetActive(false);
+        }
     }
 }

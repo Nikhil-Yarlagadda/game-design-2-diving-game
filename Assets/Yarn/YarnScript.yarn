@@ -1,23 +1,117 @@
 ﻿title: Medic1
 ---
-This is placeholder text for medic.
+Kirsten: Hey, how are you feeling?
+-> Feeling good.
+    Kirsten: *jotting something down on a clipboard* Good… okay…
+-> Uhh… normal?
+    Kirsten: *jotting something down on a clipboard* No identifiable… symptoms…
+-> What do you mean?
+
+Kirsten: I’m collecting data about everyone’s baseline condition, although I should’ve done so before the compression. Saturation diving is just so hard on the body, I’m shocked that management isn’t keeping stricter tabs on our health. 
+Kirsten: I suppose I’ll have to take care of it all myself.
+Player: You’re experienced with saturation diving?
+Kirsten: Yes, I’ve been on a few short research dives, but never at this depth or for this long. Even then, the conditions messed us up a bit. Ear infections, joint pain.
+Kirsten: Breathing nothing but hydrox while your body is under extreme pressure for days on end… It’s no joke.
+Kirsten: Of course, we’ll be fine. A twenty-day dive isn’t unheard of. Any symptoms should ameliorate once we surface and depressurize. I’m just keeping tabs, is all.
+Player: Keep it up.
 ===
 
 title: ApprenticeDiver1
 ---
-This is a placeholder text for apprentice diver.
+Player: What’s it like out there?
+Cole: It’s dark, man! Thank god for this flashlight, I wouldn’t have been able to see my hand in front of my face without it.
+Player: Any tellurium?
+Cole: Got some right here. I’ll take it to Jonah once I get all this gear hung up for you. Seems like there’s plenty of good mining spots – you’ll see for yourself tomorrow.
+Player: Sounds good.
+
 ===
 
 title: MineralProcessor1
 ---
-This is a placeholder text for mineral processor.
+Jonah: Foreman, it’s good to finally talk to you
+-> What kept you so quiet during the descent?
+    Jonah: Sorry about that… I was just a little freaked out. The feeling of sinking down, what, 600 meters? It felt like an elevator ride that never seemed to end.
+    Player: So it’s your first time in a submarine? Me too.
+    Jonah: Yeah. I never thought I’d be in a place like this, to be honest.
+-> Likewise
+
+Jonah: I’m working on getting all of this equipment set up for when Cole comes back with today’s intake. You’ll find him in the moonpool, eventually.
+Jonah: You’d think that management would’ve taken care of all this setup before the descent, but most of these machines are unplugged and… grimy
+Jonah: …
+Jonah: You know, I’m glad it’s not me out there. Pitch black, open water in all directions, no sign of the sun… I’ll leave it to you and Cole, I’m happy in here.
+-> If it spooks you so much, why take the job?
+    Jonah: Have you seen the job market? I’ll take whatever I can get, at this point!
+-> Can’t blame you.
+Player: Well, I’ll leave you to it.
+===
+
+title: MineralProcessor3
+---
+Jonah: Oh, hey. I just finished processing and logging all the tellurium that you and Cole have mined so far. The Company should have sent you some credits in return.
+Player: Credits?
+Jonah: Slept through the training videos? I can’t blame you. 
+Jonah: The short of it is, management is giving us something called “company credits” in return for the tellurium that you guys mine every day. Since you’re the foreman, you can spend them to order extra equipment at the computer terminal.
+-> What’s up with that? Can’t they just send us the equipment we need?
+    Jonah: I don’t know, it seems like they want to make sure they’re not buying anything that the mining operation can’t pay back.
+    Player: How reassuring.
+-> That’s a nice bonus.
+    Jonah: It’s a little fishy if you ask me, but I’m glad you’re enthusiastic about it.
+Jonah: In any case, you should check out the terminal and see what’s available.
+Player: Will do.
+===
+
+title: Medic3
+---
+Kirsten: How’s it going, foreman? Any symptoms after your excursion yesterday?
+-> I’m right as rain.
+    Kirsten: *jotting something down on a clipboard* Glad to hear it.
+-> I hit my elbow on a rock, think it might be bruised. 
+    Kirsten: I’m not a school nurse, foreman, but I can get you an ice pack if you really think you need it. I meant symptoms from the pressurized environment.
+    Player: In that case, no symptoms. And no need for an ice pack.
+    Kirsten: *jotting something down on a clipboard* Okay.
+Kirsten: I’ve decided that, alongside our health data, I’ll also start keeping track of the state of the submarine. No amount of dehumidifying can keep a submerged vessel dry, as I’m sure you’ve noticed. 
+Kirsten: Combine that with the high oxygen concentration, and this place could become a breeding ground for mold if we’re not careful.
+
+Player: That doesn’t sound good.
+
+Kirsten: It wouldn’t be much to worry about on a shorter operation, but since we’re going to be here for 20 days, we should make sure to keep the place clean. 
+
+Player: Absolutely.
+
+Kirsten: *jotting something down on a clipboard*
+
+Kirsten: Now that I’ve talked with you, the only data left to gather for today is Cole’s condition. He should be finishing up his excursion any minute now.
+
+Player: Take care.
+===
+
+title: ApprenticeDiver3
+---
+Cole: How’d it go yesterday?
+-> Sure is dark.
+    Cole: What’d I tell ya? Tell you what, though… I’m getting used to it. There’s something peaceful about the dark and quiet.
+    -> I know what you mean. When you’re out there, it’s just you, y’know?
+        Cole: Exactly.
+    -> I can’t relate.
+        Cole: Some diver you are, then.
+-> I got a lot of mining done.
+    Cole: Look at you go, big foreman. You’ll make us rich!
+Player: When you’re all unpacked here, Kirsten wants to check on how you’re feeling. For her medical record.
+
+Cole: Heard. I can tell you right now though that it’ll be a short conversation. I’ve never felt better!
+
+Player: Good to hear.
 ===
 
 title: Bed
 ---
 Do you want to start a new day?
-
 -> Yes
     <<NewDay>>
 -> No
+===
+
+title: Bedearly
+---
+I should check on all of my crew members before sleeping.
 ===

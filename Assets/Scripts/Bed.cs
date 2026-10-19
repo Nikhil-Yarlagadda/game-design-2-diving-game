@@ -10,7 +10,10 @@ public class Bed : MonoBehaviour, IClickable
     {
         if (!runner.IsDialogueRunning)
         {
-            runner.StartDialogue(dialogueStartNode);
+            if(GameState.npcsTalks.Count < 3)
+                runner.StartDialogue(dialogueStartNode + "early");
+            else
+                runner.StartDialogue(dialogueStartNode);
         }
     }
 }

@@ -14,4 +14,8 @@ public class DayText : MonoBehaviour
     {
         label.text = "Day: " + GameState.days;
     }
+    public void OnClicked()
+    {
+        GameState.days++;
+    }
 }
