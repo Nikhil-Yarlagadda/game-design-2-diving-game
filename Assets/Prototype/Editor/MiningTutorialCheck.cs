@@ -11,6 +11,9 @@ namespace DivingPrototype
         [MenuItem("Diving Prototype/Check Mining And Tutorial")]
         public static void Run()
         {
+            using var state = new GameStateSnapshot();
+            GameState.reset();
+            GameState.days = 2;
             int checks = 0;
             Action<bool, string> check = (ok, text) => { FlashlightCheck.Require(ok, text); checks++; };
             for (int tier = 1; tier <= 5; tier++)
@@ -75,7 +78,7 @@ namespace DivingPrototype
                 var player = tutorial.GetComponent<SpriteRenderer>();
                 var importer = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(player.sprite));
                 check(player.color == Color.white && importer.spriteImportMode == SpriteImportMode.Single && importer.alphaIsTransparency, "Transparent untinted diver import");
-                check(Mathf.Abs(1520f / importer.spritePixelsPerUnit * player.transform.lossyScale.y - 1.5f) < .001f, "Visible sprite height is 1.5 world units");
+                check(Mathf.Abs(1520f / importer.spritePixelsPerUnit * player.transform.lossyScale.y - 3f) < .001f, "Visible sprite height matches rebased player scale");
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
             Debug.Log("Mining and tutorial checks passed: " + checks + " assertions.");

@@ -23,8 +23,10 @@ public class BuyButton : MonoBehaviour
     }
 
     public void onClicked(){
-        GameState.credits -= 20;
-        GameState.itemsBought[item]++;
+        if (cost < 0 || GameState.credits < cost) return;
+        GameState.credits -= cost;
+        GameState.itemsBought.TryGetValue(item, out int pending);
+        GameState.itemsBought[item] = pending + 1;
         Debug.Log("Amount of item is " + GameState.itemsBought[item]);
     }
 }

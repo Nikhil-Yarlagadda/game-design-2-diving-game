@@ -123,7 +123,7 @@ namespace DivingPrototype
         {
             if (markers == null) return;
             bool inside = interactions.InsideSubmarine;
-            tutorialPanel.gameObject.SetActive(!inside && !interactions.IsTransitioning && tutorial != null && tutorial.Stage > 0 && tutorial.Stage < 8);
+            tutorialPanel.gameObject.SetActive(!inside && !interactions.IsTransitioning && tutorial != null && tutorial.IsVisible);
             if (tutorial != null) tutorialText.text = tutorial.Text;
             scanPanel.gameObject.SetActive(!inside && interactions.IsProspecting);
             scanFill.anchorMax = new Vector2(interactions.ScanProgress, 1);

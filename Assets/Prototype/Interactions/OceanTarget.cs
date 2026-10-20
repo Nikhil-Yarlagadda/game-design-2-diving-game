@@ -8,6 +8,9 @@ namespace DivingPrototype
     {
         public enum TargetKind { Submarine, Item, MiningSpot }
         public TargetKind kind;
+        [SerializeField, Tooltip("Unique, stable ID for retaining this spot across excursions.")]
+        private string persistentId;
+        public string PersistentId => persistentId;
         [Min(1)] public int level = 1;
         public string displayName = "Item";
         public SpriteRenderer highlight;
@@ -32,7 +35,23 @@ namespace DivingPrototype
         {
             if (initialized) return;
             actualTier = Mathf.Clamp(level, 1, 5);
+            if (CanPersist && GameState.miningSpots.TryGetValue(persistentId, out var saved))
+            {
+                actualTier = saved.ActualTier;
+                tierOutput = saved.TierOutput;
+                IsProspected = saved.IsProspected;
+                DisplayedTier = saved.DisplayedTier;
+            }
             initialized = true;
+        }
+        private bool CanPersist => Application.isPlaying && kind == TargetKind.MiningSpot && !string.IsNullOrEmpty(persistentId);
+        private void SaveMiningState()
+        {
+            if (!CanPersist) return;
+            GameState.miningSpots[persistentId] = new GameState.MiningSpotState {
+                IsProspected = IsProspected, DisplayedTier = DisplayedTier,
+                ActualTier = actualTier, TierOutput = tierOutput
+            };
         }
         private void Awake()
         {
@@ -49,7 +68,8 @@ namespace DivingPrototype
             label.alignment = TextAlignmentOptions.Center;
             label.rectTransform.sizeDelta = new Vector2(5, 1);
             label.GetComponent<MeshRenderer>().sortingOrder = 30;
-            label.gameObject.SetActive(false);
+            RefreshPresentation(Time.time);
+            ShowHighlight(false, Time.time);
         }
         private void Update() => AdvanceMining(Time.time);
         private void LateUpdate() { if (kind == TargetKind.MiningSpot) RefreshPresentation(Time.time); }
@@ -66,7 +86,11 @@ namespace DivingPrototype
                 if (tierOutput >= Allowance(actualTier)) { actualTier--; tierOutput = 0; }
                 nextTick += Interval(actualTier);
             }
-            if (produced > 0) OreProduced?.Invoke(this);
+            if (produced > 0)
+            {
+                SaveMiningState();
+                OreProduced?.Invoke(this);
+            }
             return produced;
         }
         public int YieldAt(float now) { AdvanceMining(now); return HasMachine ? StoredOre : 0; }
@@ -78,6 +102,7 @@ namespace DivingPrototype
             if (IsProspected && DisplayedTier != actualTier) changedUntil = now + 3f;
             DisplayedTier = actualTier;
             IsProspected = true;
+            SaveMiningState();
             RefreshPresentation(now);
         }
         public bool Place(float now)

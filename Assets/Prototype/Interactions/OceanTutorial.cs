@@ -5,11 +5,15 @@ namespace DivingPrototype
     [RequireComponent(typeof(OceanInteractions))]
     public sealed class OceanTutorial : MonoBehaviour
     {
+        public enum TutorialMode { None, Mining, Delivery }
+        public TutorialMode Mode { get; private set; }
+        public bool IsVisible => Mode == TutorialMode.Delivery || (Mode == TutorialMode.Mining && Stage >= 1 && Stage <= 7);
+        public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations. <b>Collect your items today, or else they will be swept away by the currents.</b>";
         public int Stage { get; private set; }
         public float VisibleSeconds { get; private set; }
         private bool discovered, placed, produced, retrieved, replaced;
         private OceanInteractions ocean;
-        public string Text => Stage >= 1 && Stage <= 7 ? Messages[Stage - 1] : "";
+        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : IsVisible ? Messages[Stage - 1] : "";
         private static readonly string[] Messages = {
             "Stop moving, then <b>hold E for 3 seconds</b> to use your prospecting tool.",
             "The prospecting tool will reveal nearby tellurium mining spots.\nMove near a prospected mining spot, then left-click while it is highlighted to place a mining machine.",
@@ -26,7 +30,7 @@ namespace DivingPrototype
             ocean.MachinePlaced += OnPlaced;
             ocean.OreProduced += OnProduced;
             ocean.PositiveRetrieval += OnRetrieved;
-            ocean.ExcursionDeparted += BeginExcursion;
+            ocean.DeliveryCollected += OnDeliveryCollected;
             ocean.ExcursionEnded += EndExcursion;
         }
         private void Start() => BeginExcursion();
@@ -36,23 +40,39 @@ namespace DivingPrototype
             ocean.MachinePlaced -= OnPlaced;
             ocean.OreProduced -= OnProduced;
             ocean.PositiveRetrieval -= OnRetrieved;
-            ocean.ExcursionDeparted -= BeginExcursion;
+            ocean.DeliveryCollected -= OnDeliveryCollected;
             ocean.ExcursionEnded -= EndExcursion;
         }
         public void BeginExcursion()
         {
+            if (ocean == null) ocean = GetComponent<OceanInteractions>();
             discovered = placed = produced = retrieved = replaced = false;
-            Stage = 1;
+            Stage = 0;
+            Mode = TutorialMode.None;
             VisibleSeconds = 0;
+            if (GameState.days == 2)
+            {
+                Mode = TutorialMode.Mining;
+                Stage = 1;
+            }
+            else if (GameState.days > 2 && !GameState.deliveryTutorialShown && ocean.RemainingDeliveryCount > 0)
+            {
+                Mode = TutorialMode.Delivery;
+                GameState.deliveryTutorialShown = true;
+            }
         }
-        public void EndExcursion() { Stage = 0; VisibleSeconds = 0; }
+        public void EndExcursion() { Mode = TutorialMode.None; Stage = 0; VisibleSeconds = 0; }
+        public void OnDeliveryCollected(int remaining)
+        {
+            if (Mode == TutorialMode.Delivery && remaining == 0) EndExcursion();
+        }
         public void OnScan(int count) { if (Stage > 0 && count > 0) discovered = true; }
         public void OnPlaced() { if (Stage <= 0) return; placed = true; if (retrieved) replaced = true; }
         public void OnProduced(OceanTarget target) { if (Stage > 0) produced = true; }
         public void OnRetrieved() { if (Stage > 0) retrieved = true; }
         private void Update()
         {
-            if (ocean.InsideSubmarine || ocean.IsTransitioning) return;
+            if (Mode != TutorialMode.Mining || ocean.InsideSubmarine || ocean.IsTransitioning) return;
             // A machine deployed on an earlier excursion can already contain ore.
             foreach (var target in ocean.targets)
                 if (target != null && target.HasMachine && target.StoredOre > 0) produced = true;
@@ -60,7 +80,7 @@ namespace DivingPrototype
         }
         public void Advance(float seconds)
         {
-            if (Stage < 1 || Stage >= 8 || seconds < 0) return;
+            if (Mode != TutorialMode.Mining || Stage < 1 || Stage >= 8 || seconds < 0) return;
             VisibleSeconds += seconds;
             bool next = Stage == 1 ? discovered
                 : Stage == 2 ? placed : Stage == 3 ? produced : Stage == 4 ? retrieved

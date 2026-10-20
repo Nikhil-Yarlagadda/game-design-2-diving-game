@@ -52,7 +52,7 @@ namespace DivingPrototype
                 settings.FindProperty("consumptionRate").floatValue=1;
                 settings.ApplyModifiedPropertiesWithoutUndo();tank.Refill();
                 var targets = interactions.targets;
-                FlashlightCheck.Near(interactions.transform.localScale.x,.75f,"Smaller player and matching collider scale",.001f);
+                FlashlightCheck.Near(interactions.transform.localScale.x,1.5f,"Rebased player and matching collider scale",.001f);
                 FlashlightCheck.Near(interactions.oceanCamera.orthographicSize,9f,"Trial camera height is 18 units",.001f);
                 var smooth=interactions.oceanMap.GetComponentsInChildren<PolygonCollider2D>();
                 FlashlightCheck.Require(smooth.All(p=>p.GetComponent<SpriteRenderer>().sprite.pixelsPerUnit==40),"Terrain silhouettes use 40 PPU");
@@ -117,7 +117,10 @@ namespace DivingPrototype
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Kelp")).All(b => b.isTrigger), "Kelp passable");
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Rock") || b.name.StartsWith("Chasm")).All(b => !b.isTrigger), "Rocks and chasms solid");
                 FlashlightCheck.Require(EditorBuildSettings.scenes.Any(s => s.enabled && s.path == "Assets/Scenes/Interior.unity"), "Interior included in build");
-                //FlashlightCheck.Require(mines.Length == 37 && /*interactions.itemCount == 15 &&*/ targets.Count(t=>t.kind==OceanTarget.TargetKind.Item)>=interactions.itemCount, "Full reference map and initial item count");
+                FlashlightCheck.Require(mines.Length == 37 && targets.All(t=>t.kind!=OceanTarget.TargetKind.Item), "Full reference map without authored test pickups");
+                FlashlightCheck.Require(interactions.deliveryPrefab != null && interactions.deliveryPrefab.kind == OceanTarget.TargetKind.Item, "Delivery prefab is wired");
+                FlashlightCheck.Near(interactions.deliveryRadius,10,"Default delivery radius",.001f);
+                FlashlightCheck.Require(interactions.resultsScene == "Result", "Ocean exit uses Results");
                 foreach (var size in new[] {new Vector2(1920,1080),new Vector2(1280,720),new Vector2(1920,1200),new Vector2(2560,1080)})
                 {
                     var r=FixedOceanView.Viewport(size.x,size.y);
@@ -127,6 +130,7 @@ namespace DivingPrototype
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
             MiningTutorialCheck.Run();
+            DayDeliveryCheck.Run();
             CheckPolygonPixels();
         }
 

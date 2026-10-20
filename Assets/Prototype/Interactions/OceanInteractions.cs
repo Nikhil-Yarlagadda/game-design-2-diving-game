@@ -1,8 +1,7 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 namespace DivingPrototype
 {
@@ -20,8 +19,12 @@ namespace DivingPrototype
         [Min(0f)] public float prospectCooldown = 5f;
         [Min(.1f)] public float prospectDuration = 3f;
         [Min(1)] public int availableMachines = 3;
-        [Min(0)] private int itemCount = GameState.itemsBought["Mining Machine"];
-        public string interiorScene = "Result";
+        public OceanTarget deliveryPrefab;
+        [Min(.1f)] public float deliveryRadius = 10f;
+        [FormerlySerializedAs("interiorScene")] public string resultsScene = "Result";
+        public int DeliveredItemCount { get; private set; }
+        public int RemainingDeliveryCount { get; private set; }
+        public event System.Action<int> DeliveryCollected;
         public OceanTarget Closest { get; private set; }
         public bool InsideSubmarine { get; private set; }
         public bool IsTransitioning => transitioning;
@@ -33,7 +36,7 @@ namespace DivingPrototype
         public bool IsProspecting { get; private set; }
         public float ScanProgress => IsProspecting ? Mathf.Clamp01((Time.time - scanStarted) / prospectDuration) : 0f;
         public event System.Action<int> ScanCompleted;
-        public event System.Action MachinePlaced, PositiveRetrieval, ExcursionDeparted, ExcursionEnded;
+        public event System.Action MachinePlaced, PositiveRetrieval, ExcursionEnded;
         public event System.Action<OceanTarget> OreProduced;
         private float scanStarted;
         private float messageUntil, nextProspect;
@@ -42,8 +45,7 @@ namespace DivingPrototype
         private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted && !IsProspecting;
         private SwimmerController swimmer;
         private Rigidbody2D body;
-        private Vector3 oceanStart;
-        private FlashlightController flashlight;
+        private readonly HashSet<OceanTarget> deliveries = new HashSet<OceanTarget>();
         private readonly RaycastHit2D[] hits = new RaycastHit2D[32];
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
@@ -51,48 +53,58 @@ namespace DivingPrototype
 
         private void Awake()
         {
-            Debug.Log("Item Count to start is " + itemCount);
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
-            oceanStart = transform.position;
-            flashlight = GetComponent<FlashlightController>();
             Hydrox.Refill();
-            var items = new System.Collections.Generic.List<OceanTarget>();
-            var all = new System.Collections.Generic.List<OceanTarget>();
-            foreach (var target in targets)
-                if (target.kind == OceanTarget.TargetKind.Item) items.Add(target); else all.Add(target);
-            for (int i = 0; i < itemCount && items.Count > 0; i++)
-            {
-                var item = i < items.Count ? items[i] : Instantiate(items[0], items[0].transform.parent);
-                item.name = "Item " + (i + 1);
-                all.Add(item);
-            }
-            for (int i = itemCount; i < items.Count; i++) items[i].gameObject.SetActive(false);
-            targets = all.ToArray();
+            BuildSpawnArea();
+            SpawnDeliveries();
             foreach (var target in targets)
                 if (target != null) target.OreProduced += OnOreProduced;
-            BuildSpawnArea();
-            foreach (var target in targets)
+        }
+
+        private void SpawnDeliveries()
+        {
+            GameState.itemsBought.TryGetValue(GameState.MiningMachine, out int pending);
+            if (pending <= 0) return;
+            OceanTarget submarine = System.Array.Find(targets, t => t != null && t.kind == OceanTarget.TargetKind.Submarine);
+            if (deliveryPrefab == null || deliveryPrefab.kind != OceanTarget.TargetKind.Item || submarine == null)
             {
-                if (target.kind != OceanTarget.TargetKind.Item) continue;
-                bool placed = false;
-                for (int attempt = 0; attempt < 300; attempt++)
+                Debug.LogError("Purchased deliveries need an item prefab and a submarine. Orders remain pending.", this);
+                return;
+            }
+            Vector2 center = submarine.transform.position;
+            var all = new List<OceanTarget>(targets);
+            for (int i = 0; i < pending; i++)
+            {
+                if (!TryFindDeliveryPosition(center, out Vector2 point))
                 {
-                    var point = new Vector2(Random.Range(spawnMin.x, spawnMax.x), Random.Range(spawnMin.y, spawnMax.y));
-                    if (!CanSpawn(point, target)) continue;
-                    target.transform.position = point;
-                    placed = true;
+                    Debug.LogWarning("No safe delivery position within " + deliveryRadius + " units of the submarine. Remaining orders will be delivered on a later excursion.", this);
                     break;
                 }
-                if (!placed)
-                    foreach (var point in spawnCells)
-                        if (CanSpawn(point, target)) { target.transform.position = point; placed = true; break; }
-                if (!placed)
-                {
-                    target.gameObject.SetActive(false);
-                    Debug.LogError("No reachable free position for " + target.name + ". Pickup disabled.", target);
-                }
+                var item = Instantiate(deliveryPrefab, point, Quaternion.identity, oceanMap.transform);
+                item.name = "Purchased Mining Machine " + (DeliveredItemCount + 1);
+                item.gameObject.SetActive(true);
+                deliveries.Add(item);
+                all.Add(item);
+                targets = all.ToArray();
+                DeliveredItemCount++;
+                RemainingDeliveryCount++;
+                GameState.itemsBought[GameState.MiningMachine]--;
             }
+        }
+
+        private bool TryFindDeliveryPosition(Vector2 center, out Vector2 point)
+        {
+            for (int attempt = 0; attempt < 300; attempt++)
+            {
+                point = center + Random.insideUnitCircle * deliveryRadius;
+                if (CanSpawn(point, null)) return true;
+            }
+            foreach (var cell in spawnCells)
+                if ((cell - center).sqrMagnitude <= deliveryRadius * deliveryRadius && CanSpawn(cell, null))
+                { point = cell; return true; }
+            point = default;
+            return false;
         }
 
         public void BuildSpawnArea()
@@ -150,7 +162,7 @@ namespace DivingPrototype
             foreach (var obstacle in obstacles)
                 if (obstacle != null && obstacle.isActiveAndEnabled && Vector2.Distance(point, obstacle.ClosestPoint(point)) < .7f) return false;
             foreach (var other in targets)
-                if (other != item && Vector2.Distance(point, other.transform.position) < 1.5f) return false;
+                if (other != null && other != item && other.gameObject.activeInHierarchy && Vector2.Distance(point, other.transform.position) < 1.5f) return false;
             return true;
         }
 
@@ -163,20 +175,13 @@ namespace DivingPrototype
                 && (InsideSubmarine ? Camera.main : oceanCamera).pixelRect.Contains(mouse.position.ReadValue());
             if (InsideSubmarine)
             {
-                if (pointerInside && mouse.leftButton.wasPressedThisFrame) StartCoroutine(ReturnToOcean());
                 return;
             }
             Hydrox.Advance(Time.deltaTime);
             if (Hydrox.IsDepleted)
             {
                 StopOceanControls();
-                if (sceneUnavailable)
-                {
-                    Message = "Submarine scene is unavailable.";
-                    messageUntil = float.PositiveInfinity;
-                }
-                GameState.tellurium = Tellurium;
-                SceneChanger.ChangeScene("Result");
+                RequestEnterSubmarine();
                 return;
             }
             RefreshClosest();
@@ -284,10 +289,13 @@ namespace DivingPrototype
             if (Closest == null || InsideSubmarine || transitioning) return;
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
+                if (!deliveries.Remove(Closest)) return;
                 ItemsCollected++;
                 availableMachines++;
-                Notify("Item collected.");
+                RemainingDeliveryCount--;
                 Closest.gameObject.SetActive(false);
+                DeliveryCollected?.Invoke(RemainingDeliveryCount);
+                Notify("Purchased mining machine collected.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)
             {
@@ -298,11 +306,7 @@ namespace DivingPrototype
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
-            else if (Closest.kind == OceanTarget.TargetKind.Submarine)
-            {
-                GameState.tellurium = Tellurium;
-                SceneChanger.ChangeScene("Result");
-            }
+            else if (Closest.kind == OceanTarget.TargetKind.Submarine) RequestEnterSubmarine();
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
@@ -310,18 +314,25 @@ namespace DivingPrototype
         public bool RequestEnterSubmarine()
         {
             if (InsideSubmarine || transitioning || sceneUnavailable) return false;
-            if (!Application.CanStreamedLevelBeLoaded(interiorScene))
+            if (!Application.CanStreamedLevelBeLoaded(resultsScene))
             {
                 sceneUnavailable = true;
-                Notify("Submarine scene is unavailable.");
+                Notify("Results scene is unavailable.");
                 if (Hydrox.IsDepleted) messageUntil = float.PositiveInfinity;
-                Debug.LogError("Submarine scene is unavailable: " + interiorScene + ". Include it in the build scene list.", this);
+                Debug.LogError("Results scene is unavailable: " + resultsScene + ". Include it in the build scene list.", this);
                 return false;
             }
             transitioning = true;
-            ExcursionEnded?.Invoke();
             StopOceanControls();
-            StartCoroutine(EnterSubmarine());
+            foreach (var item in deliveries)
+                if (item != null) item.gameObject.SetActive(false);
+            deliveries.Clear();
+            RemainingDeliveryCount = 0;
+            Closest = null;
+            ExcursionEnded?.Invoke();
+            InsideSubmarine = true;
+            GameState.tellurium = Tellurium;
+            SceneChanger.ChangeScene(resultsScene);
             return true;
         }
 
@@ -331,41 +342,5 @@ namespace DivingPrototype
             body.linearVelocity = Vector2.zero;
             swimmer.enabled = false;
         }
-
-        private IEnumerator EnterSubmarine()
-        {
-           var operation = SceneManager.LoadSceneAsync(interiorScene, LoadSceneMode.Additive);
-            yield return operation;
-            SceneManager.SetActiveScene(SceneManager.GetSceneByName(interiorScene));
-            InsideSubmarine = true;
-            body.simulated = false;
-            flashlight.enabled = false;
-            oceanCamera.gameObject.SetActive(false);
-            oceanMap.SetActive(false);
-            GetComponent<SpriteRenderer>().enabled = false;
-            GameState.tellurium = Tellurium;
-            transitioning = false;
-        }
-
-        private IEnumerator ReturnToOcean()
-        {
-            transitioning = true;
-            SceneManager.SetActiveScene(gameObject.scene);
-            yield return SceneManager.UnloadSceneAsync(interiorScene);
-            transform.position = oceanStart;
-            body.position = oceanStart;
-            body.linearVelocity = Vector2.zero;
-            oceanMap.SetActive(true);
-            oceanCamera.gameObject.SetActive(true);
-            GetComponent<SpriteRenderer>().enabled = true;
-            flashlight.enabled = true;
-            Hydrox.Refill();
-            body.simulated = true;
-            swimmer.enabled = true;
-            InsideSubmarine = false;
-            transitioning = false;
-            ExcursionDeparted?.Invoke();
-        }
-
     }
 }
