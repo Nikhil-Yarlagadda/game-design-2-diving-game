@@ -1,5 +1,6 @@
 using UnityEngine;
 using Yarn.Unity;
+using System.Collections.Generic;
 
 public class WorldInteractions : MonoBehaviour
 {
@@ -7,6 +8,7 @@ public class WorldInteractions : MonoBehaviour
     public static void NewDay()
     {
         GameState.days++;
-        SceneChanger.ChangeScene("Ocean Floor");
+        GameState.npcsTalks = new HashSet<string>();
+        SceneChanger.ChangeScene("Ocean Interactables");
     }     
 }

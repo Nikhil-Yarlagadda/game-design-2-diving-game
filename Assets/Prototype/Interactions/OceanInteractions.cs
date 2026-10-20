@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 namespace DivingPrototype
 {
@@ -18,8 +19,8 @@ namespace DivingPrototype
         [Min(.1f)] public float interactionRange = 1.8f;
         [Min(0f)] public float prospectCooldown = 2f;
         [Min(1)] public int availableMachines = 3;
-        [Min(1)] public int itemCount = 15;
-        public string interiorScene = "Interior";
+        [Min(0)] private int itemCount = GameState.itemsBought["Mining Machine"];
+        public string interiorScene = "Result";
         public OceanTarget Closest { get; private set; }
         public bool InsideSubmarine { get; private set; }
         public bool IsTransitioning => transitioning;
@@ -43,6 +44,7 @@ namespace DivingPrototype
 
         private void Awake()
         {
+            Debug.Log("Item Count to start is " + itemCount);
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             oceanStart = transform.position;
@@ -164,7 +166,8 @@ namespace DivingPrototype
                     Message = "Submarine scene is unavailable.";
                     messageUntil = float.PositiveInfinity;
                 }
-                RequestEnterSubmarine();
+                GameState.tellurium = Tellurium;
+                SceneChanger.ChangeScene("Result");
                 return;
             }
             RefreshClosest();
@@ -230,6 +233,7 @@ namespace DivingPrototype
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
                 ItemsCollected++;
+                availableMachines++;
                 Notify("Item collected.");
                 Closest.gameObject.SetActive(false);
             }
@@ -241,7 +245,11 @@ namespace DivingPrototype
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
-            else if (Closest.kind == OceanTarget.TargetKind.Submarine) RequestEnterSubmarine();
+            else if (Closest.kind == OceanTarget.TargetKind.Submarine)
+            {
+                GameState.tellurium = Tellurium;
+                SceneChanger.ChangeScene("Result");
+            }
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
@@ -271,7 +279,7 @@ namespace DivingPrototype
 
         private IEnumerator EnterSubmarine()
         {
-            var operation = SceneManager.LoadSceneAsync(interiorScene, LoadSceneMode.Additive);
+           var operation = SceneManager.LoadSceneAsync(interiorScene, LoadSceneMode.Additive);
             yield return operation;
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(interiorScene));
             InsideSubmarine = true;
@@ -280,6 +288,7 @@ namespace DivingPrototype
             oceanCamera.gameObject.SetActive(false);
             oceanMap.SetActive(false);
             GetComponent<SpriteRenderer>().enabled = false;
+            GameState.tellurium = Tellurium;
             transitioning = false;
         }
 
