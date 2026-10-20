@@ -116,8 +116,8 @@
 
       } else {
         // Desktop style: Render the game canvas container in a window that can be maximized to fullscreen:
-        fullscreenContainer.style.width = "1920px";
-        fullscreenContainer.style.height = "1080px";
+        fullscreenContainer.style.width = "min(100vw, calc((100vh - 60px) * 16 / 9))";
+        fullscreenContainer.style.height = "min(calc(100vh - 60px), calc(100vw * 9 / 16))";
       }
 
 
