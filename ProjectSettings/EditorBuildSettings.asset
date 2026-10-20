@@ -6,7 +6,46 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/Ocean Interactables.unity
+    guid: 5530e1b41e8c64c44bbf16e8be82b756
+  - enabled: 1
+    path: Assets/Scenes/Ocean Floor.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Sleeping Quarters.unity
+    guid: 9a9f84f50976633419efcf1e12fb238e
+  - enabled: 1
+    path: Assets/Scenes/Interior.unity
+    guid: bfb4df49235f91c4b9da55dae5564e6b
+  - enabled: 1
+    path: Assets/Scenes/Mineral Lab.unity
+    guid: d29e7842ba8ea8448b01caa407dd7bac
+  - enabled: 1
+    path: Assets/Scenes/Shared Space.unity
+    guid: de5869682791c9646b4ff6bf633990dd
+  - enabled: 1
+    path: Assets/Scenes/Storage Closet.unity
+    guid: 3d7cdbf2c885e2043899b78b55717928
+  - enabled: 1
+    path: Assets/Scenes/Airlock.unity
+    guid: 165248db35e7e2f48b06d2b9eb08fb7b
+  - enabled: 1
+    path: Assets/Scenes/Dialogue.unity
+    guid: 0fb8a44c44b23134a97a56f7dc713506
+  - enabled: 1
+    path: Assets/Scenes/Shop.unity
+    guid: 429c39cc4442c1e438ff4d9686041ed0
+  - enabled: 1
+    path: Assets/Scenes/Title Screen.unity
+    guid: ead9bf03853ab11418f5f35f903373ef
+  - enabled: 1
+    path: Assets/Scenes/Pause Screen.unity
+    guid: eb0894f45ae50bc4297c387627662042
+  - enabled: 1
+    path: Assets/Scenes/Introduction.unity
+    guid: f8bca94684ea0e04ba087f56ccb4e41b
+  - enabled: 1
+    path: Assets/Scenes/Result.unity
+    guid: 042ec375beb894a44bb14095abafedd4
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
