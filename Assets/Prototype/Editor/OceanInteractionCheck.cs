@@ -81,23 +81,29 @@ namespace DivingPrototype
                 FlashlightCheck.Require(mines.Select(t => t.level).Distinct().Count() == 5, "All five mining tiers exist");
                 foreach (var mine in mines)
                 {
+                    mine.Reveal(0);
                     FlashlightCheck.Require(mine.Place(10), "Place a machine");
                     FlashlightCheck.Require(!mine.Place(20), "A second placement must not reset the timer");
-                    FlashlightCheck.Require(mine.YieldAt(69) == Mathf.FloorToInt(59f * mine.level / 60f), "Partial minutes use tier rate");
-                    FlashlightCheck.Require(mine.Retrieve(130) == 2 * mine.level && !mine.HasMachine && !mine.machine.activeSelf, "Retrieve two minutes and machine");
+                    FlashlightCheck.Require(mine.YieldAt(69) == (mine.level == 5 ? 22 : mine.level == 4 ? 11 : mine.level == 3 ? 5 : mine.level == 2 ? 3 : 1), "Discrete ticks use specified tier rate");
+                    FlashlightCheck.Require(mine.Retrieve(130) == 2 * OceanTarget.Rate(mine.level) && !mine.HasMachine && !mine.machine.activeSelf, "Retrieve two minutes and machine");
                     FlashlightCheck.Require(mine.Retrieve(200) == 0, "Retrieving twice cannot duplicate resources");
                     FlashlightCheck.Require(interactions.obstacles.All(b => Vector2.Distance(mine.transform.position, b.ClosestPoint(mine.transform.position)) >= .6f), "Mining center has 0.6-unit clearance: " + mine.name);
                 }
                 var nearby = mines.OrderBy(m=>Vector2.Distance(m.transform.position, interactions.transform.position)).First();
                 interactions.oceanCamera.transform.position = nearby.transform.position + new Vector3(0,0,-10);
-                FlashlightCheck.Require(interactions.Prospect(100.1f), "Prospecting starts directly");
-                FlashlightCheck.Require(!interactions.Prospect(101), "Prospect starts cooldown");
-                FlashlightCheck.Require(interactions.Prospect(102.1f), "Scan is available after two seconds");
+                foreach (var m in mines) typeof(OceanTarget).GetField("<IsProspected>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(m, false);
+                FlashlightCheck.Require(interactions.Prospect(100), "Stationary prospect starts channel");
+                interactions.CompleteProspect(102.99f);
+                FlashlightCheck.Require(interactions.IsProspecting && mines.All(t => !t.IsProspected), "No reveal before three seconds");
+                interactions.CompleteProspect(103);
+                FlashlightCheck.Require(!interactions.IsProspecting && !interactions.Prospect(107.99f), "Five-second cooldown starts on completion");
                 var visible = mines.Where(t => { var v = interactions.oceanCamera.WorldToViewportPoint(t.transform.position); return v.z > 0 && v.x >= 0 && v.x <= 1 && v.y >= 0 && v.y <= 1; }).ToArray();
                 FlashlightCheck.Require(visible.Length > 0 && visible.Length < mines.Length, "Test includes on-screen and off-screen mines");
-                FlashlightCheck.Require(visible.All(t => t.RevealAlpha(102.1f) > .99f && t.RevealAlpha(102.85f) > .49f && t.RevealAlpha(103.6f) == 0), "Reveal fades to zero");
-                FlashlightCheck.Require(mines.Except(visible).All(t => t.RevealAlpha(102.1f) == 0), "Off-screen mines stay hidden");
-                FlashlightCheck.Require(interactions.Prospect(110.6f), "A later scan is available");
+                FlashlightCheck.Require(visible.All(t => t.RevealAlpha(1000) == 1), "Discovered spots remain revealed");
+                FlashlightCheck.Require(mines.Except(visible).All(t => !t.IsProspected), "Off-screen mines stay hidden");
+                FlashlightCheck.Require(interactions.Prospect(108), "Scan available exactly five seconds after completion");
+                interactions.CancelProspect();
+                FlashlightCheck.Require(!interactions.GetComponent<SwimmerController>().MovementLocked, "Cancellation releases movement lock");
                 var light = new SerializedObject(interactions.GetComponent<FlashlightController>());
                 var polygons = light.FindProperty("polygonBlockers");
                 int edgeCount = 0;
@@ -117,9 +123,10 @@ namespace DivingPrototype
                     var r=FixedOceanView.Viewport(size.x,size.y);
                     FlashlightCheck.Near(r.width*size.x/(r.height*size.y),16f/9f,"Fitted 16:9 viewport",.001f);
                 }
-                Debug.Log("Ocean interaction check passed: full draft map, tiers, resource accounting, minimap geometry, cooldown, screen filtering, reveal fade, obstacle and scene wiring, fixed aspect ratios.");
+                Debug.Log("Ocean interaction check passed: full draft map, tiers, resource accounting, minimap geometry, cooldown, screen filtering, persistent reveal, obstacle and scene wiring, fixed aspect ratios.");
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
+            MiningTutorialCheck.Run();
             CheckPolygonPixels();
         }
 

@@ -86,6 +86,9 @@ namespace DivingPrototype
                 keyboard.MakeCurrent();
                 InputSystem.onAfterUpdate += keepTestKeyboardCurrent;
                 ocean.Hydrox.Refill();
+                var tutorial = ocean.GetComponent<OceanTutorial>();
+                require(tutorial.Stage==1,"Excursion starts tutorial at stage one");
+                require(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.MiningSpot).All(t=>!t.IsProspected && !t.GetComponent<SpriteRenderer>().enabled && !t.highlight.enabled),"Undiscovered spots have no visible sprites or outlines");
                 float initialHydrox=ocean.Hydrox.CurrentCapacity;
                 int frame = Time.frameCount;
                 await Task.Delay(200);
@@ -126,13 +129,30 @@ namespace DivingPrototype
                 var scanMine=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot);
                 jump(scanMine.transform.position);
                 pointer(false,true,null);await Task.Delay(150);
-                require(ocean.CooldownRemaining>1f,"Right mouse press scans immediately");
-                require(ocean.targets.Any(t=>t.kind==OceanTarget.TargetKind.MiningSpot && t.highlight.enabled), "Prospect highlight is rendered");
-                await Task.Delay(2100);
-                require(ocean.CooldownRemaining==0f,"Held right mouse does not rescan after cooldown");
-                pointer(false,false,null);await Task.Delay(100);pointer(false,true,null);await Task.Delay(150);
-                require(ocean.CooldownRemaining>1f,"Fresh right mouse press scans again");
-                pointer(false,false,null);await Task.Delay(100);jump(new Vector2(0,-1.5f));
+                require(!ocean.IsProspecting && ocean.CooldownRemaining==0,"Right click no longer prospects");
+                pointer(false,false,null);
+                keys(new[]{Key.E,Key.D});await Task.Delay(150);
+                require(!ocean.IsProspecting && ocean.Message.Contains("Stop moving"),"Movement input rejects prospecting");
+                keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
+                keys(new[]{Key.E,Key.W,Key.S});await Task.Delay(150);
+                require(!ocean.IsProspecting,"Opposing movement keys must also be released before scanning");
+                keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
+                keys(new[]{Key.E});await Task.Delay(500);
+                require(ocean.IsProspecting && swimmer.MovementLocked,"Hold E locks stationary diver");
+                keys(Array.Empty<Key>());await Task.Delay(150);
+                require(!ocean.IsProspecting && !swimmer.MovementLocked && ocean.CooldownRemaining==0,"Early release cancels without cooldown");
+                keys(new[]{Key.E});await Task.Delay(500);
+                keys(new[]{Key.E,Key.D});var scanPosition=body.position;await Task.Delay(800);
+                require(Vector2.Distance(body.position,scanPosition)<.001f,"Movement remains locked during held scan");
+                await Task.Delay(1900);
+                require(!ocean.IsProspecting && ocean.CooldownRemaining>3,"Completed scan starts five-second cooldown");
+                require(scanMine.IsProspected && scanMine.highlight.enabled,"Prospected spot stays rendered");
+                keys(new[]{Key.E});await Task.Delay(5100);
+                require(!ocean.IsProspecting && ocean.CooldownRemaining==0,"Holding E does not automatically rescan");
+                keys(Array.Empty<Key>());await Task.Delay(100);
+                keys(new[]{Key.E});await Task.Delay(200);
+                require(ocean.IsProspecting,"A fresh E press starts another scan");
+                keys(Array.Empty<Key>());await Task.Delay(100);jump(new Vector2(0,-1.5f));
                 require(hud.minimapRoot.gameObject.activeInHierarchy,"Minimap stays active without holding a key");
                 var mapTexts=hud.minimapRoot.GetComponentsInChildren<TMPro.TMP_Text>();
                 require(mapTexts.Length==2 && mapTexts.Any(t=>t.text=="N") && mapTexts.Any(t=>t.text.StartsWith("Submarine")),"North and one submarine summary only");
@@ -168,16 +188,17 @@ namespace DivingPrototype
                 await Task.Delay(100);
                 require(hud.minimapRoot.gameObject.activeInHierarchy && !hud.status.text.Contains("Hold Z"),"Release Z preserves minimap and removes legacy HUD hint");
                 var mine=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot&&t.level==5);
+                mine.Reveal(Time.time);
                 jump(mine.transform.position); keys(new[]{Key.X,Key.Space});await Task.Delay(150);keys(Array.Empty<Key>());await Task.Delay(150);
                 require(!mine.HasMachine && ocean.availableMachines==3,"Old X and Space bindings are inactive");
                 await click();
                 require(mine.HasMachine && ocean.availableMachines==2, "Left click deploys exactly one machine");
-                var placed = typeof(OceanTarget).GetField("<PlacedAt>k__BackingField",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
-                placed.SetValue(mine,Time.time-60.1f);
+                var placed = typeof(OceanTarget).GetField("nextTick",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                placed.SetValue(mine,Time.time-55.1f);
                 await click();
-                require(!mine.HasMachine && ocean.Tellurium==5 && ocean.availableMachines==3, "Left click retrieves machine and one minute of tier five yield");
+                require(!mine.HasMachine && ocean.Tellurium==24 && ocean.availableMachines==3, "Left click retrieves machine and 24 tellurium from one minute of tier five ticks");
                 pointer(false,false,null);await Task.Delay(100);
-                require(mine.Retrieve(Time.time)==0 && ocean.Tellurium==5,"Duplicate retrieval cannot award resources");
+                require(mine.Retrieve(Time.time)==0 && ocean.Tellurium==24,"Duplicate retrieval cannot award resources");
                 // Isolate the duplicate-click check from legitimate pickup of a neighboring target.
                 var item=items.First(t=>ocean.targets.All(other=>other==t || !other.isActiveAndEnabled
                     || Vector2.Distance(other.transform.position,t.transform.position)>ocean.interactionRange+.5f));
@@ -202,7 +223,8 @@ namespace DivingPrototype
                 require(hud.hydroxRoot.gameObject.activeInHierarchy && ocean.Hydrox.CurrentCapacity>ocean.Hydrox.MaxCapacity-2,"Return refills Hydrox and restores its bar");
                 require(!ocean.InsideSubmarine && SceneManager.GetActiveScene().name=="Ocean Interactables" && body.simulated && swimmer.enabled, "Left click returns to playable ocean");
                 require(Vector2.Distance(body.position,oceanStart)<.05f && Vector2.Distance(ocean.transform.position,oceanStart)<.05f && body.linearVelocity.sqrMagnitude<.001f,"Manual departure starts at original map spawn without momentum");
-                require(ocean.ItemsCollected==1 && ocean.Tellurium==5 && mine.HasMachine, "Inventory and placed mine survive scene round trip");
+                require(tutorial.Stage==1 && mine.IsProspected,"Departure restarts tutorial and preserves discovery");
+                require(ocean.ItemsCollected==1 && ocean.Tellurium==24 && mine.HasMachine, "Inventory and placed mine survive scene round trip");
                 require(remaining.SequenceEqual(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item && t.isActiveAndEnabled).Select(t=>t.transform.position)), "Random items do not respawn on return");
                 mine.Retrieve(Time.time);
                 jump(new Vector2(0,-1.5f));
@@ -237,6 +259,7 @@ namespace DivingPrototype
                 foreach(var fixedMine in ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.MiningSpot))
                     require(ocean.IsReachable(fixedMine.transform.position),"Reference mining route is reachable: "+fixedMine.name);
                 var questMine=ocean.targets.Single(t=>t.name=="Mining Spot 36");
+                questMine.Reveal(Time.time);
                 jump(questMine.transform.position);await click();
                 require(questMine.HasMachine && ocean.availableMachines==2,"Scaled quest alcove supports machine placement");
                 await click();require(!questMine.HasMachine && ocean.availableMachines==3,"Scaled quest alcove supports retrieval");
@@ -267,6 +290,7 @@ namespace DivingPrototype
                 require(Vector2.Distance(body.position,oceanStart)>10,"Depletion test starts far from original spawn");
                 int keptItems=ocean.ItemsCollected,keptTellurium=ocean.Tellurium,keptMachines=ocean.availableMachines;
                 mine.Place(Time.time);
+                require(ocean.Prospect(Time.time) && swimmer.MovementLocked,"Begin scan before simulated gas depletion");
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
                 require(!ocean.Prospect(Time.time+10) && !ocean.PlaceMachine(),"Empty tank blocks scanning and placement");
                 ocean.Interact();
@@ -275,6 +299,7 @@ namespace DivingPrototype
                 require(ocean.IsTransitioning || ocean.InsideSubmarine,"Empty tank starts forced return from far bank");
                 require(!ocean.RequestEnterSubmarine(),"Forced entry cannot be requested twice");
                 for(int i=0;i<40&&!ocean.InsideSubmarine;i++)await Task.Delay(100);
+                require(!ocean.IsProspecting && !swimmer.MovementLocked && tutorial.Stage==0,"Depletion cancels scan, releases lock and clears tutorial");
                 require(ocean.InsideSubmarine && !swimmer.enabled && !body.simulated,"Depletion enters Interior and stops swimming");
                 await click();
                 for(int i=0;i<40&&(ocean.InsideSubmarine||ocean.IsTransitioning);i++)await Task.Delay(100);

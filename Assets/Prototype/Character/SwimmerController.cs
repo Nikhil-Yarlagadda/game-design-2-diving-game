@@ -13,24 +13,39 @@ namespace DivingPrototype
         private Rigidbody2D body;
         private Vector2 input;
         public Vector2 MovementInput => input;
+        public bool MovementLocked { get; private set; }
+        public void SetMovementLocked(bool locked)
+        {
+            MovementLocked = locked;
+            if (body == null) body = GetComponent<Rigidbody2D>();
+            if (locked) body.linearVelocity = Vector2.zero;
+        }
         [SerializeField] private PolygonCollider2D[] kelpZones = new PolygonCollider2D[0];
         public float SpeedMultiplier { get; private set; } = 1f;
 
         private void Awake() => body = GetComponent<Rigidbody2D>();
 
-        private void Update()
+        public static bool HasMovementKeysPressed()
         {
             var keyboard = Keyboard.current;
-            input = keyboard == null ? Vector2.zero : new Vector2(
+            return keyboard != null && (keyboard.wKey.isPressed || keyboard.aKey.isPressed
+                || keyboard.sKey.isPressed || keyboard.dKey.isPressed || keyboard.upArrowKey.isPressed
+                || keyboard.leftArrowKey.isPressed || keyboard.downArrowKey.isPressed || keyboard.rightArrowKey.isPressed);
+        }
+        public static Vector2 ReadMovementInput()
+        {
+            var keyboard = Keyboard.current;
+            return keyboard == null ? Vector2.zero : Vector2.ClampMagnitude(new Vector2(
                 (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1 : 0)
                 - (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? 1 : 0),
                 (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed ? 1 : 0)
-                - (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed ? 1 : 0));
-            input = Vector2.ClampMagnitude(input, 1f);
+                - (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed ? 1 : 0)), 1f);
         }
+        private void Update() => input = MovementLocked ? Vector2.zero : ReadMovementInput();
 
         private void FixedUpdate()
         {
+            if (MovementLocked) { body.linearVelocity = Vector2.zero; return; }
             SpeedMultiplier = 1f;
             foreach (var kelp in kelpZones)
                 if (kelp != null && kelp.isActiveAndEnabled && kelp.OverlapPoint(body.position))

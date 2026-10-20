@@ -96,6 +96,8 @@ namespace DivingPrototype
                     if (aimCamera.pixelRect.Contains(screen) && plane.Raycast(ray, out float distance)) candidate = (Vector2)(ray.GetPoint(distance) - transform.position);
                 }
                 direction = FlashlightMath.RetainDirection(candidate, direction);
+                // The diver artwork faces up in its source image; align the player sprite to the camera aim.
+                transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
             }
             instance.SetVector(OriginId, transform.position);
             instance.SetVector(DirectionId, new Vector4(direction.x, direction.y, 0f, 0f));

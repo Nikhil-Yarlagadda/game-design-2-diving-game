@@ -17,7 +17,8 @@ namespace DivingPrototype
         public Vector2 spawnMin = new Vector2(-21f, -18f);
         public Vector2 spawnMax = new Vector2(21f, 18f);
         [Min(.1f)] public float interactionRange = 1.8f;
-        [Min(0f)] public float prospectCooldown = 2f;
+        [Min(0f)] public float prospectCooldown = 5f;
+        [Min(.1f)] public float prospectDuration = 3f;
         [Min(1)] public int availableMachines = 3;
         [Min(0)] private int itemCount = GameState.itemsBought["Mining Machine"];
         public string interiorScene = "Result";
@@ -29,10 +30,16 @@ namespace DivingPrototype
         public int Tellurium { get; private set; }
         public float CooldownRemaining => Mathf.Max(0f, nextProspect - Time.time);
         public string Message { get; private set; }
+        public bool IsProspecting { get; private set; }
+        public float ScanProgress => IsProspecting ? Mathf.Clamp01((Time.time - scanStarted) / prospectDuration) : 0f;
+        public event System.Action<int> ScanCompleted;
+        public event System.Action MachinePlaced, PositiveRetrieval, ExcursionDeparted, ExcursionEnded;
+        public event System.Action<OceanTarget> OreProduced;
+        private float scanStarted;
         private float messageUntil, nextProspect;
         private bool transitioning, sceneUnavailable;
         private HydroxTank hydrox;
-        private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted;
+        private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted && !IsProspecting;
         private SwimmerController swimmer;
         private Rigidbody2D body;
         private Vector3 oceanStart;
@@ -62,6 +69,8 @@ namespace DivingPrototype
             }
             for (int i = itemCount; i < items.Count; i++) items[i].gameObject.SetActive(false);
             targets = all.ToArray();
+            foreach (var target in targets)
+                if (target != null) target.OreProduced += OnOreProduced;
             BuildSpawnArea();
             foreach (var target in targets)
             {
@@ -171,8 +180,15 @@ namespace DivingPrototype
                 return;
             }
             RefreshClosest();
-            if (!pointerInside) return;
-            if (mouse.rightButton.wasPressedThisFrame) Prospect(Time.time);
+            var keyboard = Keyboard.current;
+            if (IsProspecting)
+            {
+                if (keyboard == null || !keyboard.eKey.isPressed) CancelProspect();
+                else if (Time.time - scanStarted >= prospectDuration) CompleteProspect(Time.time);
+                return;
+            }
+            if (keyboard != null && keyboard.eKey.wasPressedThisFrame) Prospect(Time.time);
+            if (IsProspecting || !pointerInside) return;
             if (mouse.leftButton.wasPressedThisFrame) Interact();
         }
 
@@ -183,6 +199,7 @@ namespace DivingPrototype
             foreach (var target in targets)
             {
                 if (target == null || !target.isActiveAndEnabled) continue;
+                if (target.kind == OceanTarget.TargetKind.MiningSpot && !target.IsProspected) continue;
                 float distance = Vector2.Distance(transform.position, target.transform.position);
                 if (distance <= best && HasClearPath(target.transform.position)) { best = distance; Closest = target; }
             }
@@ -203,14 +220,48 @@ namespace DivingPrototype
         public bool Prospect(float now)
         {
             if (now < nextProspect || !CanActInOcean) return false;
+            if (body == null) body = GetComponent<Rigidbody2D>();
+            if (swimmer == null) swimmer = GetComponent<SwimmerController>();
+            if (SwimmerController.HasMovementKeysPressed() || body.linearVelocity.sqrMagnitude > .0001f)
+            {
+                Notify("Stop moving before prospecting");
+                return false;
+            }
+            IsProspecting = true;
+            scanStarted = now;
+            swimmer.SetMovementLocked(true);
+            return true;
+        }
+
+        public void CancelProspect()
+        {
+            IsProspecting = false;
+            if (swimmer != null) swimmer.SetMovementLocked(false);
+        }
+
+        public void CompleteProspect(float now)
+        {
+            if (!IsProspecting || now - scanStarted < prospectDuration) return;
+            CancelProspect();
             nextProspect = now + prospectCooldown;
+            int revealed = 0;
             foreach (var target in targets)
             {
                 if (target == null || !target.isActiveAndEnabled || target.kind != OceanTarget.TargetKind.MiningSpot) continue;
                 Vector3 viewport = oceanCamera.WorldToViewportPoint(target.transform.position);
-                if (viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f) target.Reveal(now);
+                if (viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f)
+                { target.Reveal(now); revealed++; }
             }
-            return true;
+            ScanCompleted?.Invoke(revealed);
+            RefreshClosest();
+        }
+
+        private void OnOreProduced(OceanTarget target) => OreProduced?.Invoke(target);
+        private void OnDisable() => CancelProspect();
+        private void OnDestroy()
+        {
+            foreach (var target in targets)
+                if (target != null) target.OreProduced -= OnOreProduced;
         }
 
         public bool PlaceMachine()
@@ -221,7 +272,8 @@ namespace DivingPrototype
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
             if (!Closest.Place(Time.time)) return false;
             availableMachines--;
-            Notify("Mining started: " + Closest.level + " tellurium / minute.");
+            Notify("Mining started: " + OceanTarget.Rate(Closest.DisplayedTier) + " tellurium / minute (last prospected).");
+            MachinePlaced?.Invoke();
             return true;
         }
 
@@ -242,6 +294,7 @@ namespace DivingPrototype
                 int amount = Closest.Retrieve(Time.time);
                 Tellurium += amount;
                 availableMachines++;
+                if (amount > 0) PositiveRetrieval?.Invoke();
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
@@ -266,6 +319,7 @@ namespace DivingPrototype
                 return false;
             }
             transitioning = true;
+            ExcursionEnded?.Invoke();
             StopOceanControls();
             StartCoroutine(EnterSubmarine());
             return true;
@@ -273,6 +327,7 @@ namespace DivingPrototype
 
         private void StopOceanControls()
         {
+            CancelProspect();
             body.linearVelocity = Vector2.zero;
             swimmer.enabled = false;
         }
@@ -309,6 +364,7 @@ namespace DivingPrototype
             swimmer.enabled = true;
             InsideSubmarine = false;
             transitioning = false;
+            ExcursionDeparted?.Invoke();
         }
 
     }

@@ -73,3 +73,9 @@ This is a playable draft with placeholder art, provisional scale and provisional
 Standalone builds, low-end devices, long-duration thermal behavior and exhaustive human route playtests have not been verified. Editor measurements include editor overhead and do not establish performance on other hardware. Temporary screenshots and raw sampling files remain local, outside the committed source.
 
 Further details: [acceptance and design notes](OCEAN-INTERACTABLES-NOTES.md), [performance comparison](OCEAN-PERFORMANCE-NOTES.md), and [prototype setup](UNDERWATER-PROTOTYPE.md).
+
+## Updated mining demo controls (2026-10-19)
+
+Stop moving and hold **E for three seconds** to prospect the current screen. Release early to cancel; completed scans have a five-second cooldown. Spots stay marked after discovery, but their displayed tiers and rate estimates become outdated as machines mine them. Re-prospect frequently to discover depletion. Tier rates are now 2 / 4 / 6 / 12 / 24 tellurium per minute, with finite reserves and automatic downgrades; see the current acceptance notes for tick intervals and capacities.
+
+Move near a highlighted spot and left-click to deploy a machine. Left-click a highlighted deployed machine to retrieve both it and its stored ore. The tutorial restarts on every ocean departure and explains the loop. Its overnight warning is preparatory: overnight breakage is not yet implemented, and submarine visits preserve machines and mining progress. The player now uses the supplied transparent diver illustration, rotated to face the camera aim.

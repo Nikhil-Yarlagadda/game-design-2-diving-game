@@ -1,6 +1,8 @@
 # Ocean Scene Interactables: Acceptance and Design Notes
 
-Updated: 2026-10-17. Playable scene: `Assets/Scenes/Ocean Interactables.unity`.
+Updated: 2026-10-19. Playable scene: `Assets/Scenes/Ocean Interactables.unity`.
+
+> Current controls, rates and tutorial behavior are in [Prospecting, depletion, and excursion tutorial](#prospecting-depletion-and-excursion-tutorial-2026-10-19). Earlier checklists below record previous prototype behavior.
 
 ## Requirement Checklist
 
@@ -149,3 +151,21 @@ Every departure from the Interior placeholder starts at the original map spawn (
 The four outer boundary colliders retain collision while their leftover default Square sprites are hidden.
 
 Departure validation: **150 Play assertions passed** on Unity 6000.6.4f1 / Windows D3D12, including manual departure and depletion at a distant location followed by original-spawn departure with zero velocity. Inventory, mining and randomized pickup persistence still pass. Ocean editor and polygon GPU checks also passed. The depletion check accelerates elapsed consumption; it intentionally logs one missing-scene configuration error in its separate failure case. No standalone build or full three-minute endurance run was performed.
+
+## Prospecting, depletion, and excursion tutorial (2026-10-19)
+
+This section supersedes the earlier instant right-click scan, fading highlights, and fixed tier-per-minute yields.
+
+- Release all movement keys and stop drifting, then hold **E for 3 seconds**. Scanning locks swimming and interactions; releasing E cancels without a penalty. Gas and mining continue. Completed scans reveal all spot centers in the gameplay viewport and start a **5-second cooldown**. Holding E does not repeat scans.
+- Unprospected spots are invisible and cannot be selected or mined. Discovered spots retain their tier markers throughout the current game, including submarine visits. The minimap still tracks only the submarine and items.
+- Tier 1 produces 1 tellurium every 30 seconds, then exhausts after 10. Tier 2 produces 1 every 15 seconds, downgrading after 20. Tier 3 produces 1 every 10 seconds, downgrading after 30. Tier 4 produces 1 every 5 seconds, downgrading after 40. Tier 5 produces 2 every 5 seconds, downgrading after 60. Each lower tier has its own allowance, for 160 total tellurium in a fresh tier-5 spot.
+- Displayed tiers and estimated rates are snapshots of the last completed prospect. Mining does not update them. Re-prospect to refresh; a changed tier gets a three-second amber label pulse with its old and new tier. Actual stored ore remains visible in the nearby machine prompt. Secretly exhausted spots can waste a machine placement until prospecting confirms depletion.
+- Left-click still acts on the nearest unobstructed highlighted target within 1.8 units. Retrieval returns the machine and all stored ore. Retrieval stops production; replacing the machine starts a fresh tick interval but preserves depleted reserves.
+- An eight-stage tutorial restarts on every departure. Stages 2–6 provide at least five seconds of reading time and buffer milestones. Stages 6 and 7 remain visible for thirty seconds each. Submarine entry discards current tutorial progress; departure resets it. Existing machines and ore remain eligible for later tutorials.
+- The tutorial retains the designer's overnight breakage warning. **There is no overnight system or machine breakage penalty yet.** Submarine visits preserve deployed machines, which continue mining.
+- The original transparent diver PNG replaces the placeholder, with white tint and a 1.5-world-unit visible alpha height. Physics, movement, camera and mouse flashlight aim are unchanged; the upward-facing artwork rotates to follow the player camera aim.
+- All exploration, reserve and tutorial state is session-only; restarting the game resets it. No persistent save or day system is introduced.
+
+Checks: `Check Mining And Tutorial` covers discrete ticks, every downgrade, exhaustion, stale information, replacement, duplicate retrieval, tutorial reading/timing/milestone resets, and diver import. `Check Ocean Interactions` includes it and verifies scan timing, persistent discovery and viewport filtering. `Check Ocean In Play Mode` exercises held-E input, cancellation, movement locking and the existing scene/minimap/lighting regressions.
+
+Validation on Unity 6000.6.4f1 / macOS Metal: mining/tutorial editor checks passed 86 assertions; the final ocean Play regression passed 161 assertions, including opposing movement keys and gas depletion interrupting a scan. The missing-submarine test intentionally logs one configuration error. All seven tutorial messages passed 84 overflow, viewport and click-through checks across 1280×720, 1920×1080, 1920×1200 and 2560×1080, with screenshots reviewed at 720p and 16:10. Live stale-tier and re-prospect feedback checks confirmed the old/new label and its three-second expiry. The imported PNG checksum matches the attachment. Screenshots and test reports are ignored local artifacts under `Temp/tutorial-review` and `Temp/diving-play-result.json`. No standalone build or full three-minute endurance dive was performed.
