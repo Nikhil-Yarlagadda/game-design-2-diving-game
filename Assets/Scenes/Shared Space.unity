@@ -449,7 +449,7 @@ GameObject:
   - component: {fileID: 366322302}
   - component: {fileID: 366322301}
   - component: {fileID: 366322304}
-  - component: {fileID: 366322303}
+  - component: {fileID: 366322305}
   m_Layer: 8
   m_Name: Shop
   m_TagString: Untagged
@@ -532,18 +532,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 20.947, z: 0}
---- !u!114 &366322303
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 366322300}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be0182f1a1c39c4448afd185fe29e59f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Shop
 --- !u!61 &366322304
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -590,6 +578,18 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &366322305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 366322300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a141a3eb1fca9c0428c6a519b888f739, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TerminalHandler
 --- !u!1 &574710978
 GameObject:
   m_ObjectHideFlags: 0
