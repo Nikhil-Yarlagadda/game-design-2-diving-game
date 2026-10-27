@@ -6780,13 +6780,13 @@ MonoBehaviour:
   halfStrengthDistance: 2.5
   coreAngle: 35
   spillInnerAngle: 40
-  spillAngle: 60
-  spillIntensity: 0.429
+  spillAngle: 80
+  spillIntensity: 0.5
   beamFadeStart: 12
   beamRange: 12.01
   spillFadeStart: 12
   spillRange: 12.01
-  playerHaloStrength: 1
+  playerHaloStrength: 0.2
   haloFeather: 2
   waterStrength: 0.3
   refractionTexels: 2
