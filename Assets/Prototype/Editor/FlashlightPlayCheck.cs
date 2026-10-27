@@ -102,7 +102,7 @@ namespace DivingPrototype
                 controller.RefreshLighting();
                 FlashlightCheck.Render(camera, target, pixels);
                 FlashlightCheck.Near(Pixel(camera, pixels, Vector2.zero).r, 1f, "Small configured circle lights player center", .005f);
-                FlashlightCheck.Near(Pixel(camera, pixels, new Vector2(-.35f, .35f)).r, 0f, "Small configured circle leaves rear sprite corner dark", .005f);
+                FlashlightCheck.Require(Pixel(camera, pixels, new Vector2(-.35f, .35f)).r > 0f, "Soft halo lights rear sprite corner");
                 controller.transform.localScale = oldScale * 2f;
                 controller.RefreshLighting();
                 FlashlightCheck.Near(material.GetFloat("_PlayerLightRadius"), .1f, "Sprite scaling does not override configured radius");

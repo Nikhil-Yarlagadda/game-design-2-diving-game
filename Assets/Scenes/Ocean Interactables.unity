@@ -6644,6 +6644,7 @@ GameObject:
   - component: {fileID: 570103284}
   - component: {fileID: 570103291}
   - component: {fileID: 570103292}
+  - component: {fileID: 990000001}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -6741,9 +6742,9 @@ MonoBehaviour:
   prospectCooldown: 5
   prospectDuration: 3
   availableMachines: 3
-  resultsScene: Result
-  deliveryRadius: 10
   deliveryPrefab: {fileID: 51960121, guid: 25b227a3c64f400a9b84a0f192226f7b, type: 3}
+  deliveryRadius: 10
+  resultsScene: Result
 --- !u!4 &570103285
 Transform:
   m_ObjectHideFlags: 0
@@ -6774,9 +6775,23 @@ MonoBehaviour:
   aimMode: 0
   aimCamera: {fileID: 1214223813}
   ambientBrightness: 0
-  coneAngle: 60
-  halfStrengthDistance: 2
-  playerLightRadius: 0.375
+  beamIntensity: 1
+  coneAngle: 40
+  halfStrengthDistance: 2.5
+  coreAngle: 35
+  spillInnerAngle: 40
+  spillAngle: 60
+  spillIntensity: 0.429
+  beamFadeStart: 12
+  beamRange: 12.01
+  spillFadeStart: 12
+  spillRange: 12.01
+  playerHaloStrength: 1
+  haloFeather: 2
+  waterStrength: 0.3
+  refractionTexels: 2
+  waterSpeed: 0.6
+  playerLightRadius: 0.01
   spriteMaterial: {fileID: 2100000, guid: 57d642bebfae4fa38cdc702b5ff002d3, type: 2}
   map: {fileID: 1366615275}
   blockers:
@@ -12027,6 +12042,23 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!114 &990000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 570103283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2721ff81abc048f9b22e03a7938c79bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.OceanVfx
+  particleShader: {fileID: 4800000, guid: 8c1113ba5bc54784b44576979217592e, type: 3}
+  waterOverlayShader: {fileID: 4800000, guid: 443505c02e384074913564dd97df5f7e, type: 3}
+  trailRate: 7
+  breathingInterval: 2.5
+  suspendedCount: 120
 --- !u!1 &996124933
 GameObject:
   m_ObjectHideFlags: 0
@@ -20209,6 +20241,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.OceanTarget
   kind: 0
+  persistentId: 
   level: 1
   displayName: Submarine
   highlight: {fileID: 1827275358}

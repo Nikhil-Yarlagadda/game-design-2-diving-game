@@ -5306,6 +5306,7 @@ GameObject:
   - component: {fileID: 1243325441}
   - component: {fileID: 1243325440}
   - component: {fileID: 1900000001}
+  - component: {fileID: 990000001}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -8301,9 +8302,23 @@ MonoBehaviour:
   aimMode: 0
   aimCamera: {fileID: 519420031}
   ambientBrightness: 0
-  coneAngle: 60
-  halfStrengthDistance: 2
-  playerLightRadius: 0.5
+  coneAngle: 125
+  halfStrengthDistance: 10
+  coreAngle: 44
+  beamIntensity: 1
+  spillInnerAngle: 90
+  spillAngle: 178
+  spillIntensity: 0.18
+  beamFadeStart: 24
+  beamRange: 36
+  spillFadeStart: 22
+  spillRange: 34
+  playerHaloStrength: 1
+  haloFeather: 2.5
+  waterStrength: 0.55
+  refractionTexels: 2
+  waterSpeed: 0.6
+  playerLightRadius: 0.75
   spriteMaterial: {fileID: 2100000, guid: 57d642bebfae4fa38cdc702b5ff002d3, type: 2}
   map: {fileID: 506044665}
   blockers:
@@ -8973,3 +8988,20 @@ SceneRoots:
   - {fileID: 619394802}
   - {fileID: 506044665}
   - {fileID: 1243325444}
+--- !u!114 &990000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1243325439}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2721ff81abc048f9b22e03a7938c79bb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.OceanVfx
+  particleShader: {fileID: 4800000, guid: 8c1113ba5bc54784b44576979217592e, type: 3}
+  waterOverlayShader: {fileID: 4800000, guid: 443505c02e384074913564dd97df5f7e, type: 3}
+  trailRate: 7
+  breathingInterval: 2.5
+  suspendedCount: 120

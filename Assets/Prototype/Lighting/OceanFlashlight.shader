@@ -2,12 +2,29 @@ Shader "Diving Prototype/Ocean Flashlight"
 {
     Properties
     {
+        _PlayerHaloStrength ("Player Halo Strength", Range(0,1)) = 1
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _AmbientBrightness ("Ambient Brightness", Range(0,1)) = 0
-        _ConeAngle ("Cone Angle", Range(2,180)) = 60
+        _ConeAngle ("Cone Angle", Range(2,180)) = 125
         _HalfStrengthDistance ("Half Strength Distance", Float) = 10
-        _PlayerLightRadius ("Player Light Radius", Float) = 0.1
+        _CoreAngle ("Bright Core Angle", Float) = 44
+        _BeamIntensity ("Beam Intensity", Range(0,1)) = 1
+        _SpillAngle ("Spill Outer Angle", Float) = 178
+        _SpillInnerAngle ("Spill Inner Angle", Float) = 90
+        _SpillIntensity ("Spill Intensity", Range(0,1)) = 0.18
+        _BeamFadeStart ("Beam Fade Start", Float) = 24
+        _BeamRange ("Beam Range", Float) = 36
+        _SpillFadeStart ("Spill Fade Start", Float) = 22
+        _SpillRange ("Spill Range", Float) = 34
+        _HaloFeather ("Halo Feather", Float) = 2.5
+        _WaterStrength ("Water Shimmer", Range(0,1)) = 0.55
+        _RefractionTexels ("Refraction Texels", Range(0,4)) = 2
+        _WaterSpeed ("Water Speed", Float) = 0.6
+        [PerRendererData] _SceneryEffects ("Scenery Effects", Float) = 0
+        [PerRendererData] _ObstacleEffects ("Obstacle Effects", Float) = 0
+        [PerRendererData] _SpriteUVRect ("Sprite UV Bounds", Vector) = (0,0,1,1)
+        _PlayerLightRadius ("Player Light Radius", Float) = 0.75
         _FlashlightOrigin ("Origin", Vector) = (0,0,0,0)
         _FlashlightDirection ("Direction", Vector) = (1,0,0,0)
         [HideInInspector] _SelfBlocker ("Self Blocker", Float) = -1
@@ -49,24 +66,8 @@ Shader "Diving Prototype/Ocean Flashlight"
             SAMPLER(sampler_MainTex);
             TEXTURE2D(_AlphaTex);
             SAMPLER(sampler_AlphaTex);
-            CBUFFER_START(UnityPerMaterial)
-                half4 _Color;
-                float4 _FlashlightOrigin;
-                float4 _FlashlightDirection;
-                float _AmbientBrightness;
-                float _ConeAngle;
-                float _HalfStrengthDistance;
-                float _PlayerLightRadius;
-                float _SelfBlocker;
-                float _Reveal;
-                float _EnableExternalAlpha;
-                int _BlockerCount;
-                float4 _BlockerRowsX[32];
-                float4 _BlockerRowsY[32];
-                int _EdgeCount;
-                float4 _PolygonEdges[256];
-                float _EdgeOwners[256];
-            CBUFFER_END
+            float4 _MainTex_TexelSize;
+            #include "OceanLighting.hlsl"
 
             Varyings FlashlightVertex(Attributes input)
             {
@@ -83,31 +84,6 @@ Shader "Diving Prototype/Ocean Flashlight"
                 return output;
             }
 
-            bool Slab(float start, float step, inout float enter, inout float exit)
-            {
-                if (abs(step) < 0.000001) return abs(start) <= 1.0;
-                float a = (-1.0 - start) / step;
-                float b = (1.0 - start) / step;
-                enter = max(enter, min(a, b));
-                exit = min(exit, max(a, b));
-                return enter <= exit;
-            }
-
-            bool Blocked(float2 endpoint, int index)
-            {
-                float4 rowX = _BlockerRowsX[index];
-                if (rowX.w == 0.0 || index == (int)_SelfBlocker) return false;
-                float4 rowY = _BlockerRowsY[index];
-                float3 origin = float3(_FlashlightOrigin.xy, 1.0);
-                float2 delta = endpoint - origin.xy;
-                float2 start = float2(dot(rowX.xyz, origin), dot(rowY.xyz, origin));
-                float2 step = float2(dot(rowX.xy, delta), dot(rowY.xy, delta));
-                float enter = 0.0, exit = 1.0;
-                return Slab(start.x, step.x, enter, exit)
-                    && Slab(start.y, step.y, enter, exit)
-                    && exit > 0.00001 && enter < 1.0;
-            }
-
             half4 FlashlightFragment(Varyings input) : SV_Target
             {
                 half4 sampled = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
@@ -115,40 +91,42 @@ Shader "Diving Prototype/Ocean Flashlight"
                     sampled.a = lerp(sampled.a, SAMPLE_TEXTURE2D(_AlphaTex, sampler_AlphaTex, input.uv).r, _EnableExternalAlpha);
                 half4 color = sampled * input.color;
                 if (color.a == 0.0 || _Reveal >= 1.0 || _AmbientBrightness >= 1.0) return color;
-                float2 displacement = input.worldPosition - _FlashlightOrigin.xy;
-                float distance = length(displacement);
-                float halfAngle = radians(clamp(_ConeAngle, 2.0, 180.0) * 0.5);
-                float radius = max(0.0, _PlayerLightRadius);
-                float forward = dot(displacement, _FlashlightDirection.xy);
-                float across = abs(displacement.x * _FlashlightDirection.y - displacement.y * _FlashlightDirection.x);
-                // Both shapes share an outward world-space feather and one brightness field.
-                // Side lines lie exactly one radius from the center, tangent to the circle.
-                // Place the hidden short base through both tangent points behind the center.
-                float sideDistance = across * max(0.0, cos(halfAngle)) - forward * sin(halfAngle) - radius;
-                float baseDistance = -forward - radius * sin(halfAngle);
-                float beamDistance = max(baseDistance, sideDistance);
-                float shapeDistance = radius > 0.0 ? min(distance - radius, beamDistance) : beamDistance;
-                float shape = 1.0 - smoothstep(0.0, 0.12, shapeDistance);
-                float beyondCircle = max(0.0, distance - radius);
-                float fadeDistance = radius <= 0.0 ? distance : (beyondCircle < 0.5
-                    ? beyondCircle * beyondCircle : beyondCircle - 0.25);
-                float light = shape * exp2(-fadeDistance / max(0.001, _HalfStrengthDistance));
-                if (light > 0.0)
+                float light = OceanIllumination(input.worldPosition);
+                if (_SceneryEffects > 0.0 && light > 0.0)
                 {
-                    [loop] for (int i = 0; i < min(_BlockerCount, 32); i++)
-                        if (Blocked(input.worldPosition, i)) { light = 0.0; break; }
-                    [loop] for (int e = 0; e < min(_EdgeCount, 256) && light > 0.0; e++)
+                    float2 p = input.worldPosition;
+                    float time = _OceanTime * _WaterSpeed;
+                    float caustic = OceanRipples(p, time);
+                    float2 ripple = float2(sin(p.y * 2.1 + time), cos(p.x * 1.8 - time * 0.8));
+                    float2 inset = min(_MainTex_TexelSize.xy * 0.5, (_SpriteUVRect.zw - _SpriteUVRect.xy) * 0.49);
+                    float2 uv = clamp(input.uv + ripple * _MainTex_TexelSize.xy * _RefractionTexels * light,
+                        _SpriteUVRect.xy + inset, _SpriteUVRect.zw - inset);
+                    half4 refracted = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+                    // Keep original silhouettes; reject displaced samples outside the sprite's painted area.
+                    color.rgb = lerp(sampled.rgb, refracted.rgb, saturate(refracted.a)) * input.color.rgb;
+                    // Refracted light creates visible moving highlights and darker troughs on flat art too.
+                    color.rgb *= 1.0 + _WaterStrength * (caustic * 0.8 - 0.22);
+                    if (_ObstacleEffects > 0.0)
                     {
-                        if ((int)_EdgeOwners[e] == (int)_SelfBlocker) continue;
-                        float2 a = _PolygonEdges[e].xy;
-                        float2 edge = _PolygonEdges[e].zw - a;
-                        float2 ray = input.worldPosition - _FlashlightOrigin.xy;
-                        float2 offset = a - _FlashlightOrigin.xy;
-                        float divisor = ray.x * edge.y - ray.y * edge.x;
-                        if (abs(divisor) < 0.000001) continue;
-                        float t = (offset.x * edge.y - offset.y * edge.x) / divisor;
-                        float u = (offset.x * ray.y - offset.y * ray.x) / divisor;
-                        if (t > 0.00001 && t < 0.99999 && u >= 0.0 && u <= 1.0) light = 0.0;
+                        float2 towardLight = normalize(_FlashlightOrigin.xy - p + float2(0.00001, 0));
+                        float2 uvPerWorld = float2(dot(_WorldToSpriteU.xy, towardLight), dot(_WorldToSpriteV.xy, towardLight));
+                        float2 nearUV = input.uv + uvPerWorld * 0.22;
+                        float2 farUV = input.uv + uvPerWorld * 0.65;
+                        float nearInside = all(nearUV >= _SpriteUVRect.xy) && all(nearUV <= _SpriteUVRect.zw) ? 1.0 : 0.0;
+                        float farInside = all(farUV >= _SpriteUVRect.xy) && all(farUV <= _SpriteUVRect.zw) ? 1.0 : 0.0;
+                        float nearAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, clamp(nearUV, _SpriteUVRect.xy, _SpriteUVRect.zw)).a * nearInside;
+                        float farAlpha = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, clamp(farUV, _SpriteUVRect.xy, _SpriteUVRect.zw)).a * farInside;
+                        float bevel = saturate(sampled.a - farAlpha);
+                        float lip = saturate(sampled.a - nearAlpha);
+                        // Broad surface planes react to the light direction, independent of the painted texture.
+                        float2 slope = float2(sin(p.x * 1.1 + p.y * .6), cos(p.y * .9 - p.x * .5)) * .65;
+                        float3 normal = normalize(float3(slope, 1.0));
+                        float diffuse = saturate(dot(normal, normalize(float3(towardLight, .6))));
+                        float surface = .3 + diffuse * .85;
+                        float shadedCaustic = OceanRipples(p + slope * .22, time * 1.1);
+                        color.rgb *= lerp(1.0, surface * (.72 + shadedCaustic * .65), _WaterStrength);
+                        color.rgb += (float3(.18, .23, .25) * bevel + float3(.16, .2, .21) * lip)
+                            * _WaterStrength * (.55 + shadedCaustic * .45);
                     }
                 }
                 color.rgb *= max(saturate(_Reveal), saturate(_AmbientBrightness) + (1.0 - saturate(_AmbientBrightness)) * light);
