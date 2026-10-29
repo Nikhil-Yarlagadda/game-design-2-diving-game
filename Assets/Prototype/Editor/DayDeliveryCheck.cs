@@ -49,8 +49,14 @@ namespace DivingPrototype
                 foreach(int day in new[]{1,2,3,4,6})
                 {
                     GameState.days=day; tutorial.BeginExcursion();
-                    check(tutorial.IsVisible==(day==2),"Only day two starts mining tutorial: day "+day);
+                    check(tutorial.IsVisible==(day==2 || day==4),"Only day two and four start guidance without deliveries: day "+day);
                     check(tutorial.Stage==(day==2?1:0),"No numbered tutorial on later days");
+                    if(day==4)
+                    {
+                        check(tutorial.Mode==OceanTutorial.TutorialMode.Depletion && tutorial.Text==OceanTutorial.DepletionMessage,"Day four explains depletion without requiring a purchase");
+                        tutorial.Advance(29.99f); check(tutorial.IsVisible,"Depletion guidance provides thirty seconds to read");
+                        tutorial.Advance(.02f); check(!tutorial.IsVisible,"Depletion guidance dismisses after reading");
+                    }
                 }
                 GameState.days=4;
                 GameState.itemsBought[GameState.MiningMachine]=2;
@@ -58,7 +64,7 @@ namespace DivingPrototype
                 typeof(OceanInteractions).GetMethod("SpawnDeliveries",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(ocean,null);
                 check(GameState.itemsBought[GameState.MiningMachine]==2 && ocean.DeliveredItemCount==0,"Blocked delivery area preserves unspawned purchases");
                 tutorial.BeginExcursion();
-                check(!tutorial.IsVisible && !GameState.deliveryTutorialShown,"No delivery tutorial for orders that could not spawn");
+                check(tutorial.Mode==OceanTutorial.TutorialMode.Depletion && !GameState.deliveryTutorialShown,"Blocked orders do not consume delivery guidance eligibility or hide day-four depletion guidance");
                 GameState.deliveryTutorialShown=true; GameState.credits=0;
                 GameState.reset();
                 check(GameState.credits==100 && !GameState.deliveryTutorialShown && GameState.itemsBought[GameState.MiningMachine]==0,"New game restores credits and resets delivery history");

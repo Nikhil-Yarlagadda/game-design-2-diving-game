@@ -37,6 +37,7 @@ namespace DivingPrototype
             var originalKeyboard = Keyboard.current;
             var originalMouse = Mouse.current;
             var oldBackgroundBehavior = InputSystem.settings.backgroundBehavior;
+            var oldInputRouting = InputSystem.settings.editorInputBehaviorInPlayMode;
             bool oldRunInBackground = Application.runInBackground;
             int originalWidth=Screen.width,originalHeight=Screen.height;
             float originalTimeScale=Time.timeScale;
@@ -84,12 +85,15 @@ namespace DivingPrototype
             try
             {
                 InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+                InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
                 Application.runInBackground = true;
                 keyboard = InputSystem.AddDevice<Keyboard>("OceanCheckKeyboard");
                 mouse = InputSystem.AddDevice<Mouse>("OceanCheckMouse");
                 mouse.MakeCurrent();
                 keyboard.MakeCurrent();
                 InputSystem.onAfterUpdate += keepTestKeyboardCurrent;
+                // Start can still be pending when an unfocused scene has just loaded.
+                await Task.Delay(100);
                 ocean.Hydrox.Refill();
                 var tutorial = ocean.GetComponent<OceanTutorial>();
                 require(tutorial.Stage==1,"Excursion starts tutorial at stage one");
@@ -122,10 +126,23 @@ namespace DivingPrototype
                     Vector2 from=new Vector2(solid.bounds.min.x-4,solid.bounds.center.y);
                     var hit=Physics2D.RaycastAll(from,Vector2.right,solid.bounds.size.x+8).First(h=>h.collider==solid);
                     jump(hit.point-Vector2.right*.7f);
-                    keys(new[]{Key.D});await Task.Delay(3100);
-                    var contacts=new ContactPoint2D[16];int count=body.GetContacts(contacts);
-                    require(contacts.Take(count).Any(c=>c.collider==solid||c.otherCollider==solid), name+" stops swimming by actual contact");
-                    require(!solid.OverlapPoint(body.position), name+" cannot be entered");
+                    keys(new[]{Key.D});
+                    var contacts=new ContactPoint2D[16];
+                    bool touched=false,entered=false,crossed=false;
+                    Vector2 previous=body.position;
+                    float until=Time.time+3.1f;
+                    while(Time.time<until)
+                    {
+                        await Task.Delay(10);
+                        int count=body.GetContacts(contacts);
+                        touched |= contacts.Take(count).Any(c=>c.collider==solid||c.otherCollider==solid);
+                        entered |= solid.OverlapPoint(body.position);
+                        if(Vector2.Distance(previous,body.position)>.0001f)
+                            crossed |= Physics2D.LinecastAll(previous,body.position).Any(h=>h.collider==solid);
+                        previous=body.position;
+                    }
+                    require(touched, name+" blocks swimming through actual contact, even if the diver later slides free");
+                    require(!entered && !crossed, name+" cannot be entered or crossed during the push");
                     keys(Array.Empty<Key>());await Task.Delay(150);
                 }
                 jump(new Vector2(0,-1.5f));
@@ -137,11 +154,16 @@ namespace DivingPrototype
                 require(!ocean.IsProspecting && ocean.CooldownRemaining==0,"Right click no longer prospects");
                 pointer(false,false,null);
                 keys(new[]{Key.E,Key.D});await Task.Delay(150);
-                require(!ocean.IsProspecting && ocean.Message.Contains("Stop moving"),"Movement input rejects prospecting");
+                require(ocean.IsProspecting && swimmer.MovementLocked && body.linearVelocity.sqrMagnitude<.0001f,"Movement input starts scanning and stops the diver");
+                require(hud.status.text.Contains("Movement locked") && hud.status.text.Contains("Release E to cancel"),"HUD explains scanning lock and cancellation");
                 keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
                 keys(new[]{Key.E,Key.W,Key.S});await Task.Delay(150);
-                require(!ocean.IsProspecting,"Opposing movement keys must also be released before scanning");
+                require(ocean.IsProspecting && swimmer.MovementLocked,"Opposing movement keys do not prevent scanning");
                 keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
+                body.linearVelocity=Vector2.right;
+                keys(new[]{Key.E});await Task.Delay(100);
+                require(ocean.IsProspecting && swimmer.MovementLocked && body.linearVelocity.sqrMagnitude<.0001f,"Coasting does not prevent scanning and stops immediately");
+                keys(Array.Empty<Key>());await Task.Delay(100);jump(scanMine.transform.position);
                 keys(new[]{Key.E});await Task.Delay(500);
                 require(ocean.IsProspecting && swimmer.MovementLocked,"Hold E locks stationary diver");
                 keys(Array.Empty<Key>());await Task.Delay(150);
@@ -284,10 +306,11 @@ namespace DivingPrototype
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
                 require(!ocean.Prospect(Time.time+10) && !ocean.PlaceMachine(),"Empty tank blocks scanning and placement");
                 await Task.Delay(200);
-                require(SceneManager.GetActiveScene().name=="Result" && ended,"Gas depletion cancels scan, expires deliveries and ends tutorial before Results");
-                require(GameState.tellurium==24 && GameState.days==2,"Results receives ore without skipping excursion day");
-                require(GameState.itemsBought[GameState.MiningMachine]==0,"Delivered orders are not pending again");
-                return new { checks,openSpeed,kelpSpeed,minimapLabels=2,hydroxResults=true };
+                var restarted=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
+                require(SceneManager.GetActiveScene().name=="Ocean Interactables" && !ended && restarted!=ocean,"Day-two gas depletion restarts training without ending the excursion through Results");
+                require(GameState.tellurium==0 && GameState.days==2 && restarted.GetComponent<OceanTutorial>().Stage==1,"Tutorial retry discards failed-attempt income and restarts the first step");
+                require(GameState.itemsBought[GameState.MiningMachine]==0 && restarted.RemainingDeliveryCount==3,"Tutorial retry reissues starting deliveries exactly once");
+                return new { checks,openSpeed,kelpSpeed,minimapLabels=2,hydroxTutorialRetry=true };
 
             }
             finally
@@ -297,6 +320,7 @@ namespace DivingPrototype
                 if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
                 if (mouse != null && mouse.added) InputSystem.RemoveDevice(mouse);
                 InputSystem.settings.backgroundBehavior = oldBackgroundBehavior;
+                InputSystem.settings.editorInputBehaviorInPlayMode = oldInputRouting;
                 Application.runInBackground = oldRunInBackground;
                 if(originalKeyboard!=null && originalKeyboard.added)originalKeyboard.MakeCurrent();
                 if(originalMouse!=null && originalMouse.added)originalMouse.MakeCurrent();

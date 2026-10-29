@@ -28,6 +28,12 @@ namespace DivingPrototype
         public OceanTarget Closest { get; private set; }
         public bool InsideSubmarine { get; private set; }
         public bool IsTransitioning => transitioning;
+        public bool ReturnConfirmationOpen { get; private set; }
+        public int DeployedMachineCount
+        {
+            get { int count = 0; foreach (var target in targets) if (target != null && target.HasMachine) count++; return count; }
+        }
+        public bool TutorialIncomplete => GameState.days == 2 && GetComponent<OceanTutorial>()?.IsMiningComplete != true;
         public HydroxTank Hydrox => hydrox != null ? hydrox : (hydrox = GetComponent<HydroxTank>());
         public int ItemsCollected { get; private set; }
         public int Tellurium { get; private set; }
@@ -42,7 +48,9 @@ namespace DivingPrototype
         private float messageUntil, nextProspect;
         private bool transitioning, sceneUnavailable;
         private HydroxTank hydrox;
-        private bool CanActInOcean => !InsideSubmarine && !transitioning && !Hydrox.IsDepleted && !IsProspecting;
+        private bool CanActInOcean => Time.timeScale > 0f && !PauseManager.BlocksInput && !InsideSubmarine && !transitioning && !ReturnConfirmationOpen && Time.frameCount > resumeInputFrame && !Hydrox.IsDepleted && !IsProspecting;
+        private float timeScaleBeforeReturn;
+        private int resumeInputFrame = -1;
         private SwimmerController swimmer;
         private Rigidbody2D body;
         private readonly HashSet<OceanTarget> deliveries = new HashSet<OceanTarget>();
@@ -50,9 +58,16 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
+        private Dictionary<string, GameState.MiningSpotState> tutorialStartMining;
+        private Dictionary<string, int> tutorialStartOrders;
 
         private void Awake()
         {
+            if (GameState.days == 2)
+            {
+                tutorialStartMining = new Dictionary<string, GameState.MiningSpotState>(GameState.miningSpots);
+                tutorialStartOrders = new Dictionary<string, int>(GameState.itemsBought);
+            }
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             Hydrox.Refill();
@@ -168,6 +183,7 @@ namespace DivingPrototype
 
         private void Update()
         {
+            if (Time.timeScale == 0f || PauseManager.BlocksInput || ReturnConfirmationOpen || Time.frameCount <= resumeInputFrame) return;
             if (Time.time > messageUntil) Message = "";
             if (transitioning) return;
             var mouse = Mouse.current;
@@ -225,13 +241,7 @@ namespace DivingPrototype
         public bool Prospect(float now)
         {
             if (now < nextProspect || !CanActInOcean) return false;
-            if (body == null) body = GetComponent<Rigidbody2D>();
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
-            if (SwimmerController.HasMovementKeysPressed() || body.linearVelocity.sqrMagnitude > .0001f)
-            {
-                Notify("Stop moving before prospecting");
-                return false;
-            }
             IsProspecting = true;
             scanStarted = now;
             swimmer.SetMovementLocked(true);
@@ -262,7 +272,11 @@ namespace DivingPrototype
         }
 
         private void OnOreProduced(OceanTarget target) => OreProduced?.Invoke(target);
-        private void OnDisable() => CancelProspect();
+        private void OnDisable()
+        {
+            CancelProspect();
+            if (ReturnConfirmationOpen) CancelReturn();
+        }
         private void OnDestroy()
         {
             foreach (var target in targets)
@@ -313,7 +327,28 @@ namespace DivingPrototype
 
         public bool RequestEnterSubmarine()
         {
-            if (InsideSubmarine || transitioning || sceneUnavailable) return false;
+            if (Time.timeScale == 0f || PauseManager.BlocksInput || InsideSubmarine || transitioning || sceneUnavailable || ReturnConfirmationOpen || Time.frameCount <= resumeInputFrame) return false;
+            if (GameState.days == 2 && Hydrox.IsDepleted)
+            {
+                string scene = SceneChanger.getScene();
+                if (!Application.CanStreamedLevelBeLoaded(scene))
+                {
+                    sceneUnavailable = true;
+                    Debug.LogError("Tutorial scene is unavailable: " + scene, this);
+                    return false;
+                }
+                transitioning = true;
+                StopOceanControls();
+                GameState.miningSpots = tutorialStartMining;
+                GameState.itemsBought = tutorialStartOrders;
+                SceneChanger.ChangeScene(scene);
+                return true;
+            }
+            if (TutorialIncomplete)
+            {
+                Notify("Complete the tutorial before returning to the submarine.");
+                return false;
+            }
             if (!Application.CanStreamedLevelBeLoaded(resultsScene))
             {
                 sceneUnavailable = true;
@@ -322,6 +357,38 @@ namespace DivingPrototype
                 Debug.LogError("Results scene is unavailable: " + resultsScene + ". Include it in the build scene list.", this);
                 return false;
             }
+            if (!Hydrox.IsDepleted)
+            {
+                if (IsProspecting) return false;
+                ReturnConfirmationOpen = true;
+                timeScaleBeforeReturn = Time.timeScale;
+                swimmer.SetMovementLocked(true);
+                Time.timeScale = 0f;
+                return true;
+            }
+            return EnterSubmarine();
+        }
+
+        public void CancelReturn()
+        {
+            if (!ReturnConfirmationOpen) return;
+            ReturnConfirmationOpen = false;
+            Time.timeScale = timeScaleBeforeReturn;
+            swimmer.SetMovementLocked(false);
+            // Consume the UI click before world interaction resumes.
+            resumeInputFrame = Time.frameCount + 1;
+        }
+
+        public bool ConfirmReturn()
+        {
+            if (!ReturnConfirmationOpen) return false;
+            CancelReturn();
+            return EnterSubmarine();
+        }
+
+        private bool EnterSubmarine()
+        {
+            if (!SceneChanger.ChangeSceneWithFade(resultsScene)) return false;
             transitioning = true;
             StopOceanControls();
             foreach (var item in deliveries)
@@ -332,7 +399,6 @@ namespace DivingPrototype
             ExcursionEnded?.Invoke();
             InsideSubmarine = true;
             GameState.tellurium = Tellurium;
-            SceneChanger.ChangeScene(resultsScene);
             return true;
         }
 

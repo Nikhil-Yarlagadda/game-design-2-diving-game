@@ -20,6 +20,49 @@ namespace DivingPrototype
         private OceanTutorial tutorial;
         private TMP_Text tutorialText, scanText;
         private RectTransform tutorialPanel, scanPanel, scanFill;
+        private RectTransform returnOverlay;
+        private TMP_Text returnWarning;
+
+        private void ReturnButton(RectTransform panel, string name, string caption, float x, UnityEngine.Events.UnityAction action)
+        {
+            var rect = Panel(name, new Vector2(x, 24), new Vector2(250, 48));
+            rect.SetParent(panel, false);
+            var image = rect.GetComponent<UnityEngine.UI.Image>();
+            image.color = new Color(.08f, .22f, .27f, 1f);
+            image.raycastTarget = true;
+            var button = rect.gameObject.AddComponent<UnityEngine.UI.Button>();
+            button.targetGraphic = image;
+            button.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.None };
+            button.onClick.AddListener(action);
+            var label = PanelText(rect, 20);
+            label.alignment = TextAlignmentOptions.Center;
+            label.text = caption;
+        }
+
+        private void BuildReturnConfirmation()
+        {
+            returnOverlay = Panel("Return Confirmation", Vector2.zero, Vector2.zero);
+            returnOverlay.anchorMin = Vector2.zero;
+            returnOverlay.anchorMax = Vector2.one;
+            returnOverlay.offsetMin = returnOverlay.offsetMax = Vector2.zero;
+            var backdrop = returnOverlay.GetComponent<UnityEngine.UI.Image>();
+            backdrop.color = new Color(0, 0, 0, .75f);
+            backdrop.raycastTarget = true;
+            var dialog = Panel("Dialog", Vector2.zero, new Vector2(620, 260));
+            dialog.SetParent(returnOverlay, false);
+            dialog.anchorMin = dialog.anchorMax = dialog.pivot = new Vector2(.5f, .5f);
+            dialog.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
+            var question = PanelText(dialog, 24);
+            question.rectTransform.offsetMin = new Vector2(24, 168);
+            question.rectTransform.offsetMax = new Vector2(-24, -24);
+            question.text = "End this excursion and return to the submarine?";
+            returnWarning = PanelText(dialog, 20);
+            returnWarning.rectTransform.offsetMin = new Vector2(24, 84);
+            returnWarning.rectTransform.offsetMax = new Vector2(-24, -96);
+            ReturnButton(dialog, "Continue Exploring", "Continue exploring", -145, () => interactions.CancelReturn());
+            ReturnButton(dialog, "End Excursion", "End excursion", 145, () => interactions.ConfirmReturn());
+            returnOverlay.gameObject.SetActive(false);
+        }
 
         private RectTransform Panel(string name, Vector2 position, Vector2 size)
         {
@@ -105,11 +148,13 @@ namespace DivingPrototype
             for (int i = 0; i < markers.Length; i++)
             {
                 var target = interactions.targets[i];
-                if (target.kind == OceanTarget.TargetKind.MiningSpot) continue;
+                if (target == null) continue;
+                bool machine = target.kind == OceanTarget.TargetKind.MiningSpot;
                 bool submarine = target.kind == OceanTarget.TargetKind.Submarine;
-                markers[i] = Image(target.name + " Minimap Marker", submarine ? squareSprite : circleSprite,
-                    submarine ? 7 : 4, submarine ? new Color(.55f, .9f, 1f) : Color.white);
+                markers[i] = Image(target.name + (machine ? " Machine" : "") + " Minimap Marker", submarine || machine ? squareSprite : circleSprite,
+                    submarine ? 7 : machine ? 6 : 4, submarine ? new Color(.55f, .9f, 1f) : machine ? new Color(1f, .65f, .2f) : Color.white);
                 if (submarine) markers[i].rectTransform.localRotation = Quaternion.Euler(0,0,45);
+                if (machine) markers[i].gameObject.SetActive(target.HasMachine);
             }
             // Keep the home marker above overlapping item dots without changing its bearing.
             foreach (var marker in markers)
@@ -117,11 +162,26 @@ namespace DivingPrototype
             Image("Minimap Player", circleSprite, 6, Color.white);
             playerDirection = Image("Minimap Facing", arrowSprite, 7, Color.white).rectTransform;
             playerDirection.sizeDelta = new Vector2(6,9);
+            BuildReturnConfirmation();
         }
 
         private void LateUpdate()
         {
             if (markers == null) return;
+            if (returnOverlay.gameObject.activeSelf != interactions.ReturnConfirmationOpen)
+            {
+                returnOverlay.gameObject.SetActive(interactions.ReturnConfirmationOpen);
+                if (UnityEngine.EventSystems.EventSystem.current != null)
+                    UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+            }
+            if (interactions.ReturnConfirmationOpen)
+            {
+                int count = interactions.DeployedMachineCount;
+                returnWarning.text = count == 0 ? "No mining machines will be left behind."
+                    : count + " mining machine" + (count == 1 ? "" : "s") + " still deployed.\nThey will be left behind if you end the excursion.";
+                returnWarning.color = count == 0 ? Color.white : new Color(1f, .75f, .4f);
+            }
+            if (interactions.IsTransitioning) return;
             bool inside = interactions.InsideSubmarine;
             tutorialPanel.gameObject.SetActive(!inside && !interactions.IsTransitioning && tutorial != null && tutorial.IsVisible);
             if (tutorial != null) tutorialText.text = tutorial.Text;
@@ -137,20 +197,23 @@ namespace DivingPrototype
             message.text = interactions.Message;
             var target = interactions.Closest;
             prompt.text = inside ? "LEFT CLICK  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
-                ? "LEFT CLICK  Enter submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
+                ? interactions.TutorialIncomplete ? "Complete the tutorial before returning" : "LEFT CLICK  Return to submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
                 : target.HasMachine ? "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
                 : target.DisplayedTier == 0 ? "Depleted (last prospected)"
                 : "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier) + " / min (last prospected)  |  LEFT CLICK  Place machine";
             if (interactions.IsProspecting) prompt.text = "Hold E to finish prospecting • Release to cancel";
-            if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\nSTOP + HOLD E  Prospect (3s)"
-                + (interactions.CooldownRemaining > 0f ? " (" + interactions.CooldownRemaining.ToString("0.0") + "s)" : " (ready)");
+            if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\n"
+                + (interactions.IsProspecting ? "SCANNING  Movement locked | Release E to cancel"
+                    : "HOLD E  Prospect (3s)" + (interactions.CooldownRemaining > 0f
+                        ? " | Cooldown " + interactions.CooldownRemaining.ToString("0.0") + "s" : " | Ready"));
             if (inside) return;
             float radius = Mathf.Min(minimapRoot.rect.width, minimapRoot.rect.height) * .5f - 6;
             for (int i = 0; i < markers.Length; i++)
             {
                 if (markers[i] == null) continue;
                 var tracked = interactions.targets[i];
-                bool visible = tracked != null && tracked.isActiveAndEnabled;
+                bool visible = tracked != null && tracked.isActiveAndEnabled
+                    && (tracked.kind != OceanTarget.TargetKind.MiningSpot || tracked.HasMachine);
                 markers[i].gameObject.SetActive(visible);
                 if (!visible) continue;
                 Vector2 offset = tracked.transform.position - interactions.transform.position;

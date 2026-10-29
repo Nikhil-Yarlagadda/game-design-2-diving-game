@@ -84,7 +84,7 @@ namespace DivingPrototype
         public void RefreshLighting()
         {
             if (instance == null) return;
-            if (Application.isPlaying)
+            if (Application.isPlaying && Time.timeScale > 0f)
             {
                 Vector2 candidate = Vector2.zero;
                 if (aimMode == AimMode.MovementKeys) candidate = swimmer.MovementInput;

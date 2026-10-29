@@ -6,9 +6,9 @@ namespace DivingPrototype
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class SwimmerController : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float maxSpeed = 5f;
-        [SerializeField, Min(0f)] private float acceleration = 8f;
-        [SerializeField, Min(0f)] private float deceleration = 7f;
+        [SerializeField, Min(0f)] private float maxSpeed = 2.5f;
+        [SerializeField, Min(0f)] private float acceleration = 5f;
+        [SerializeField, Min(0f)] private float deceleration = 12.5f;
 
         private Rigidbody2D body;
         private Vector2 input;

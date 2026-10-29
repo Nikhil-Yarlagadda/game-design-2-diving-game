@@ -21,6 +21,7 @@ public class ResultsText : MonoBehaviour
     }
 
     public void onLeave(){
+        if (SceneChanger.IsTransitioning) return;
         GameState.credits += (GameState.tellurium*10) - 50;
         GameState.tellurium = 0;
         GameState.days++;

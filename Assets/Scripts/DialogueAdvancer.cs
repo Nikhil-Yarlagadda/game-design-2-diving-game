@@ -13,6 +13,7 @@ public class DialogueAdvancer : MonoBehaviour
 
     void Update()
     {
+        if (SceneChanger.IsTransitioning) return;
 
         if (Mouse.current.rightButton.wasPressedThisFrame)
         {

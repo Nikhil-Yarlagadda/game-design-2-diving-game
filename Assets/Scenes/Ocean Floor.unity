@@ -5326,8 +5326,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.SwimmerController
   maxSpeed: 2.5
-  acceleration: 1
-  deceleration: 1.5
+  acceleration: 5
+  deceleration: 12.5
   kelpZones: []
 --- !u!50 &1243325441
 Rigidbody2D:
