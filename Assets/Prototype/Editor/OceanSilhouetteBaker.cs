@@ -16,6 +16,8 @@ namespace DivingPrototype
             var ocean = UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
             if (ocean == null) throw new InvalidOperationException("Open Ocean Interactables first.");
             var polygons = ocean.oceanMap.GetComponentsInChildren<PolygonCollider2D>();
+            if (polygons.Any(p => p.GetComponent<SpriteRenderer>().drawMode != SpriteDrawMode.Simple))
+                throw new InvalidOperationException("Undo map resizing before rebuilding shared ocean silhouettes. Resized terrain is kept in scene properties only.");
             var first = polygons[0].GetComponent<SpriteRenderer>().sprite;
             float factor = 40f / first.pixelsPerUnit;
             int width = Mathf.RoundToInt(first.texture.width * factor);

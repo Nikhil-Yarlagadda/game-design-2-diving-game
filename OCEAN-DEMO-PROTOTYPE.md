@@ -54,6 +54,8 @@ Terrain silhouettes were rebuilt at 40 PPU from the same polygon paths as their 
 
 The editor-only menu **Diving Prototype > Rebuild Smooth Ocean Silhouettes** regenerates the silhouettes from the open ocean scene. The desktop terrain atlas uses approximately 64 MiB of BC7 texture data.
 
+Use **Diving Prototype > Ocean Map Resizer** to capture the current layout as scale 1 and resize authored map distances and terrain around the submarine. Ordinary object sizes and gameplay settings stay unchanged. Changes use scene Undo; the tool saves no baseline or generated art files. See the [map resizer guide](OCEAN-MAP-RESIZER.md).
+
 ## Performance and Verification
 
 The flashlight excludes shadow edges that cannot intersect any ray from the player to the visible gameplay area. Transparent and fully revealed fragments skip unnecessary lighting work. Self-shadow exclusion and the 256-edge capacity validation are preserved.
