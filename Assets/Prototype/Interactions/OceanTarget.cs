@@ -8,6 +8,7 @@ namespace DivingPrototype
         public TargetKind kind;
         [Min(1)] public int level = 1;
         public string displayName = "Item";
+        public string itemName;
         public SpriteRenderer highlight;
         public GameObject machine;
         public bool HasMachine { get; private set; }

@@ -30,7 +30,10 @@ public class Shop : MonoBehaviour
     public void buyClicked()
     {
         GameState.credits -= cost;
-        GameState.itemsBought[item]++;
+        if(GameState.itemsBought.ContainsKey(item))
+            GameState.itemsBought[item]++;
+        else
+            GameState.itemsBought[item] = 1;
         Debug.Log("Amount of item is " + GameState.itemsBought[item]);
     }
 

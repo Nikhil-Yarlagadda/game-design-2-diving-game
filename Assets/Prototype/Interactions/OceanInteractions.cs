@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DivingPrototype
 {
@@ -19,7 +20,7 @@ namespace DivingPrototype
         [Min(.1f)] public float interactionRange = 1.8f;
         [Min(0f)] public float prospectCooldown = 2f;
         [Min(1)] public int availableMachines = 3;
-        [Min(0)] private int itemCount = GameState.itemsBought["Mining Machine"];
+        [Min(0)] private int itemCount = GameState.itemsBought.Values.Sum();
         public string interiorScene = "Result";
         public OceanTarget Closest { get; private set; }
         public bool InsideSubmarine { get; private set; }
@@ -52,12 +53,18 @@ namespace DivingPrototype
             Hydrox.Refill();
             var items = new System.Collections.Generic.List<OceanTarget>();
             var all = new System.Collections.Generic.List<OceanTarget>();
+            var itemNames = new System.Collections.Generic.List<string>();
+            foreach (var pair in GameState.itemsBought)
+                for (int n = 0; n < pair.Value; n++)
+                    itemNames.Add(pair.Key);
+
             foreach (var target in targets)
                 if (target.kind == OceanTarget.TargetKind.Item) items.Add(target); else all.Add(target);
             for (int i = 0; i < itemCount && items.Count > 0; i++)
             {
                 var item = i < items.Count ? items[i] : Instantiate(items[0], items[0].transform.parent);
                 item.name = "Item " + (i + 1);
+                item.itemName = itemNames[i];
                 all.Add(item);
             }
             for (int i = itemCount; i < items.Count; i++) items[i].gameObject.SetActive(false);
@@ -233,8 +240,14 @@ namespace DivingPrototype
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
                 ItemsCollected++;
-                availableMachines++;
-                Notify("Item collected.");
+                if (GameState.inventory.ContainsKey(Closest.itemName))
+                    GameState.inventory[Closest.itemName]++;
+                else
+                    GameState.inventory[Closest.itemName] = 1;
+                
+                if(Closest.itemName == "Mining Machine")
+                    availableMachines++;
+                Notify(Closest.itemName + " collected.");
                 Closest.gameObject.SetActive(false);
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)

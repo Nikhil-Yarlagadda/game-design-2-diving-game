@@ -8,7 +8,7 @@ public static class GameState
     public static int tellurium;
     public static HashSet<string> npcsTalks;
     public static Dictionary<string, int> itemsBought;
-    
+    public static Dictionary<string, int> inventory;
 
     public static void reset()
     {
@@ -17,6 +17,8 @@ public static class GameState
         tellurium = 0;
         npcsTalks = new HashSet<string>();
         itemsBought = new Dictionary<string, int>();
+        inventory = new Dictionary<string, int>();
         itemsBought["Mining Machine"] = 0;
+        inventory["Mining Machine"] = 3;
     }
 }
