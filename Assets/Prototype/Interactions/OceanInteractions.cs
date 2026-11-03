@@ -42,6 +42,8 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
+        public GameObject panel;            // InventoryPanel
+        public OceanTarget dropPrefab;
 
         private void Awake()
         {
@@ -154,6 +156,8 @@ namespace DivingPrototype
 
         private void Update()
         {
+            if (panel.activeSelf) return;
+
             if (Time.time > messageUntil) Message = "";
             if (transitioning) return;
             var mouse = Mouse.current;
@@ -228,6 +232,7 @@ namespace DivingPrototype
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
             if (!Closest.Place(Time.time)) return false;
             availableMachines--;
+            GameState.inventory["Mining Machine"]--;
             Notify("Mining started: " + Closest.level + " tellurium / minute.");
             return true;
         }
@@ -240,13 +245,29 @@ namespace DivingPrototype
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
                 ItemsCollected++;
-                if (GameState.inventory.ContainsKey(Closest.itemName))
-                    GameState.inventory[Closest.itemName]++;
-                else
-                    GameState.inventory[Closest.itemName] = 1;
-                
-                if(Closest.itemName == "Mining Machine")
-                    availableMachines++;
+                if (Closest.kind == OceanTarget.TargetKind.Item)
+                {
+                    ItemsCollected++;
+
+                    if (Closest.itemName == "Tellurium")
+                    {
+                        Tellurium++;
+                        GameState.tellurium = Tellurium;
+                    }
+                    else
+                    {
+                        if (GameState.inventory.ContainsKey(Closest.itemName))
+                            GameState.inventory[Closest.itemName]++;
+                        else
+                            GameState.inventory[Closest.itemName] = 1;
+
+                        if (Closest.itemName == "Mining Machine")
+                            availableMachines++;
+                    }
+
+                    Notify(Closest.itemName + " collected.");
+                    Closest.gameObject.SetActive(false);
+                }
                 Notify(Closest.itemName + " collected.");
                 Closest.gameObject.SetActive(false);
             }
@@ -254,7 +275,9 @@ namespace DivingPrototype
             {
                 int amount = Closest.Retrieve(Time.time);
                 Tellurium += amount;
+                GameState.tellurium = Tellurium;
                 availableMachines++;
+                GameState.inventory["Mining Machine"]++;
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
@@ -288,6 +311,72 @@ namespace DivingPrototype
         {
             body.linearVelocity = Vector2.zero;
             swimmer.enabled = false;
+        }
+
+        public bool DropItem(string itemName)
+        {
+
+            Debug.Log("DropItem called: " + itemName);
+            
+            // find something to clone
+            var template = dropPrefab;
+            if (template == null)
+                foreach (var t in targets)
+                    if (t != null && t.kind == OceanTarget.TargetKind.Item) { template = t; break; }
+
+            if (template == null)
+            {
+                Notify("Can't drop that here.");
+                return false;
+            }
+
+            // take it out of the inventory
+            if (itemName == "Tellurium")
+            {
+                if (Tellurium <= 0) return false;
+                Tellurium--;
+                GameState.tellurium = Tellurium;
+            }
+            else if (GameState.inventory.TryGetValue(itemName, out int count) && count > 0)
+            {
+                if (count <= 1) GameState.inventory.Remove(itemName);
+                else GameState.inventory[itemName] = count - 1;
+
+                if (itemName == "Mining Machine")
+                    availableMachines = Mathf.Max(0, availableMachines - 1);
+            }
+            else return false;
+
+            // create the pickup
+            var drop = Instantiate(template, template.transform.parent);
+            drop.kind = OceanTarget.TargetKind.Item;
+            drop.itemName = itemName;
+            drop.displayName = itemName;
+            drop.name = "Dropped " + itemName;
+            drop.gameObject.SetActive(true);
+            drop.transform.position = FindDropPoint(drop);
+
+            var list = new System.Collections.Generic.List<OceanTarget>(targets);
+            list.Add(drop);
+            targets = list.ToArray();
+
+            Notify(itemName + " dropped.");
+            return true;
+        }
+
+        private Vector2 FindDropPoint(OceanTarget drop)
+        {
+            Vector2 origin = transform.position;
+            for (float radius = 0.8f; radius <= 1.4f; radius += 0.3f)
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / 12f;
+                    var point = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (CanSpawn(point, drop)) return point;
+                }
+            }
+            return origin; // nowhere free nearby, drop at the player's feet
         }
 
         private IEnumerator EnterSubmarine()
