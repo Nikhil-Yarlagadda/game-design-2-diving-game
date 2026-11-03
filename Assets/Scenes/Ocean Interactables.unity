@@ -1828,6 +1828,36 @@ MonoBehaviour:
   - itemName: Tellurium
     sprite: {fileID: 0}
     maxStack: 16
+  - itemName: 'Medium Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Heavy Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Advanced flippers  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Stimulant Canister  '
+    sprite: {fileID: 0}
+    maxStack: 4
+  - itemName: 'Antimicrobial Medicine  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Camera Module  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Light Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: Full-grown Fungus Sample
+    sprite: {fileID: 0}
+    maxStack: 4
+  - itemName: Photograph of Infected Crewmate
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Photograph of the Eye of the Abyss  '
+    sprite: {fileID: 0}
+    maxStack: 1
 --- !u!114 &123723316
 MonoBehaviour:
   m_ObjectHideFlags: 0
