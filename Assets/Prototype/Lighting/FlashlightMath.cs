@@ -12,47 +12,42 @@ namespace DivingPrototype
         public static float Strength(float distance, float halfStrengthDistance) =>
             Mathf.Pow(2f, -Mathf.Max(0f, distance) / Mathf.Max(.001f, halfStrengthDistance));
 
-        public const float EdgeFeather = .12f;
-        public const float FadeBlendDistance = .5f;
+        public const float EdgeFeather = 2.5f;
 
         public static float CircleMask(float distance, float radius)
         {
             if (radius <= 0f) return 0f;
-            return Feather(distance - radius);
+            float shoulder = Mathf.Max(0f, distance - radius) / EdgeFeather;
+            return Mathf.Pow(2f, -2f * Mathf.Pow(shoulder, 1.5f)) * (1f - Smooth(3f, 4f, shoulder));
         }
 
-        public static float BeamMask(Vector2 displacement, Vector2 direction, float angle, float radius)
+        // CPU reference for the saved broad, exponential light profile.
+        public static float AngularMask(Vector2 displacement, Vector2 direction, float innerAngle, float outerAngle)
         {
-            float forward = Vector2.Dot(displacement, direction);
-            float across = Mathf.Abs(displacement.x * direction.y - displacement.y * direction.x);
-            float halfAngle = Mathf.Clamp(angle, 2f, 180f) * .5f * Mathf.Deg2Rad;
-            radius = Mathf.Max(0f, radius);
-            // Each side is exactly radius away from the circle center. The base passes through the tangent points.
-            float sideDistance = across * Mathf.Max(0f, Mathf.Cos(halfAngle))
-                - forward * Mathf.Sin(halfAngle) - radius;
-            float baseDistance = -forward - radius * Mathf.Sin(halfAngle);
-            return Feather(Mathf.Max(baseDistance, sideDistance));
+            float cosine = displacement.sqrMagnitude < .0000001f ? 1f : Vector2.Dot(displacement.normalized, direction);
+            float angle = Mathf.Acos(Mathf.Clamp(cosine, -1f, 1f)) * Mathf.Rad2Deg;
+            float outer = outerAngle * .5f;
+            float shoulder = angle / Mathf.Max(.5f, innerAngle * .5f);
+            return Mathf.Pow(2f, -shoulder * shoulder) * (1f - Smooth(outer * .65f, outer, angle));
         }
 
-        private static float Feather(float signedDistance)
+        private static float Smooth(float start, float end, float value)
         {
-            float t = Mathf.Clamp01(signedDistance / EdgeFeather);
-            return 1f - t * t * (3f - 2f * t);
-        }
-
-        public static float FadeDistance(float distance, float radius)
-        {
-            if (radius <= 0f) return distance;
-            float beyondCircle = Mathf.Max(0f, distance - radius);
-            return beyondCircle < FadeBlendDistance
-                ? beyondCircle * beyondCircle / (2f * FadeBlendDistance)
-                : beyondCircle - FadeBlendDistance * .5f;
+            float t = Mathf.Clamp01((value - start) / Mathf.Max(.000001f, end - start));
+            return t * t * (3f - 2f * t);
         }
 
         public static float Illumination(Vector2 displacement, Vector2 direction, float angle,
-            float halfStrengthDistance, float radius) => Mathf.Max(CircleMask(displacement.magnitude, radius),
-                BeamMask(displacement, direction, angle, radius))
-                * Strength(FadeDistance(displacement.magnitude, radius), halfStrengthDistance);
+            float halfStrengthDistance, float radius)
+        {
+            float distance = displacement.magnitude;
+            float beam = AngularMask(displacement, direction, 44f, angle) * Strength(distance, halfStrengthDistance)
+                * (1f - Smooth(24f, 36f, distance));
+            float spill = .18f * AngularMask(displacement, direction, 90f, 178f) * Strength(distance, halfStrengthDistance * 2f)
+                * (1f - Smooth(22f, 34f, distance));
+            float forward = 1f - (1f - beam) * (1f - spill);
+            return 1f - (1f - CircleMask(distance, radius)) * (1f - forward);
+        }
 
         // Each row transforms a world point into the collider's normalized local box [-1, 1].
         public static void PackBox(BoxCollider2D box, out Vector4 rowX, out Vector4 rowY)

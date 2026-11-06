@@ -101,7 +101,14 @@ namespace DivingPrototype
                 require(ocean.Hydrox.CurrentCapacity < initialHydrox,"Hydrox consumes during ocean gameplay");
                 Time.timeScale=0;
                 float pausedCapacity=ocean.Hydrox.CurrentCapacity;
+                await Task.Delay(50);
+                var pausedMaterial = ocean.GetComponent<SpriteRenderer>().sharedMaterial;
+                float pausedWaterTime = pausedMaterial.GetFloat("_OceanTime");
+                var pausedVfx = ocean.GetComponent<OceanVfx>();
+                int pausedBubbles = pausedVfx.Bubbles.particleCount;
                 await Task.Delay(200);
+                require(Mathf.Approximately(pausedMaterial.GetFloat("_OceanTime"), pausedWaterTime)
+                    && pausedVfx.Bubbles.particleCount == pausedBubbles, "Pause freezes water time and bubble emission");
                 require(ocean.Hydrox.CurrentCapacity==pausedCapacity,"Paused game time does not consume Hydrox");
                 Time.timeScale=originalTimeScale;
                 require(ocean.oceanMap.GetComponentsInChildren<SpriteRenderer>(true)
@@ -268,16 +275,18 @@ namespace DivingPrototype
                     ocean.GetComponent<FlashlightController>().RefreshLighting();
                     FlashlightCheck.Render(ocean.oceanCamera,bankRt,bankPixels);
                     var sample=bankPixels.GetPixel(Mathf.Clamp((int)(bankViewport.x*1280),0,1279),Mathf.Clamp((int)(bankViewport.y*720),0,719));
-                    require(Mathf.Max(sample.r,sample.g,sample.b)>.005f,"Actual GPU frame shows flashlight illuminating the opposite bank");
+                    require(Mathf.Max(sample.r,sample.g,sample.b)>.005f,"Actual GPU frame illuminates the opposite bank across the viewport");
                     System.IO.Directory.CreateDirectory("Temp/coverage-analysis");
                     System.IO.File.WriteAllBytes("Temp/coverage-analysis/cross-chasm-check.png",bankPixels.EncodeToPNG());
                 }
                 finally {ocean.oceanCamera.targetTexture=previousTarget;ocean.oceanCamera.rect=previousRect;UnityEngine.Object.DestroyImmediate(bankRt);UnityEngine.Object.DestroyImmediate(bankPixels);}
                 require(Vector2.Distance(body.position,oceanStart)>10,"Depletion test starts far from original spawn");
                 bool ended = false;
+                var departureVfx = ocean.GetComponent<OceanVfx>();
                 ocean.ExcursionEnded += () => {
                     ended = !ocean.IsProspecting && !swimmer.MovementLocked && !tutorial.IsVisible
                         && ocean.RemainingDeliveryCount == 0
+                        && departureVfx.Bubbles.particleCount == 0 && departureVfx.Suspended.particleCount == 0
                         && ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item).All(t=>!t.gameObject.activeSelf);
                 };
                 require(ocean.Prospect(Time.time) && swimmer.MovementLocked,"Begin scan before simulated gas depletion");

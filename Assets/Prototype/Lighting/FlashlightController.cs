@@ -12,10 +12,28 @@ namespace DivingPrototype
         [SerializeField] private AimMode aimMode = AimMode.Mouse;
         [SerializeField] private Camera aimCamera;
         [SerializeField, Range(0f, 1f)] private float ambientBrightness;
-        [SerializeField, Range(2f, 180f)] private float coneAngle = 60f;
+        [Header("Bright cone (total angles in degrees)")]
+        [SerializeField, Range(0f, 1f)] private float beamIntensity = 1f;
+        [SerializeField, Range(2f, 180f)] private float coneAngle = 125f;
         [SerializeField, Min(.001f)] private float halfStrengthDistance = 10f;
-        [SerializeField, Min(0f), Tooltip("Fully bright circle radius in world units. Used directly, independent of player sprite size. Zero disables the circle.")]
-        private float playerLightRadius = .1f;
+        [SerializeField, Range(2f, 180f)] private float coreAngle = 44f;
+        [Header("Dim forward spill")]
+        [SerializeField, Range(2f, 180f)] private float spillInnerAngle = 90f;
+        [SerializeField, Range(2f, 180f)] private float spillAngle = 178f;
+        [SerializeField, Range(0f, 1f)] private float spillIntensity = .18f;
+        [SerializeField, Min(0f)] private float beamFadeStart = 24f;
+        [SerializeField, Min(.01f)] private float beamRange = 36f;
+        [SerializeField, Min(0f)] private float spillFadeStart = 22f;
+        [SerializeField, Min(.01f)] private float spillRange = 34f;
+        [Header("Player halo and water motion")]
+        [SerializeField, Range(0f, 1f), Tooltip("Brightness of the player-centered glow. Zero disables the halo; one uses full strength.")]
+        private float playerHaloStrength = 1f;
+        [SerializeField, Min(.001f)] private float haloFeather = 2.5f;
+        [SerializeField, Range(0f, 1f)] private float waterStrength = .55f;
+        [SerializeField, Range(0f, 4f)] private float refractionTexels = 2f;
+        [SerializeField, Min(0f)] private float waterSpeed = .6f;
+        [SerializeField, Min(0f), Tooltip("Inner player circle radius in world units, with a soft outer fade. Brightness is controlled by Player Halo Strength. Used directly, independent of player sprite size. Zero disables the circle.")]
+        private float playerLightRadius = .75f;
         [SerializeField] private Material spriteMaterial;
         [SerializeField] private Transform map;
         [SerializeField] private BoxCollider2D[] blockers = new BoxCollider2D[0];
@@ -23,7 +41,7 @@ namespace DivingPrototype
         private const int MaxEdges = 256;
         private readonly Vector4[] edges = new Vector4[MaxEdges];
         private readonly float[] edgeOwners = new float[MaxEdges];
-        private readonly System.Collections.Generic.List<Vector2> path = new System.Collections.Generic.List<Vector2>();
+        private readonly System.Collections.Generic.List<Vector2> path = new System.Collections.Generic.List<Vector2>(MaxEdges);
 
         private static readonly int OriginId = Shader.PropertyToID("_FlashlightOrigin");
         private static readonly int DirectionId = Shader.PropertyToID("_FlashlightDirection");
@@ -46,12 +64,22 @@ namespace DivingPrototype
         private Color originalBackground;
         private Vector2 direction = Vector2.right;
         public Vector2 AimDirection => direction;
+        public Camera AimCamera => aimCamera;
+        private readonly System.Collections.Generic.List<Material> lightingMaterials = new System.Collections.Generic.List<Material>(4);
+
+        public void RegisterLightingMaterial(Material material)
+        {
+            if (material != null && !lightingMaterials.Contains(material)) lightingMaterials.Add(material);
+        }
+
+        public void UnregisterLightingMaterial(Material material) => lightingMaterials.Remove(material);
 
         private void OnEnable()
         {
             if (spriteMaterial == null || map == null || aimCamera == null || !ValidateBlockers()) return;
             swimmer = GetComponent<SwimmerController>();
             instance = new Material(spriteMaterial) { name = "Ocean Flashlight (Instance)", hideFlags = HideFlags.HideAndDontSave };
+            RegisterLightingMaterial(instance);
             var mapSprites = map.GetComponentsInChildren<SpriteRenderer>(true);
             var playerSprites = GetComponentsInChildren<SpriteRenderer>(true);
             sprites = new SpriteRenderer[mapSprites.Length + playerSprites.Length];
@@ -73,6 +101,19 @@ namespace DivingPrototype
                 for (int b = 0; b < polygonBlockers.Length; b++)
                     if (polygonBlockers[b] != null && polygonBlockers[b].gameObject == sprites[i].gameObject) self = 32 + b;
                 properties.SetFloat(SelfId, self);
+                bool scenery = i < mapSprites.Length && !sprites[i].name.Contains("Highlight");
+                properties.SetFloat("_SceneryEffects", scenery ? 1f : 0f);
+                properties.SetFloat("_ObstacleEffects", scenery && self >= 0 ? 1f : 0f);
+                var sprite = sprites[i].sprite;
+                if (sprite != null)
+                {
+                    properties.SetVector("_SpriteUVRect", UnityEngine.Sprites.DataUtility.GetOuterUV(sprite));
+                    var inverse = sprites[i].transform.worldToLocalMatrix;
+                    float u = sprite.pixelsPerUnit / sprite.texture.width * (sprites[i].flipX ? -1f : 1f);
+                    float v = sprite.pixelsPerUnit / sprite.texture.height * (sprites[i].flipY ? -1f : 1f);
+                    properties.SetVector("_WorldToSpriteU", new Vector4(inverse.m00 * u, inverse.m01 * u, 0, 0));
+                    properties.SetVector("_WorldToSpriteV", new Vector4(inverse.m10 * v, inverse.m11 * v, 0, 0));
+                }
                 sprites[i].SetPropertyBlock(properties);
             }
             originalBackground = aimCamera.backgroundColor;
@@ -99,17 +140,8 @@ namespace DivingPrototype
                 // The diver artwork faces up in its source image; align the player sprite to the camera aim.
                 transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
             }
-            instance.SetVector(OriginId, transform.position);
-            instance.SetVector(DirectionId, new Vector4(direction.x, direction.y, 0f, 0f));
-            instance.SetFloat(AmbientId, Mathf.Clamp01(ambientBrightness));
-            instance.SetFloat(AngleId, Mathf.Clamp(coneAngle, 2f, 180f));
-            instance.SetFloat(DistanceId, Mathf.Max(.001f, halfStrengthDistance));
-            instance.SetFloat(RadiusId, Mathf.Max(0f, playerLightRadius));
             int count = Mathf.Min(blockers.Length, FlashlightMath.MaxBlockers);
             for (int i = 0; i < count; i++) FlashlightMath.PackBox(blockers[i], out rowsX[i], out rowsY[i]);
-            instance.SetInt(CountId, count);
-            instance.SetVectorArray(BoxesXId, rowsX);
-            instance.SetVectorArray(BoxesYId, rowsY);
             Vector2 viewMin = transform.position, viewMax = transform.position;
             var ground = new Plane(Vector3.forward, transform.position);
             bool boundedView = aimCamera != null;
@@ -143,9 +175,10 @@ namespace DivingPrototype
                     }
                 }
             }
-            instance.SetInt("_EdgeCount", edgeCount);
-            instance.SetVectorArray("_PolygonEdges", edges);
-            instance.SetFloatArray("_EdgeOwners", edgeOwners);
+            // Never place the terminal fade inside the camera rectangle, even after a zoom change.
+            float viewReach = new Vector2(Mathf.Max(Mathf.Abs(viewMin.x - transform.position.x), Mathf.Abs(viewMax.x - transform.position.x)),
+                Mathf.Max(Mathf.Abs(viewMin.y - transform.position.y), Mathf.Abs(viewMax.y - transform.position.y))).magnitude;
+            foreach (var material in lightingMaterials) UploadLighting(material, count, edgeCount, viewReach);
             if (aimCamera != null)
             {
                 Color background = originalBackground;
@@ -154,6 +187,37 @@ namespace DivingPrototype
                 background.b *= ambientBrightness;
                 aimCamera.backgroundColor = background;
             }
+        }
+
+        private void UploadLighting(Material material, int count, int edgeCount, float viewReach)
+        {
+            material.SetVector(OriginId, transform.position);
+            material.SetVector(DirectionId, new Vector4(direction.x, direction.y, 0f, 0f));
+            material.SetFloat(AmbientId, Mathf.Clamp01(ambientBrightness));
+            material.SetFloat(AngleId, coneAngle);
+            material.SetFloat(DistanceId, halfStrengthDistance);
+            material.SetFloat(RadiusId, playerLightRadius);
+            material.SetFloat("_CoreAngle", coreAngle);
+            material.SetFloat("_BeamIntensity", beamIntensity);
+            material.SetFloat("_SpillInnerAngle", spillInnerAngle);
+            material.SetFloat("_SpillAngle", spillAngle);
+            material.SetFloat("_SpillIntensity", spillIntensity);
+            material.SetFloat("_BeamFadeStart", Mathf.Max(beamFadeStart, viewReach * 1.1f));
+            material.SetFloat("_BeamRange", Mathf.Max(beamRange, viewReach * 1.8f));
+            material.SetFloat("_SpillFadeStart", Mathf.Max(spillFadeStart, viewReach * 1.05f));
+            material.SetFloat("_SpillRange", Mathf.Max(spillRange, viewReach * 1.7f));
+            material.SetFloat("_HaloFeather", haloFeather);
+            material.SetFloat("_PlayerHaloStrength", Mathf.Clamp01(playerHaloStrength));
+            material.SetFloat("_WaterStrength", waterStrength);
+            material.SetFloat("_RefractionTexels", refractionTexels);
+            material.SetFloat("_WaterSpeed", waterSpeed);
+            material.SetFloat("_OceanTime", Application.isPlaying ? Time.time : 0f);
+            material.SetInt(CountId, count);
+            material.SetVectorArray(BoxesXId, rowsX);
+            material.SetVectorArray(BoxesYId, rowsY);
+            material.SetInt("_EdgeCount", edgeCount);
+            material.SetVectorArray("_PolygonEdges", edges);
+            material.SetFloatArray("_EdgeOwners", edgeOwners);
         }
 
         public static bool EdgeIntersectsView(Vector2 a, Vector2 b, Rect view)
@@ -166,6 +230,15 @@ namespace DivingPrototype
             coneAngle = Mathf.Clamp(coneAngle, 2f, 180f);
             halfStrengthDistance = Mathf.Max(.001f, halfStrengthDistance);
             playerLightRadius = Mathf.Max(0f, playerLightRadius);
+            coreAngle = Mathf.Clamp(coreAngle, 1f, coneAngle - .01f);
+            spillInnerAngle = Mathf.Clamp(spillInnerAngle, 2f, 179.99f);
+            spillAngle = Mathf.Clamp(spillAngle, spillInnerAngle + .01f, 180f);
+            beamFadeStart = Mathf.Max(0f, beamFadeStart);
+            beamRange = Mathf.Max(beamFadeStart + .01f, beamRange);
+            spillFadeStart = Mathf.Max(0f, spillFadeStart);
+            spillRange = Mathf.Max(spillFadeStart + .01f, spillRange);
+            haloFeather = Mathf.Max(.001f, haloFeather);
+            playerHaloStrength = Mathf.Clamp01(playerHaloStrength);
             ValidateBlockers();
         }
 
@@ -203,6 +276,7 @@ namespace DivingPrototype
                     sprites[i].SetPropertyBlock(originalProperties[i]);
                 }
             if (aimCamera != null) aimCamera.backgroundColor = originalBackground;
+            UnregisterLightingMaterial(instance);
             if (Application.isPlaying) Destroy(instance);
             else DestroyImmediate(instance);
             instance = null;
