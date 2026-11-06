@@ -17,5 +17,8 @@ public class DayText : MonoBehaviour
     public void OnClicked()
     {
         GameState.days++;
+        GameState.npcsTalks.Add("1");
+        GameState.npcsTalks.Add("2");
+        GameState.npcsTalks.Add("3");
     }
 }

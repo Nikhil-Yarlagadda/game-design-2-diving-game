@@ -15,12 +15,14 @@ namespace DivingPrototype
         private readonly Dictionary<string, GameState.MiningSpotState> miningSpots = GameState.miningSpots;
         private readonly bool tutorialShown = GameState.deliveryTutorialShown;
         private readonly HashSet<string> talks = GameState.npcsTalks;
+        private readonly Dictionary<string, int> inventory = GameState.inventory;
         private readonly Dictionary<string, int> purchases = GameState.itemsBought;
         public void Dispose()
         {
             GameState.miningSpots = miningSpots;
             GameState.days = days; GameState.credits = credits; GameState.tellurium = tellurium;
             GameState.deliveryTutorialShown = tutorialShown;
+            GameState.inventory = inventory;
             GameState.npcsTalks = talks; GameState.itemsBought = purchases;
         }
     }
@@ -34,7 +36,7 @@ namespace DivingPrototype
             int checks = 0;
             Action<bool,string> check = (ok,label) => { FlashlightCheck.Require(ok,label); checks++; };
             GameState.reset();
-            check(GameState.days==1 && GameState.credits==100 && GameState.tellurium==0,"New game starts on interior day one with 100 credits");
+            check(GameState.days==1 && GameState.credits==0 && GameState.tellurium==0,"New game starts on interior day one with 0 credits");
             check(!GameState.deliveryTutorialShown && GameState.itemsBought[GameState.MiningMachine]==0,"New game clears tutorial eligibility and orders");
             var scene=EditorSceneManager.OpenPreviewScene("Assets/Scenes/Ocean Interactables.unity");
             try
@@ -61,7 +63,7 @@ namespace DivingPrototype
                 check(!tutorial.IsVisible && !GameState.deliveryTutorialShown,"No delivery tutorial for orders that could not spawn");
                 GameState.deliveryTutorialShown=true; GameState.credits=0;
                 GameState.reset();
-                check(GameState.credits==100 && !GameState.deliveryTutorialShown && GameState.itemsBought[GameState.MiningMachine]==0,"New game restores credits and resets delivery history");
+                check(GameState.credits==0 && !GameState.deliveryTutorialShown && GameState.itemsBought[GameState.MiningMachine]==0,"New game restores credits and resets delivery history");
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
             Debug.Log("Day tutorial and delivery setup checks passed: "+checks+" assertions. One blocked-delivery warning is expected.");

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine.Serialization;
 
 namespace DivingPrototype
@@ -20,6 +21,8 @@ namespace DivingPrototype
         [Min(.1f)] public float prospectDuration = 3f;
         [Min(1)] public int availableMachines = 3;
         public OceanTarget deliveryPrefab;
+        public GameObject panel;
+        public OceanTarget dropPrefab;
         [Min(.1f)] public float deliveryRadius = 10f;
         [FormerlySerializedAs("interiorScene")] public string resultsScene = "Result";
         public int DeliveredItemCount { get; private set; }
@@ -56,6 +59,7 @@ namespace DivingPrototype
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             Hydrox.Refill();
+            GameState.inventory.TryGetValue(GameState.MiningMachine, out availableMachines);
             BuildSpawnArea();
             SpawnDeliveries();
             foreach (var target in targets)
@@ -64,8 +68,7 @@ namespace DivingPrototype
 
         private void SpawnDeliveries()
         {
-            GameState.itemsBought.TryGetValue(GameState.MiningMachine, out int pending);
-            if (pending <= 0) return;
+            if (GameState.itemsBought.Values.All(count => count <= 0)) return;
             OceanTarget submarine = System.Array.Find(targets, t => t != null && t.kind == OceanTarget.TargetKind.Submarine);
             if (deliveryPrefab == null || deliveryPrefab.kind != OceanTarget.TargetKind.Item || submarine == null)
             {
@@ -74,22 +77,28 @@ namespace DivingPrototype
             }
             Vector2 center = submarine.transform.position;
             var all = new List<OceanTarget>(targets);
-            for (int i = 0; i < pending; i++)
+            foreach (string itemName in new List<string>(GameState.itemsBought.Keys))
             {
-                if (!TryFindDeliveryPosition(center, out Vector2 point))
+                int pending = GameState.itemsBought[itemName];
+                for (int i = 0; i < pending; i++)
                 {
-                    Debug.LogWarning("No safe delivery position within " + deliveryRadius + " units of the submarine. Remaining orders will be delivered on a later excursion.", this);
-                    break;
+                    if (!TryFindDeliveryPosition(center, out Vector2 point))
+                    {
+                        Debug.LogWarning("No safe delivery position. Remaining orders will be delivered on a later excursion.", this);
+                        return;
+                    }
+                    var item = Instantiate(deliveryPrefab, point, Quaternion.identity, oceanMap.transform);
+                    item.itemName = itemName;
+                    item.displayName = itemName;
+                    item.name = "Purchased " + itemName + " " + (DeliveredItemCount + 1);
+                    item.gameObject.SetActive(true);
+                    deliveries.Add(item);
+                    all.Add(item);
+                    targets = all.ToArray();
+                    DeliveredItemCount++;
+                    RemainingDeliveryCount++;
+                    GameState.itemsBought[itemName]--;
                 }
-                var item = Instantiate(deliveryPrefab, point, Quaternion.identity, oceanMap.transform);
-                item.name = "Purchased Mining Machine " + (DeliveredItemCount + 1);
-                item.gameObject.SetActive(true);
-                deliveries.Add(item);
-                all.Add(item);
-                targets = all.ToArray();
-                DeliveredItemCount++;
-                RemainingDeliveryCount++;
-                GameState.itemsBought[GameState.MiningMachine]--;
             }
         }
 
@@ -168,6 +177,7 @@ namespace DivingPrototype
 
         private void Update()
         {
+            if (panel != null && panel.activeSelf) { CancelProspect(); return; }
             if (Time.time > messageUntil) Message = "";
             if (transitioning) return;
             var mouse = Mouse.current;
@@ -277,6 +287,7 @@ namespace DivingPrototype
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
             if (!Closest.Place(Time.time)) return false;
             availableMachines--;
+            GameState.inventory[GameState.MiningMachine] = availableMachines;
             Notify("Mining started: " + OceanTarget.Rate(Closest.DisplayedTier) + " tellurium / minute (last prospected).");
             MachinePlaced?.Invoke();
             return true;
@@ -289,19 +300,35 @@ namespace DivingPrototype
             if (Closest == null || InsideSubmarine || transitioning) return;
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
-                if (!deliveries.Remove(Closest)) return;
+                bool isDelivery = deliveries.Remove(Closest);
+                string itemName = string.IsNullOrEmpty(Closest.itemName) ? GameState.MiningMachine : Closest.itemName;
                 ItemsCollected++;
-                availableMachines++;
-                RemainingDeliveryCount--;
+                if (itemName == "Tellurium")
+                {
+                    Tellurium++;
+                    GameState.tellurium = Tellurium;
+                }
+                else
+                {
+                    GameState.inventory.TryGetValue(itemName, out int count);
+                    GameState.inventory[itemName] = count + 1;
+                    if (itemName == GameState.MiningMachine) availableMachines++;
+                }
                 Closest.gameObject.SetActive(false);
-                DeliveryCollected?.Invoke(RemainingDeliveryCount);
-                Notify("Purchased mining machine collected.");
+                if (isDelivery)
+                {
+                    RemainingDeliveryCount--;
+                    DeliveryCollected?.Invoke(RemainingDeliveryCount);
+                }
+                Notify(itemName + " collected.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)
             {
                 int amount = Closest.Retrieve(Time.time);
                 Tellurium += amount;
                 availableMachines++;
+                GameState.inventory[GameState.MiningMachine] = availableMachines;
+                GameState.tellurium = Tellurium;
                 if (amount > 0) PositiveRetrieval?.Invoke();
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
@@ -334,6 +361,72 @@ namespace DivingPrototype
             GameState.tellurium = Tellurium;
             SceneChanger.ChangeScene(resultsScene);
             return true;
+        }
+
+        public bool DropItem(string itemName)
+        {
+
+            Debug.Log("DropItem called: " + itemName);
+            
+            // find something to clone
+            var template = dropPrefab;
+            if (template == null)
+                foreach (var t in targets)
+                    if (t != null && t.kind == OceanTarget.TargetKind.Item) { template = t; break; }
+
+            if (template == null)
+            {
+                Notify("Can't drop that here.");
+                return false;
+            }
+
+            // take it out of the inventory
+            if (itemName == "Tellurium")
+            {
+                if (Tellurium <= 0) return false;
+                Tellurium--;
+                GameState.tellurium = Tellurium;
+            }
+            else if (GameState.inventory.TryGetValue(itemName, out int count) && count > 0)
+            {
+                if (count <= 1) GameState.inventory.Remove(itemName);
+                else GameState.inventory[itemName] = count - 1;
+
+                if (itemName == "Mining Machine")
+                    availableMachines = Mathf.Max(0, availableMachines - 1);
+            }
+            else return false;
+
+            // create the pickup
+            var drop = Instantiate(template, template.transform.parent);
+            drop.kind = OceanTarget.TargetKind.Item;
+            drop.itemName = itemName;
+            drop.displayName = itemName;
+            drop.name = "Dropped " + itemName;
+            drop.gameObject.SetActive(true);
+            drop.transform.position = FindDropPoint(drop);
+
+            var list = new System.Collections.Generic.List<OceanTarget>(targets);
+            list.Add(drop);
+            targets = list.ToArray();
+
+            Notify(itemName + " dropped.");
+            return true;
+        }
+
+        private Vector2 FindDropPoint(OceanTarget drop)
+        {
+            Vector2 origin = transform.position;
+            for (float radius = 0.8f; radius <= 1.4f; radius += 0.3f)
+            {
+                for (int i = 0; i < 12; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / 12f;
+                    var point = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (CanSpawn(point, drop)) return point;
+                }
+            }
+            return origin; // nowhere free nearby, drop at the player's feet
         }
 
         private void StopOceanControls()

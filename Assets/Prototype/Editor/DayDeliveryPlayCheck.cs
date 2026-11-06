@@ -42,7 +42,7 @@ namespace DivingPrototype
             {
                 Application.runInBackground=true;
                 GameState.reset();
-                check(GameState.days==1 && GameState.credits==100,"New game begins with 100 credits on interior day one");
+                check(GameState.days==1 && GameState.credits==0,"New game begins with 0 credits on interior day one");
                 WorldInteractions.NewDay();
                 await Task.Delay(150);
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
@@ -60,14 +60,17 @@ namespace DivingPrototype
                 await Task.Delay(100);
                 check(SceneManager.GetActiveScene().name=="Result" && GameState.days==2,"Entering Results does not advance the day early");
                 UnityEngine.Object.FindAnyObjectByType<ResultsText>().onLeave();
-                check(GameState.days==3 && GameState.credits==50,"Leaving Results starts interior day three and settles credits");
+                check(GameState.days==3 && GameState.credits==-50,"Leaving Results starts interior day three and settles credits");
                 await SceneManager.LoadSceneAsync("Shop");
                 await Task.Delay(100);
-                var buy=UnityEngine.Object.FindAnyObjectByType<BuyButton>();
-                buy.onClicked(); buy.onClicked();
+                var buy=UnityEngine.Object.FindAnyObjectByType<Shop>();
+                var machine=UnityEngine.Object.FindObjectsByType<Item>().First(i=>i.title==GameState.MiningMachine);
+                machine.onClicked();
+                GameState.credits=machine.cost * 3 - 1;
+                buy.buyClicked(); buy.buyClicked();
                 int paidCredits=GameState.credits;
-                buy.onClicked();
-                check(paidCredits==10 && GameState.credits==10 && GameState.itemsBought[GameState.MiningMachine]==2,"Shop queues two paid orders and rejects unaffordable purchase");
+                buy.buyClicked();
+                check(paidCredits==machine.cost-1 && GameState.credits==paidCredits && GameState.itemsBought[GameState.MiningMachine]==2,"Shop queues two paid orders and rejects unaffordable purchase");
                 WorldInteractions.NewDay();
                 await Task.Delay(150);
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
@@ -148,8 +151,29 @@ namespace DivingPrototype
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity); await Task.Delay(150);
                 check(gasExpired && SceneManager.GetActiveScene().name=="Result","Gas depletion expires deliveries through the same Results path");
                 check(GameState.itemsBought[GameState.MiningMachine]==0,"Gas expiry does not requeue lost packages");
+                // Verify the interior inventory and generic deliveries share the same runtime counts.
+                GameState.itemsBought["Camera Module"] = 1;
+                GameState.itemsBought[GameState.MiningMachine] = 1;
+                await loadOcean();
+                int initialMachines = ocean.availableMachines;
+                check(initialMachines == GameState.inventory[GameState.MiningMachine], "Excursion starts from persistent inventory");
+                foreach (var delivery in ocean.targets.Where(t => t.kind == OceanTarget.TargetKind.Item).ToArray())
+                {
+                    jump(delivery.transform.position); ocean.Interact();
+                }
+                check(GameState.inventory["Camera Module"] == 1 && ocean.RemainingDeliveryCount == 0, "Non-machine orders enter inventory and complete deliveries");
+                check(ocean.availableMachines == initialMachines + 1 && GameState.inventory[GameState.MiningMachine] == ocean.availableMachines, "Machine delivery updates both counts");
+                check(ocean.DropItem("Camera Module") && !GameState.inventory.ContainsKey("Camera Module"), "Drop removes generic inventory item");
+                var dropped = ocean.targets.Last();
+                jump(dropped.transform.position); ocean.Interact();
+                check(GameState.inventory["Camera Module"] == 1 && ocean.RemainingDeliveryCount == 0, "Dropped item can be collected without counting as a delivery");
+                var mine = ocean.targets.First(t => t.kind == OceanTarget.TargetKind.MiningSpot && t.ActualTier > 0);
+                mine.Reveal(Time.time); jump(mine.transform.position);
+                check(ocean.PlaceMachine() && GameState.inventory[GameState.MiningMachine] == initialMachines, "Placement removes machine from persistent inventory");
+                ocean.Interact();
+                check(!mine.HasMachine && GameState.inventory[GameState.MiningMachine] == initialMachines + 1, "Retrieval returns machine to persistent inventory");
                 GameState.reset();
-                check(GameState.credits==100 && GameState.days==1 && !GameState.deliveryTutorialShown && GameState.miningSpots.Count==0,"New game resets credits, tutorial history and mining discoveries");
+                check(GameState.credits==0 && GameState.days==1 && !GameState.deliveryTutorialShown && GameState.miningSpots.Count==0,"New game resets credits, tutorial history and mining discoveries");
                 await loadOcean();
                 check(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.MiningSpot).All(t=>!t.IsProspected && t.ActualTier==t.level && !t.GetComponent<SpriteRenderer>().enabled),"New-game spots start hidden with fresh reserves");
                 return new {checks,firstExcursionDay=2,firstDeliveryDay=4,manualExpiry=true,gasExpiry=true,layoutSizes=4};

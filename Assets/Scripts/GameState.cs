@@ -16,6 +16,7 @@ public static class GameState
     public static int tellurium;
     public static HashSet<string> npcsTalks;
     public static Dictionary<string, int> itemsBought;
+    public static Dictionary<string, int> inventory;
     
 
     // Also initialize safely when a scene is opened directly in the editor.
@@ -25,11 +26,13 @@ public static class GameState
     {
         miningSpots = new Dictionary<string, MiningSpotState>();
         days = 1;
-        credits = 100;
+        credits = 0;
         deliveryTutorialShown = false;
         tellurium = 0;
         npcsTalks = new HashSet<string>();
         itemsBought = new Dictionary<string, int>();
         itemsBought[MiningMachine] = 0;
+        inventory = new Dictionary<string, int>();
+        inventory[MiningMachine] = 3;
     }
 }
