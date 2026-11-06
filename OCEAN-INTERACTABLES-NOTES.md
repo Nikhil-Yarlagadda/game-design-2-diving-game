@@ -1,6 +1,8 @@
 # Ocean Scene Interactables: Acceptance and Design Notes
 
-Updated: 2026-10-17. Playable scene: `Assets/Scenes/Ocean Interactables.unity`.
+Updated: 2026-10-19. Playable scene: `Assets/Scenes/Ocean Interactables.unity`.
+
+> Current day/tutorial and shop rules are in [Day-specific tutorials and shop deliveries](#day-specific-tutorials-and-shop-deliveries-2026-10-19). Prospecting and depletion are described below; earlier checklists record previous prototype behavior.
 
 ## Requirement Checklist
 
@@ -149,3 +151,44 @@ Every departure from the Interior placeholder starts at the original map spawn (
 The four outer boundary colliders retain collision while their leftover default Square sprites are hidden.
 
 Departure validation: **150 Play assertions passed** on Unity 6000.6.4f1 / Windows D3D12, including manual departure and depletion at a distant location followed by original-spawn departure with zero velocity. Inventory, mining and randomized pickup persistence still pass. Ocean editor and polygon GPU checks also passed. The depletion check accelerates elapsed consumption; it intentionally logs one missing-scene configuration error in its separate failure case. No standalone build or full three-minute endurance run was performed.
+
+## Prospecting, depletion, and excursion tutorial (2026-10-19)
+
+This section supersedes the earlier instant right-click scan, fading highlights, and fixed tier-per-minute yields.
+
+- Release all movement keys and stop drifting, then hold **E for 3 seconds**. Scanning locks swimming and interactions; releasing E cancels without a penalty. Gas and mining continue. Completed scans reveal all spot centers in the gameplay viewport and start a **5-second cooldown**. Holding E does not repeat scans.
+- Unprospected spots are invisible and cannot be selected or mined. Discovered spots retain their tier markers throughout the current game, including submarine visits. The minimap still tracks only the submarine and items.
+- Tier 1 produces 1 tellurium every 30 seconds, then exhausts after 10. Tier 2 produces 1 every 15 seconds, downgrading after 20. Tier 3 produces 1 every 10 seconds, downgrading after 30. Tier 4 produces 1 every 5 seconds, downgrading after 40. Tier 5 produces 2 every 5 seconds, downgrading after 60. Each lower tier has its own allowance, for 160 total tellurium in a fresh tier-5 spot.
+- Displayed tiers and estimated rates are snapshots of the last completed prospect. Mining does not update them. Re-prospect to refresh; a changed tier gets a three-second amber label pulse with its old and new tier. Actual stored ore remains visible in the nearby machine prompt. Secretly exhausted spots can waste a machine placement until prospecting confirms depletion.
+- Left-click still acts on the nearest unobstructed highlighted target within 1.8 units. Retrieval returns the machine and all stored ore. Retrieval stops production; replacing the machine starts a fresh tick interval but preserves depleted reserves.
+- An eight-stage tutorial restarts on every departure. Stages 2–6 provide at least five seconds of reading time and buffer milestones. Stages 6 and 7 remain visible for thirty seconds each. Submarine entry discards current tutorial progress; departure resets it. Existing machines and ore remain eligible for later tutorials.
+- The tutorial retains the designer's overnight breakage warning. **There is no overnight system or machine breakage penalty yet.** Submarine visits preserve deployed machines, which continue mining.
+- The original transparent diver PNG replaces the placeholder, with white tint and a 1.5-world-unit visible alpha height. Physics, movement, camera and mouse flashlight aim are unchanged; the upward-facing artwork rotates to follow the player camera aim.
+- All exploration, reserve and tutorial state is session-only; restarting the game resets it. No persistent save or day system is introduced.
+
+Checks: `Check Mining And Tutorial` covers discrete ticks, every downgrade, exhaustion, stale information, replacement, duplicate retrieval, tutorial reading/timing/milestone resets, and diver import. `Check Ocean Interactions` includes it and verifies scan timing, persistent discovery and viewport filtering. `Check Ocean In Play Mode` exercises held-E input, cancellation, movement locking and the existing scene/minimap/lighting regressions.
+
+Validation on Unity 6000.6.4f1 / macOS Metal: mining/tutorial editor checks passed 86 assertions; the final ocean Play regression passed 161 assertions, including opposing movement keys and gas depletion interrupting a scan. The missing-submarine test intentionally logs one configuration error. All seven tutorial messages passed 84 overflow, viewport and click-through checks across 1280×720, 1920×1080, 1920×1200 and 2560×1080, with screenshots reviewed at 720p and 16:10. Live stale-tier and re-prospect feedback checks confirmed the old/new label and its three-second expiry. The imported PNG checksum matches the attachment. Screenshots and test reports are ignored local artifacts under `Temp/tutorial-review` and `Temp/diving-play-result.json`. No standalone build or full three-minute endurance dive was performed.
+
+## Day-specific tutorials and shop deliveries (2026-10-19)
+
+This section supersedes the earlier tutorial replay and random test-item rules.
+
+- A new game starts indoors on day 1 with **100 credits**. Bed departures increment to excursion days 2, 4, 6, and so on; leaving Results increments to interior days 3, 5, 7, and so on. Both existing day increments remain intact.
+- The mining/prospecting tutorial appears only on **day 2**, with its existing reading times and stages. Later excursions do not replay it.
+- The first later excursion that actually receives shop purchases displays the Company delivery warning with radar guidance. It stays visible until the final delivered package is collected, without a timer or dismissal action. Leaving early consumes this one-time guidance too; starting a new game restores eligibility.
+- The 30 authored test pickups and their highlights were removed. `PurchasedMiningMachine.prefab` is the reusable delivery package. Without pending purchases the ocean has no item pickups, and its minimap shows only the submarine.
+- Purchased machines spawn at safe, reachable locations within **Player > Ocean Interactions > Delivery Radius**, default **10 world units** from the submarine. Existing obstacle clearance and package spacing checks remain in effect. If there is no valid location, the unspawned order remains pending for a later excursion and a warning is logged.
+- Each successfully spawned package consumes one pending order. Left-clicking a nearby highlighted package grants one machine, removes its minimap marker, and updates the tutorial immediately. Repeated clicks cannot collect the same package twice.
+- Manual submarine return and gas depletion share the Results transition and delivery cleanup. Uncollected packages expire and cannot respawn. The tellurium total is transferred before Results loads; day advancement still happens when leaving Results.
+- `GameState.reset()` restores starting credits, clears pending orders and resets delivery tutorial history. State also initializes safely when entering a scene directly in the editor.
+
+Validation entry points: `Check Day Tutorials And Delivery Setup` covers reset, day gating, prefab/scene cleanup, configurable radius and failed-placement retention. `Check Day Deliveries In Play Mode` exercises actual shop purchases, alternating day transitions, minimap/lighting integration, immediate tutorial completion, repeat suppression and manual/gas expiry. It also checks the delivery panel at 720p, 1080p, 16:10 and ultrawide resolutions. `Check Ocean In Play Mode` now queues explicit test purchases and follows the Results flow rather than the former additive Interior round trip. These checks change runtime state; restart Play afterward.
+
+Day/delivery validation on Unity 6000.6.4f1 / macOS Metal: **140 ocean Play assertions** and **37 day/delivery Play assertions** passed in the final combined run. The editor checks also passed, including 86 mining/tutorial assertions and 18 day/delivery setup assertions; the blocked-area setup intentionally logs one warning and preserves its pending orders. Checks confirmed day 2 mining guidance, day 4 first-purchase guidance, both expiry paths, reset to 100 credits, minimap/lighting integration, and delivery text layout at 1280×720, 1920×1080, 1920×1200 and 2560×1080. Visual review confirmed the warning's bold emphasis and viewport placement. The broader check exposed an Awake/OnEnable ordering issue in target spacing; placement now includes active scene objects before their components finish enabling. Reports and screenshots are ignored local files in `Temp/all-day-checks.json` and `Temp/delivery-review`. No standalone build was run.
+
+### Mining discoveries across excursion days
+
+Prospected mining spots now retain their markings and last-prospected tiers throughout the current game, including ocean scene reloads between days 2, 4, 6 and later excursions. Each authored spot has a stable identifier; current-game state retains its discovery, displayed tier, actual tier and partial depletion. Reloading the ocean does not refresh the displayed tier: re-prospecting is still required to reveal changes. This state does not recreate deployed machines or their stored ore. Starting a new game clears discoveries and restores the authored reserves.
+
+Persistence validation: 46 day/delivery Play assertions passed, including restored day-2 discoveries on day 4, visible stale tier labels, retained partial depletion, re-prospecting updates retained on day 6, and fresh hidden spots after a new-game reset. Ocean/mining/tutorial editor checks also passed.
