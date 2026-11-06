@@ -40,7 +40,7 @@ namespace DivingPrototype
                 foreach (var particles in new[] { vfx.Bubbles, vfx.Suspended })
                 {
                     var material = particles.GetComponent<ParticleSystemRenderer>().sharedMaterial;
-                    FlashlightCheck.Near(material.GetFloat("_SpillIntensity"), .18f, "Particle spill matches scenery");
+                    FlashlightCheck.Near(material.GetFloat("_SpillIntensity"), renderer.sharedMaterial.GetFloat("_SpillIntensity"), "Particle spill matches scenery");
                     FlashlightCheck.Require(material.GetVector("_FlashlightOrigin") == renderer.sharedMaterial.GetVector("_FlashlightOrigin"), "Particle light tracks player");
                 }
                 CheckWaterOverlay(vfx, light);

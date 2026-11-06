@@ -17,7 +17,7 @@ public class Shop : MonoBehaviour
     }
     void Update()
     {
-        if(GameState.credits < cost)
+        if(string.IsNullOrEmpty(item) || GameState.credits < cost)
             button.interactable = false;
         else
             button.interactable = true;
@@ -29,6 +29,7 @@ public class Shop : MonoBehaviour
 
     public void buyClicked()
     {
+        if (string.IsNullOrEmpty(item) || cost < 0 || GameState.credits < cost) return;
         GameState.credits -= cost;
         if(GameState.itemsBought.ContainsKey(item))
             GameState.itemsBought[item]++;
