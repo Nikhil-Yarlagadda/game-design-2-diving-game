@@ -1,5 +1,7 @@
 # Ocean map resizer
 
+Technical editor-tool guide. The [Sunken Contract Design Doc](docs/Sunken%20Contract%20Design%20Doc.md), particularly **EXTERIOR MAP** and **EXCURSION**, defines the intended map and gameplay. The instructions below describe how the tool edits a Unity scene; they do not establish game design requirements or imply that the full design is implemented.
+
 Open `Ocean Interactables` outside Play mode and choose **Diving Prototype → Ocean Map Resizer**.
 
 1. Choose **Capture Baseline** to establish the current layout as scale **1** for this editor session.
