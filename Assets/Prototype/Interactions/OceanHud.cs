@@ -142,7 +142,8 @@ namespace DivingPrototype
                 : target.DisplayedTier == 0 ? "Depleted (last prospected)"
                 : "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier) + " / min (last prospected)  |  LEFT CLICK  Place machine";
             if (interactions.IsProspecting) prompt.text = "Hold E to finish prospecting • Release to cancel";
-            if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\nSTOP + HOLD E  Prospect (3s)"
+            if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\nHOLD E  Prospect (3s)"
+                + (interactions.IsProspecting ? " • Thrust disabled" : "")
                 + (interactions.CooldownRemaining > 0f ? " (" + interactions.CooldownRemaining.ToString("0.0") + "s)" : " (ready)");
             if (inside) return;
             float radius = Mathf.Min(minimapRoot.rect.width, minimapRoot.rect.height) * .5f - 6;

@@ -237,21 +237,16 @@ namespace DivingPrototype
             if (now < nextProspect || !CanActInOcean) return false;
             if (body == null) body = GetComponent<Rigidbody2D>();
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
-            if (SwimmerController.HasMovementKeysPressed() || body.linearVelocity.sqrMagnitude > .0001f)
-            {
-                Notify("Stop moving before prospecting");
-                return false;
-            }
             IsProspecting = true;
             scanStarted = now;
-            swimmer.SetMovementLocked(true);
+            swimmer.PropulsionLocked = true;
             return true;
         }
 
         public void CancelProspect()
         {
             IsProspecting = false;
-            if (swimmer != null) swimmer.SetMovementLocked(false);
+            if (swimmer != null) swimmer.PropulsionLocked = false;
         }
 
         public void CompleteProspect(float now)

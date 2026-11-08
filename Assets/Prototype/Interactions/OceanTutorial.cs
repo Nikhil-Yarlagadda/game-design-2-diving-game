@@ -15,7 +15,7 @@ namespace DivingPrototype
         private OceanInteractions ocean;
         public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : IsVisible ? Messages[Stage - 1] : "";
         private static readonly string[] Messages = {
-            "Stop moving, then <b>hold E for 3 seconds</b> to use your prospecting tool.",
+            "<b>Hold E for 3 seconds</b> to use your prospecting tool. You cannot propel yourself while scanning, but will coast to a stop.",
             "The prospecting tool will reveal nearby tellurium mining spots.\nMove near a prospected mining spot, then left-click while it is highlighted to place a mining machine.",
             "Mining machines will collect tellurium over time. They will gradually deplete the mining spot.\n<b>You must re-prospect a spot to see if it has been depleted yet. Prospect your mining spots frequently, or you may be mining less tellurium than you think.</b>",
             "Move near a mining machine, then left-click while it is highlighted to retrieve it and the tellurium it mined.",

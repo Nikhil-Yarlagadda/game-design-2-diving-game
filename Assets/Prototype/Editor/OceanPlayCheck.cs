@@ -144,15 +144,19 @@ namespace DivingPrototype
                 require(!ocean.IsProspecting && ocean.CooldownRemaining==0,"Right click no longer prospects");
                 pointer(false,false,null);
                 keys(new[]{Key.E,Key.D});await Task.Delay(150);
-                require(!ocean.IsProspecting && ocean.Message.Contains("Stop moving"),"Movement input rejects prospecting");
+                require(ocean.IsProspecting && swimmer.PropulsionLocked,"Movement input does not prevent prospecting");
                 keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
                 keys(new[]{Key.E,Key.W,Key.S});await Task.Delay(150);
-                require(!ocean.IsProspecting,"Opposing movement keys must also be released before scanning");
+                require(ocean.IsProspecting && swimmer.PropulsionLocked,"Opposing movement keys do not prevent scanning");
+                keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
+                body.linearVelocity=Vector2.right;
+                keys(new[]{Key.E,Key.D});await Task.Delay(100);
+                require(ocean.IsProspecting && swimmer.PropulsionLocked && body.linearVelocity.x>0f && body.linearVelocity.x<1f,"Scanning preserves coasting and blocks propulsion");
                 keys(Array.Empty<Key>());await Task.Delay(150);jump(scanMine.transform.position);
                 keys(new[]{Key.E});await Task.Delay(500);
-                require(ocean.IsProspecting && swimmer.MovementLocked,"Hold E locks stationary diver");
+                require(ocean.IsProspecting && swimmer.PropulsionLocked,"Hold E disables propulsion");
                 keys(Array.Empty<Key>());await Task.Delay(150);
-                require(!ocean.IsProspecting && !swimmer.MovementLocked && ocean.CooldownRemaining==0,"Early release cancels without cooldown");
+                require(!ocean.IsProspecting && !swimmer.PropulsionLocked && ocean.CooldownRemaining==0,"Early release restores propulsion without cooldown");
                 keys(new[]{Key.E});await Task.Delay(500);
                 keys(new[]{Key.E,Key.D});var scanPosition=body.position;await Task.Delay(800);
                 require(Vector2.Distance(body.position,scanPosition)<.001f,"Movement remains locked during held scan");
@@ -284,12 +288,12 @@ namespace DivingPrototype
                 bool ended = false;
                 var departureVfx = ocean.GetComponent<OceanVfx>();
                 ocean.ExcursionEnded += () => {
-                    ended = !ocean.IsProspecting && !swimmer.MovementLocked && !tutorial.IsVisible
+                    ended = !ocean.IsProspecting && !swimmer.PropulsionLocked && !swimmer.MovementLocked && !tutorial.IsVisible
                         && ocean.RemainingDeliveryCount == 0
                         && departureVfx.Bubbles.particleCount == 0 && departureVfx.Suspended.particleCount == 0
                         && ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item).All(t=>!t.gameObject.activeSelf);
                 };
-                require(ocean.Prospect(Time.time) && swimmer.MovementLocked,"Begin scan before simulated gas depletion");
+                require(ocean.Prospect(Time.time) && swimmer.PropulsionLocked,"Begin scan before simulated gas depletion");
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
                 require(!ocean.Prospect(Time.time+10) && !ocean.PlaceMachine(),"Empty tank blocks scanning and placement");
                 await Task.Delay(200);
