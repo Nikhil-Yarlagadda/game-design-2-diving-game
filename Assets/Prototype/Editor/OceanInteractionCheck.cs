@@ -92,7 +92,9 @@ namespace DivingPrototype
                 var nearby = mines.OrderBy(m=>Vector2.Distance(m.transform.position, interactions.transform.position)).First();
                 interactions.oceanCamera.transform.position = nearby.transform.position + new Vector3(0,0,-10);
                 foreach (var m in mines) typeof(OceanTarget).GetField("<IsProspected>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(m, false);
-                FlashlightCheck.Require(interactions.Prospect(100), "Stationary prospect starts channel");
+                var body = interactions.GetComponent<Rigidbody2D>();
+                body.linearVelocity = Vector2.right;
+                FlashlightCheck.Require(interactions.Prospect(100) && interactions.GetComponent<SwimmerController>().PropulsionLocked && body.linearVelocity == Vector2.right, "Prospecting disables propulsion without clearing momentum");
                 interactions.CompleteProspect(102.99f);
                 FlashlightCheck.Require(interactions.IsProspecting && mines.All(t => !t.IsProspected), "No reveal before three seconds");
                 interactions.CompleteProspect(103);
@@ -103,7 +105,7 @@ namespace DivingPrototype
                 FlashlightCheck.Require(mines.Except(visible).All(t => !t.IsProspected), "Off-screen mines stay hidden");
                 FlashlightCheck.Require(interactions.Prospect(108), "Scan available exactly five seconds after completion");
                 interactions.CancelProspect();
-                FlashlightCheck.Require(!interactions.GetComponent<SwimmerController>().MovementLocked, "Cancellation releases movement lock");
+                FlashlightCheck.Require(!interactions.GetComponent<SwimmerController>().PropulsionLocked, "Cancellation releases propulsion lock");
                 var light = new SerializedObject(interactions.GetComponent<FlashlightController>());
                 var polygons = light.FindProperty("polygonBlockers");
                 int edgeCount = 0;
