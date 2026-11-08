@@ -71,6 +71,7 @@ public class ExcursionInventory : MonoBehaviour
 
     public void Toggle()
     {
+        if (PauseManager.BlocksInput || SceneChanger.IsTransitioning || (ocean != null && (ocean.ReturnConfirmationOpen || ocean.IsTransitioning))) return;
         if (panel.activeSelf) Close();
         else Open();
     }
