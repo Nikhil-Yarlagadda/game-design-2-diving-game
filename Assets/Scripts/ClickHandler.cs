@@ -18,7 +18,7 @@ public class ClickHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (InventoryButton.IsOpen) return;
+        if (InventoryButton.IsOpen || SceneChanger.IsTransitioning) return;
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
 
