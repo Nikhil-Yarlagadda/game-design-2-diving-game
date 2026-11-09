@@ -6928,10 +6928,16 @@ MonoBehaviour:
   spawnMin: {x: -40.8508, y: -39.102}
   spawnMax: {x: 38.9856, y: 38.6356}
   interactionRange: 1.8
+<<<<<<< HEAD
   prospectCooldown: 5
   prospectDuration: 3
   availableMachines: 3
   deliveryPrefab: {fileID: 51960121, guid: 25b227a3c64f400a9b84a0f192226f7b, type: 3}
+=======
+  prospectCooldown: 2
+  availableMachines: 0
+  interiorScene: Interior
+>>>>>>> c1d12f3 (debugging equip screen)
   panel: {fileID: 1953888774}
   dropPrefab: {fileID: 3354881734746019844, guid: 873d1045a72f653448db24022009bcd0, type: 3}
   deliveryRadius: 10
