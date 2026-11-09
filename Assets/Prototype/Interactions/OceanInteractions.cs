@@ -53,18 +53,15 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
-        public GameObject panel;            // InventoryPanel
-        public OceanTarget dropPrefab;
         private ExcursionInventory inventoryUI;
 
         private void Awake()
         {
-            Debug.Log("Item Count to start is " + itemCount);
             inventoryUI = FindAnyObjectByType<ExcursionInventory>();
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             Hydrox.Refill();
-            GameState.inventory.TryGetValue(GameState.MiningMachine, out availableMachines);
+            GameState.excursionInventory.TryGetValue(GameState.MiningMachine, out availableMachines);
             BuildSpawnArea();
             SpawnDeliveries();
             foreach (var target in targets)

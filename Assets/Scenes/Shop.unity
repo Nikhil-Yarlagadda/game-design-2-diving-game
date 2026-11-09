@@ -1323,7 +1323,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
   cost: 70
-  title: 'Stimulant Canister  '
+  title: Stimulant Canister
   description: "A small canister of envigorating gas. Can be used during excursions for a boost of energy. \\n\\nIt\u2019s a wonder how eager the Company is to supply these. "
 --- !u!114 &440359745
 MonoBehaviour:
@@ -4186,7 +4186,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1959313020}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.9999944
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4270,7 +4270,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0004082096, y: 0.000052929397}
+  m_AnchoredPosition: {x: 0.00037310622, y: 0.000052929397}
   m_SizeDelta: {x: -68.98779, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1956703690
