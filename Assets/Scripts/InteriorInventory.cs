@@ -17,13 +17,13 @@ public class InteriorInventory : MonoBehaviour
             sb.AppendLine(item.Key + " x" + item.Value);
         }
 
-        /*sb.AppendLine("items bought:");
+        sb.AppendLine("items bought:");
 
         foreach (var item in GameState.itemsBought)
         {
             if (item.Value <= 0) continue;
             sb.AppendLine(item.Key + " x" + item.Value);
-        }*/
+        }
 
         listText.text = sb.Length > 0 ? sb.ToString() : "Nothing yet.";
     }

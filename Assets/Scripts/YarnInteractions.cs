@@ -9,6 +9,6 @@ public class WorldInteractions : MonoBehaviour
     {
         GameState.days++;
         GameState.npcsTalks = new HashSet<string>();
-        SceneChanger.ChangeScene("Ocean Interactables");
+        SceneChanger.ChangeScene("Equip");
     }     
 }

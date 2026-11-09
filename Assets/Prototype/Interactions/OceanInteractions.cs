@@ -19,7 +19,7 @@ namespace DivingPrototype
         [Min(.1f)] public float interactionRange = 1.8f;
         [Min(0f)] public float prospectCooldown = 5f;
         [Min(.1f)] public float prospectDuration = 3f;
-        [Min(1)] public int availableMachines = 3;
+        [System.NonSerialized] public int availableMachines = GameState.excursionInventory[GameState.MiningMachine];
         public OceanTarget deliveryPrefab;
         public GameObject panel;
         public OceanTarget dropPrefab;
@@ -53,9 +53,14 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
+        public GameObject panel;            // InventoryPanel
+        public OceanTarget dropPrefab;
+        private ExcursionInventory inventoryUI;
 
         private void Awake()
         {
+            Debug.Log("Item Count to start is " + itemCount);
+            inventoryUI = FindAnyObjectByType<ExcursionInventory>();
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             Hydrox.Refill();
@@ -287,7 +292,7 @@ namespace DivingPrototype
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
             if (!Closest.Place(Time.time)) return false;
             availableMachines--;
-            GameState.inventory[GameState.MiningMachine] = availableMachines;
+            GameState.excursionInventory["Mining Machine"]--;
             Notify("Mining started: " + OceanTarget.Rate(Closest.DisplayedTier) + " tellurium / minute (last prospected).");
             MachinePlaced?.Invoke();
             return true;
@@ -300,8 +305,15 @@ namespace DivingPrototype
             if (Closest == null || InsideSubmarine || transitioning) return;
             if (Closest.kind == OceanTarget.TargetKind.Item)
             {
+                if (inventoryUI != null && !inventoryUI.CanFit(Closest.itemName))
+                {
+                    Notify("Inventory full.");
+                    return;
+                }
+
                 bool isDelivery = deliveries.Remove(Closest);
                 string itemName = string.IsNullOrEmpty(Closest.itemName) ? GameState.MiningMachine : Closest.itemName;
+                
                 ItemsCollected++;
                 if (itemName == "Tellurium")
                 {
@@ -310,9 +322,13 @@ namespace DivingPrototype
                 }
                 else
                 {
-                    GameState.inventory.TryGetValue(itemName, out int count);
-                    GameState.inventory[itemName] = count + 1;
-                    if (itemName == GameState.MiningMachine) availableMachines++;
+                    if (GameState.excursionInventory.ContainsKey(itemName))
+                        GameState.excursionInventory[itemName]++;
+                    else
+                        GameState.excursionInventory[itemName] = 1;
+
+                    if (itemName == "Mining Machine")
+                        availableMachines++;
                 }
                 Closest.gameObject.SetActive(false);
                 if (isDelivery)
@@ -324,13 +340,28 @@ namespace DivingPrototype
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)
             {
-                int amount = Closest.Retrieve(Time.time);
+                int room = inventoryUI != null ? inventoryUI.RoomFor("Tellurium") : int.MaxValue;
+
+                if (Closest.YieldAt(Time.time) > 0 && room <= 0)
+                {
+                    Notify("Inventory full.");
+                    return;
+                }
+
+                int amount = Closest.Retrieve(Time.time, room);
                 Tellurium += amount;
-                availableMachines++;
-                GameState.inventory[GameState.MiningMachine] = availableMachines;
                 GameState.tellurium = Tellurium;
                 if (amount > 0) PositiveRetrieval?.Invoke();
-                Notify("Machine retrieved. +" + amount + " tellurium.");
+                if (!Closest.HasMachine)   // fully retrieved, the machine comes back too
+                {
+                    availableMachines++;
+                    GameState.excursionInventory[GameState.MiningMachine] = availableMachines;
+                    Notify("Machine retrieved. +" + amount + " tellurium.");
+                }
+                else                       // partial, the machine stays deployed
+                {
+                    Notify("Inventory full. Took " + amount + " tellurium, the rest stays in the machine.");
+                }
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
             else if (Closest.kind == OceanTarget.TargetKind.Submarine) RequestEnterSubmarine();
@@ -359,6 +390,7 @@ namespace DivingPrototype
             ExcursionEnded?.Invoke();
             InsideSubmarine = true;
             GameState.tellurium = Tellurium;
+            GameState.ReturnFromExcursion(); 
             SceneChanger.ChangeScene(resultsScene);
             return true;
         }
@@ -387,10 +419,10 @@ namespace DivingPrototype
                 Tellurium--;
                 GameState.tellurium = Tellurium;
             }
-            else if (GameState.inventory.TryGetValue(itemName, out int count) && count > 0)
+            else if (GameState.excursionInventory.TryGetValue(itemName, out int count) && count > 0)
             {
-                if (count <= 1) GameState.inventory.Remove(itemName);
-                else GameState.inventory[itemName] = count - 1;
+                if (count <= 1) GameState.excursionInventory.Remove(itemName);
+                else GameState.excursionInventory[itemName] = count - 1;
 
                 if (itemName == "Mining Machine")
                     availableMachines = Mathf.Max(0, availableMachines - 1);
