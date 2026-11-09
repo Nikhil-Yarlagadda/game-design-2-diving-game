@@ -117,15 +117,22 @@ namespace DivingPrototype
             if (machine != null) machine.SetActive(true);
             return true;
         }
-        public int Retrieve(float now)
+
+        public int Retrieve(float now, int maxAmount = int.MaxValue)
         {
-            if (!HasMachine) return 0;
-            AdvanceMining(now);
-            int amount = StoredOre;
-            StoredOre = 0;
-            HasMachine = false;
-            if (machine != null) machine.SetActive(false);
-            return amount;
+            int amount = YieldAt(now);
+
+            if (amount <= maxAmount)
+            {
+                HasMachine = false;
+                if (machine != null) machine.SetActive(false);
+                return amount;
+            }
+
+            // not everything fits: hand over what fits and keep the machine running
+            int remaining = amount - maxAmount;
+            PlacedAt = now - remaining * 60f / level; // makes YieldAt(now) equal "remaining"
+            return maxAmount;
         }
         private Color TierColor => DisplayedTier == 5 ? new Color(.85f,.5f,1) : DisplayedTier == 4 ? new Color(1,.65f,.25f)
             : DisplayedTier == 3 ? new Color(.3f,.8f,1) : DisplayedTier == 2 ? new Color(.4f,1,.6f)

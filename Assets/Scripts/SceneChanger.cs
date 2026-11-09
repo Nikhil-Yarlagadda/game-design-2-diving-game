@@ -71,7 +71,18 @@ public class SceneChanger : MonoBehaviour
     {
         if (InventoryButton.IsOpen || IsTransitioning) return;
         Debug.Log("Change scene to " + sceneName);
-        SceneManager.LoadScene(sceneName);
+
+        if(sceneName == "Ocean Interactables")
+        {
+            SceneChanger.ChangeSceneWithFade("Ocean Interactables", () =>
+            {
+    #if UNITY_EDITOR
+                GameStateDebugger.CaptureDayStart("Ocean Interactables");
+    #endif
+            });
+        }
+        else
+            SceneManager.LoadScene(sceneName);
     }
 
     public static string getScene()

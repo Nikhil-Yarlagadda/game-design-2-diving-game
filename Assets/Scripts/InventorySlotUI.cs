@@ -1,23 +1,26 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
-public class InventorySlotUI : MonoBehaviour
+public class InventorySlotUI : MonoBehaviour,
+    IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
 {
     public Image icon;
     public TextMeshProUGUI countText;
     public TextMeshProUGUI nameText;
 
     public string ItemName { get; private set; }
-    public Action<InventorySlotUI> onClicked;
+    [HideInInspector] public int Index;
+    [HideInInspector] public ExcursionInventory owner;
+    public System.Action<InventorySlotUI> onClick; // used by screens that have no owner
 
     void Awake()
     {
         GetComponent<Button>().onClick.AddListener(() =>
         {
-            Debug.Log("Slot clicked: " + ItemName);
-            onClicked?.Invoke(this);
+            if (owner != null) owner.SlotClicked(this);
+            else onClick?.Invoke(this);
         });
     }
 
@@ -36,5 +39,16 @@ public class InventorySlotUI : MonoBehaviour
         icon.enabled = false;
         nameText.text = "";
         countText.text = "";
+    }
+
+    public void OnBeginDrag(PointerEventData e) { if (owner != null) owner.BeginDrag(this, e); }
+    public void OnDrag(PointerEventData e)      { if (owner != null) owner.Drag(e); }
+    public void OnEndDrag(PointerEventData e)   { if (owner != null) owner.EndDrag(); }
+
+    public void OnDrop(PointerEventData e)
+    {
+        if (owner == null) return;
+        var source = e.pointerDrag != null ? e.pointerDrag.GetComponent<InventorySlotUI>() : null;
+        if (source != null) owner.MoveStack(source.Index, Index);
     }
 }
