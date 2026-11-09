@@ -88,7 +88,7 @@ namespace DivingPrototype
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
             Hydrox.Refill();
-            GameState.inventory.TryGetValue(GameState.MiningMachine, out availableMachines);
+            GameState.excursionInventory.TryGetValue(GameState.MiningMachine, out availableMachines);
             BuildSpawnArea();
             SpawnDeliveries();
             foreach (var target in targets)
