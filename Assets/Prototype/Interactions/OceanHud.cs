@@ -20,6 +20,7 @@ namespace DivingPrototype
         private OceanTutorial tutorial;
         private TMP_Text tutorialText, scanText;
         private RectTransform tutorialPanel, scanPanel, scanFill;
+        private UnityEngine.UI.Outline hydroxHighlight;
         private RectTransform returnOverlay;
         private TMP_Text returnWarning;
 
@@ -129,6 +130,13 @@ namespace DivingPrototype
             tutorial = interactions.GetComponent<OceanTutorial>();
             tutorialPanel = Panel("Excursion Tutorial", new Vector2(0, 115), new Vector2(700, 160));
             tutorialText = PanelText(tutorialPanel, 19);
+            tutorialText.fontSizeMin = 16;
+            tutorialText.fontSizeMax = 19;
+            tutorialText.enableAutoSizing = true;
+            hydroxHighlight = hydroxRoot.gameObject.AddComponent<UnityEngine.UI.Outline>();
+            hydroxHighlight.effectColor = new Color(1f, .8f, .35f);
+            hydroxHighlight.effectDistance = new Vector2(3f, 3f);
+            hydroxHighlight.enabled = false;
             scanPanel = Panel("Prospecting Progress", new Vector2(0, 285), new Vector2(360, 42));
             scanFill = Panel("Scan Fill", Vector2.zero, Vector2.zero);
             scanFill.SetParent(scanPanel, false);
@@ -185,6 +193,7 @@ namespace DivingPrototype
             bool inside = interactions.InsideSubmarine;
             tutorialPanel.gameObject.SetActive(!inside && !interactions.IsTransitioning && tutorial != null && tutorial.IsVisible);
             if (tutorial != null) tutorialText.text = tutorial.Text;
+            hydroxHighlight.enabled = tutorialPanel.gameObject.activeSelf && tutorial.HighlightHydrox;
             scanPanel.gameObject.SetActive(!inside && interactions.IsProspecting);
             scanFill.anchorMax = new Vector2(interactions.ScanProgress, 1);
             scanText.text = "PROSPECTING  " + (interactions.ScanProgress * interactions.prospectDuration).ToString("0.0") + " / " + interactions.prospectDuration.ToString("0") + "s";
@@ -197,7 +206,7 @@ namespace DivingPrototype
             message.text = interactions.Message;
             var target = interactions.Closest;
             prompt.text = inside ? "LEFT CLICK  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
-                ? interactions.TutorialIncomplete ? "Complete the tutorial before returning" : "LEFT CLICK  Return to submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
+                ? interactions.TutorialBlocksReturn ? "Complete the tutorial before returning" : "LEFT CLICK  Return to submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
                 : target.HasMachine ? "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
                 : target.DisplayedTier == 0 ? "Depleted (last prospected)"
                 : "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier) + " / min (last prospected)  |  LEFT CLICK  Place machine";

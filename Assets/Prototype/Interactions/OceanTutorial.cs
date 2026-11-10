@@ -8,25 +8,26 @@ namespace DivingPrototype
         public enum TutorialMode { None, Mining, Delivery, Depletion }
         public TutorialMode Mode { get; private set; }
         public bool IsVisible => Mode == TutorialMode.Delivery || Mode == TutorialMode.Depletion || (Mode == TutorialMode.Mining && Stage >= 1 && Stage <= Messages.Length);
-        public const string DeliveryMessage = "The Company has dropped your purchased items near the submarine. White dots on the minimap show their locations.\nMove near a package and <b>left-click while it is highlighted</b> to collect it. Collect every package today, or the currents will sweep it away.";
-        public const string DepletionMessage = "Mining slowly depletes a spot and reduces its output. The displayed tier is only its <b>last prospected tier</b>.\n<b>Hold E for 3 seconds</b> near your mining spots to check their current tiers. Re-prospect frequently used spots, or you may be collecting less tellurium than you think.";
+        public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations.\n<b>Collect your items today, or else they will be swept away by the currents.</b>";
+        public const string DepletionMessage = "Mining machines will slowly deplete their mining spots over the course of several days. You must re-prospect a spot to see if it has been depleted yet.\n<b>Prospect your most frequently used mining spots once in a while, or you may be mining less tellurium than you think.</b>";
         public int Stage { get; private set; }
         public bool IsMiningComplete => Mode == TutorialMode.Mining && Stage > Messages.Length;
+        public bool HighlightHydrox => Mode == TutorialMode.Mining && Stage == 6;
         public float VisibleSeconds { get; private set; }
         private bool discovered, placed, produced, retrieved, replaced;
         private OceanInteractions ocean;
         private Vector2 startPosition;
-        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : Mode == TutorialMode.Depletion ? DepletionMessage : IsVisible
-            ? Messages[Stage - 1] + (Stage == Messages.Length ? "\nReturn unlocks in " + Mathf.CeilToInt(Mathf.Max(0, 30f - VisibleSeconds)) + "s." : "") : "";
+        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : Mode == TutorialMode.Depletion ? DepletionMessage
+            : IsVisible ? Messages[Stage - 1] : "";
         private static readonly string[] Messages = {
-            "<b>Swim with WASD. Aim your flashlight with the mouse.</b>\nSwim away from the submarine to begin. Left-click interacts with the nearest highlighted object. Complete this training before returning to the submarine.",
-            "<b>Hold E for 3 seconds, even while swimming,</b> to prospect. Scanning disables propulsion while you coast to a stop. <b>Release E to cancel</b> and propel yourself again.\nFind at least one mining spot. If none appear, swim to a different area and try again after the 5-second cooldown.",
-            "Prospecting reveals tellurium mining spots in your current view and their tiers. Higher tiers produce more tellurium.\nMove near a revealed spot, then <b>left-click while it is highlighted</b> to place a mining machine.",
-            "Your machine is collecting tellurium. <b>Wait for it to collect some ore.</b>\nThe nearby prompt shows the amount collected. <b>Orange squares on the minimap mark deployed machines.</b> You can keep exploring while they mine.",
-            "Move near your mining machine, then <b>left-click while it is highlighted</b> to retrieve both the machine and its collected tellurium.\nA machine can be reused after you collect it.",
-            "<b>Place a machine again</b> on a revealed mining spot. Keep prospecting and placing machines to gather tellurium before your breathing gas runs out.\nWatch the Hydrox meter at the bottom of the screen.",
-            "<b>Retrieve all your mining machines before ending the excursion.</b>\nMachines left out overnight will break. Return to each deployed machine and left-click while it is highlighted to collect it.",
-            "Watch your Hydrox meter and leave enough gas to swim home. The <b>cyan diamond</b> on the minimap points to the submarine; distance is shown below.\nMove near it, <b>left-click while highlighted</b>, then choose <b>End excursion</b> in the confirmation."
+            "Swim with WASD. Move your flashlight using the mouse.",
+            "Hold E to use your prospecting tool.",
+            "The prospecting tool will reveal nearby tellurium mining spots.\nMove near a prospected mining spot, then left click on it to place a mining machine.",
+            "Mining machines will collect tellurium over time.",
+            "Left click on a mining machine to retrieve it and the tellurium that it mined.",
+            "Placed mining machines will continue to mine tellurium over time.\nKeep prospecting for mining spots and placing machines to gather as much tellurium as you can <b>before your tank of breathing gas runs out.</b>",
+            "Mining machines cannot be left out overnight, or else they will permanently break.\n<b>Always retrieve all your mining machines before ending the excursion.</b>",
+            "Prospected mining spots will stay visible forever, even on future excursions. If you find yourself waiting around for your machines, try exploring and prospecting further out to get ahead for next time.\nKeep an eye on your breathing gas, and return to the submarine whenever you’re ready to end the excursion.\n<b>Work hard. The Company is watching.</b>"
         };
         private void Awake() => ocean = GetComponent<OceanInteractions>();
         private void OnEnable()
@@ -102,7 +103,7 @@ namespace DivingPrototype
             bool next = Stage == 1 ? Vector2.Distance(startPosition, transform.position) >= 1f
                 : Stage == 2 ? discovered : Stage == 3 ? placed : Stage == 4 ? produced : Stage == 5 ? retrieved
                 : Stage == 6 ? replaced : VisibleSeconds >= 30f;
-            if (next && (Stage <= 2 || VisibleSeconds >= 5f)) { Stage++; VisibleSeconds = 0; }
+            if (next) { Stage++; VisibleSeconds = 0; }
         }
     }
 }
