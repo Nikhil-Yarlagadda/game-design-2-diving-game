@@ -11,6 +11,9 @@ public class WorldInteractions : MonoBehaviour
         {
             GameState.days++;
             GameState.npcsTalks = new HashSet<string>();
+#if UNITY_EDITOR
+            GameStateDebugger.CaptureDayStart("Ocean Interactables");
+#endif
         });
     }     
 }
