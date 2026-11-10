@@ -7,6 +7,8 @@ public class Item : MonoBehaviour
     public int cost;
     public string title;
     public string description;
+    
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -16,6 +18,7 @@ public class Item : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        
         
     }
 

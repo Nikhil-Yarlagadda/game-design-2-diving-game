@@ -69,6 +69,10 @@ namespace DivingPrototype
         public GameObject panel;            // InventoryPanel
         public OceanTarget dropPrefab;
         private ExcursionInventory inventoryUI;
+        private static readonly System.Collections.Generic.HashSet<string> droppable =
+            new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister", "Tellurium" };
+
+
 
         private void Awake()
         {
@@ -210,6 +214,11 @@ namespace DivingPrototype
             foreach (var other in targets)
                 if (other != null && other != item && other.gameObject.activeInHierarchy && Vector2.Distance(point, other.transform.position) < 1.5f) return false;
             return true;
+        }
+
+        public bool CanDrop(string itemName)
+        {
+            return droppable.Contains(itemName);
         }
 
         private void Update()
