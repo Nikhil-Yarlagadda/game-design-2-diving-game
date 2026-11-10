@@ -36,7 +36,8 @@ namespace DivingPrototype
         {
             get { int count = 0; foreach (var target in targets) if (target != null && target.HasMachine) count++; return count; }
         }
-        public bool TutorialIncomplete => GameState.days == 2 && GetComponent<OceanTutorial>()?.IsMiningComplete != true;
+        public bool TutorialBlocksReturn => GameState.days == 2 && Hydrox.NormalizedFill >= .15f
+            && GetComponent<OceanTutorial>()?.IsMiningComplete != true;
         public HydroxTank Hydrox => hydrox != null ? hydrox : (hydrox = GetComponent<HydroxTank>());
         public int ItemsCollected { get; private set; }
         public int Tellurium { get; private set; }
@@ -388,7 +389,7 @@ namespace DivingPrototype
                 SceneChanger.ChangeScene(scene);
                 return true;
             }
-            if (TutorialIncomplete)
+            if (TutorialBlocksReturn)
             {
                 Notify("Complete the tutorial before returning to the submarine.");
                 return false;

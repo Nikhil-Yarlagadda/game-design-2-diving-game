@@ -206,6 +206,14 @@ namespace DivingPrototype
                 check(ocean!=null && ocean.GetComponent<OceanTutorial>().Stage==1 && GameState.days==2 && GameState.credits==73,"Tutorial gas exhaustion retries without settlement");
                 check(GameState.inventory["Camera Module"]==1 && GameState.inventory[GameState.MiningMachine]==3 && GameState.tellurium==0,"Retry restores the starting inventory without duplicating pickups");
                 check(ocean.RemainingDeliveryCount==2 && GameState.itemsBought.Values.All(c=>c==0) && GameState.miningSpots.Count==0,"Retry reissues orders once and restores mining discoveries");
+                var tank = ocean.Hydrox;
+                tank.Refill();
+                tank.Advance(tank.MaxCapacity * .85f / tank.ConsumptionRate);
+                check(!ocean.RequestEnterSubmarine(),"An unfinished tutorial blocks return at exactly 15% Hydrox");
+                tank.Advance(.1f);
+                check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && ocean.ConfirmReturn(),"Less than 15% Hydrox permits ending an unfinished tutorial excursion");
+                await WaitForIdle();
+                check(SceneManager.GetActiveScene().name=="Result","Low-gas return reaches Results");
                 GameState.reset();
                 check(GameState.credits==0 && GameState.days==1 && !GameState.deliveryTutorialShown && GameState.miningSpots.Count==0,"New game resets credits, tutorial history and mining discoveries");
                 await loadOcean();

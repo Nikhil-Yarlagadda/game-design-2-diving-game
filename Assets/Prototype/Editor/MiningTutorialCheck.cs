@@ -57,7 +57,7 @@ namespace DivingPrototype
             {
                 var tutorial = scene.GetRootGameObjects().Select(g => g.GetComponent<OceanTutorial>()).First(t => t != null);
                 tutorial.BeginExcursion(); tutorial.Advance(10);
-                check(tutorial.Stage == 1 && tutorial.Text.Contains("WASD") && tutorial.Text.Contains("mouse"), "Movement and aim are taught before prospecting");
+                check(tutorial.Stage == 1 && tutorial.Text == "Swim with WASD. Move your flashlight using the mouse.", "Movement and aim are taught before prospecting");
                 tutorial.transform.position += Vector3.right * .99f;
                 tutorial.Advance(0); check(tutorial.Stage == 1, "Movement shorter than one unit does not advance");
                 tutorial.transform.position += Vector3.right * .02f;
@@ -66,14 +66,14 @@ namespace DivingPrototype
                 check(tutorial.Stage == 2, "Empty scan does not advance tutorial");
                 tutorial.OnScan(1); tutorial.Advance(0); check(tutorial.Stage == 3, "Discovery introduces placement");
                 tutorial.OnPlaced(); tutorial.OnProduced(null); tutorial.OnRetrieved(); tutorial.OnPlaced();
-                tutorial.Advance(4.99f); check(tutorial.Stage == 3, "Reading time gates early milestone");
-                tutorial.Advance(.02f); check(tutorial.Stage == 4, "Buffered placement advances after reading");
-                tutorial.Advance(5); check(tutorial.Stage == 5, "Buffered production advances");
-                tutorial.Advance(5); check(tutorial.Stage == 6, "Positive retrieval advances");
-                tutorial.Advance(5); check(tutorial.Stage == 7, "Placement after retrieval advances");
+                tutorial.Advance(0); check(tutorial.Stage == 4, "Buffered placement advances immediately");
+                tutorial.Advance(0); check(tutorial.Stage == 5, "Buffered production advances");
+                tutorial.Advance(0); check(tutorial.Stage == 6 && tutorial.HighlightHydrox, "Positive retrieval advances and highlights the Hydrox meter");
+                tutorial.Advance(0); check(tutorial.Stage == 7 && !tutorial.HighlightHydrox, "Placement after retrieval advances and clears the highlight");
                 tutorial.Advance(29.99f); check(tutorial.Stage == 7, "Overnight warning lasts thirty seconds");
-                tutorial.Advance(.02f); check(tutorial.Stage == 8 && tutorial.Text.Contains("cyan diamond"), "Return guidance explains submarine marker and interaction");
-                tutorial.Advance(30); check(tutorial.Stage == 9 && tutorial.Text == "" && tutorial.IsMiningComplete, "Tutorial finishes and permits return");
+                tutorial.Advance(.02f); check(tutorial.Stage == 8 && tutorial.Text.EndsWith("<b>Work hard. The Company is watching.</b>"), "Return guidance follows the overnight warning");
+                tutorial.Advance(29.99f); check(tutorial.Stage == 8 && !tutorial.IsMiningComplete, "Return guidance lasts thirty seconds");
+                tutorial.Advance(.02f); check(tutorial.Stage == 9 && tutorial.Text == "" && tutorial.IsMiningComplete, "Tutorial finishes and permits return");
                 tutorial.EndExcursion(); check(tutorial.Stage == 0 && !tutorial.IsMiningComplete, "Submarine entry clears tutorial");
                 tutorial.BeginExcursion(); tutorial.transform.position += Vector3.right; tutorial.Advance(0);
                 tutorial.OnScan(1); tutorial.OnPlaced(); tutorial.OnProduced(null);
