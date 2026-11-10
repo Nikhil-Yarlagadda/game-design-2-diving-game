@@ -68,6 +68,9 @@ namespace DivingPrototype
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            GameStateDebugger.CaptureFirstOceanEntry(gameObject.scene.name);
+#endif
             if (GameState.days == 2)
             {
                 tutorialStartMining = new Dictionary<string, GameState.MiningSpotState>(GameState.miningSpots);
@@ -84,6 +87,14 @@ namespace DivingPrototype
             foreach (var target in targets)
                 if (target != null) target.OreProduced += OnOreProduced;
         }
+
+#if UNITY_EDITOR
+        internal void SyncDebugInventory()
+        {
+            Tellurium = GameState.tellurium;
+            GameState.inventory.TryGetValue(GameState.MiningMachine, out availableMachines);
+        }
+#endif
 
         private void SpawnDeliveries()
         {

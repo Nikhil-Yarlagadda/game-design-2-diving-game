@@ -92,5 +92,8 @@ public class SceneChanger : MonoBehaviour
         IsTransitioning = false;
         GameState.reset();
         PauseManager.ResetState();
+#if UNITY_EDITOR
+        GameStateDebugger.ClearDayStart();
+#endif
     }
 }
