@@ -8,6 +8,9 @@ public class Shop : MonoBehaviour
     private static int cost;
     private static string item;
     private static string desc;
+    private static readonly System.Collections.Generic.HashSet<string> restockable =
+        new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister"};
+    private static int stock = 0;
     
     void Start()
     {
@@ -17,13 +20,74 @@ public class Shop : MonoBehaviour
     }
     void Update()
     {
-        if(string.IsNullOrEmpty(item) || GameState.credits < cost)
-            button.interactable = false;
-        else
-            button.interactable = true;
 
+        if(string.IsNullOrEmpty(item))
+            return;
+
+        button.interactable = true;
+        
         if(item != null)
-            description.text = item + "\n"+  "Cost - " + cost +"\n"+ "\n"+ desc;
+            description.text = item + "\n"+  "Cost - " + cost +"\n"+  "Stock - " + stock +"\n"+ "\n"+ desc;
+
+        if(GameState.credits < cost)
+        {
+            button.interactable = false;
+        }
+
+        
+
+        Debug.Log("reaches stock logic");
+        if(GameState.itemsBought.ContainsKey(item))
+        {
+            if(restockable.Contains(item))
+            {
+                if(GameState.itemsBought[item] >= 5)
+                {
+                    stock = 0;
+                    button.interactable = false;
+                }
+                else
+                    stock = 5 - GameState.itemsBought[item];
+            }
+            else 
+            {
+                if(GameState.itemsBought[item] >= 1)
+                {
+                    stock = 0;
+                    button.interactable = false;
+                }
+                else
+                    stock = 1;
+            }
+        }
+        else if(GameState.inventory.ContainsKey(item))
+        {
+            if(restockable.Contains(item))
+            {
+                stock = 5;
+                return;
+            }
+            else
+            {
+                if(GameState.inventory[item] >= 1)
+                {
+                    stock = 0;
+                    button.interactable = false;
+                }
+                else
+                    stock = 1;
+            }
+        }
+
+        else
+        {
+            if(restockable.Contains(item))
+                stock = 5;
+            else
+                stock = 1;
+        }
+
+       
         
     }
 

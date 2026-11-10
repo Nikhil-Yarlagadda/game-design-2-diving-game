@@ -147,6 +147,12 @@ public class ExcursionInventory : MonoBehaviour
 
         string name = stack.itemName;
 
+         if (!ocean.CanDrop(name))
+        {
+            ocean.Notify("You can't drop that.");   // only if Notify is public
+            return;
+        }
+
         // remove from the clicked stack first, so the right slot shrinks
         stack.count--;
         if (stack.count <= 0) GameState.layout[slot.Index] = null;

@@ -414,6 +414,7 @@ MonoBehaviour:
   persistentId: 9a702802e046403a8a30766669a9ae26
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 66784567}
   machine: {fileID: 774290649}
 --- !u!21 &17211534
@@ -778,6 +779,7 @@ MonoBehaviour:
   persistentId: 5d760d25ef1b460f86fde4f728439983
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 168428370}
   machine: {fileID: 996124933}
 --- !u!1 &58133760
@@ -983,6 +985,7 @@ MonoBehaviour:
   persistentId: 37be859c54284c95b52034fa77362324
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 417523259}
   machine: {fileID: 1665614817}
 --- !u!1 &64286805
@@ -1372,6 +1375,7 @@ MonoBehaviour:
   persistentId: d00422f4949541b0840ef4cd1ed8671a
   level: 4
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 832181000}
   machine: {fileID: 268849405}
 --- !u!1 &108336222
@@ -1575,9 +1579,11 @@ RectTransform:
   - {fileID: 171149730}
   - {fileID: 1210267787}
   - {fileID: 427454435}
-  - {fileID: 264305655}
   - {fileID: 1627325288}
   - {fileID: 907611316}
+  - {fileID: 1541746181}
+  - {fileID: 1953888775}
+  - {fileID: 264305655}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1598,6 +1604,79 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.FixedOceanView
   interactions: {fileID: 570103284}
+--- !u!114 &123723315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 123723309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e37fe42fc29cfc47ba96b96c2692cd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ExcursionInventory
+  panel: {fileID: 1953888774}
+  gridParent: {fileID: 165849900}
+  slotPrefab: {fileID: 3384652143570707671, guid: d0255685eef06314c92d19c5ece1af04, type: 3}
+  columns: 8
+  rows: 6
+  defaultMaxStack: 64
+  itemInfos:
+  - itemName: Mining Machine
+    sprite: {fileID: 0}
+    maxStack: 4
+  - itemName: Tellurium
+    sprite: {fileID: 0}
+    maxStack: 16
+  - itemName: 'Medium Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Heavy Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Advanced flippers  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Stimulant Canister  '
+    sprite: {fileID: 0}
+    maxStack: 4
+  - itemName: 'Antimicrobial Medicine  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Camera Module  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Light Hydrox Tank  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: Full-grown Fungus Sample
+    sprite: {fileID: 0}
+    maxStack: 4
+  - itemName: Photograph of Infected Crewmate
+    sprite: {fileID: 0}
+    maxStack: 1
+  - itemName: 'Photograph of the Eye of the Abyss  '
+    sprite: {fileID: 0}
+    maxStack: 1
+  dragGhost: {fileID: 0}
+--- !u!114 &123723316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 123723309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &129288969
 GameObject:
   m_ObjectHideFlags: 0
@@ -2242,6 +2321,66 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!1 &165849899
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 165849900}
+  - component: {fileID: 165849901}
+  m_Layer: 0
+  m_Name: Grid
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &165849900
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165849899}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1953888775}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &165849901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 165849899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 4
+  m_StartCorner: 0
+  m_StartAxis: 0
+  m_CellSize: {x: 100, y: 100}
+  m_Spacing: {x: 8, y: 8}
+  m_Constraint: 1
+  m_ConstraintCount: 8
 --- !u!1 &168428368
 GameObject:
   m_ObjectHideFlags: 0
@@ -3087,6 +3226,7 @@ MonoBehaviour:
   persistentId: 7f332b11831f456185fd3b9db7c55b56
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 175698421}
   machine: {fileID: 1414410656}
 --- !u!1 &246385624
@@ -3681,6 +3821,7 @@ MonoBehaviour:
   persistentId: 2786a8a86e894fa6bbb6c1b196dc3000
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 4698420}
   machine: {fileID: 1168416738}
 --- !u!1 &268849405
@@ -5964,6 +6105,85 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!1 &483348087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 483348088}
+  - component: {fileID: 483348090}
+  - component: {fileID: 483348089}
+  m_Layer: 0
+  m_Name: EventSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &483348088
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483348087}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1953888775}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &483348089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483348087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
+  m_SendPointerHoverToParent: 1
+  m_MoveRepeatDelay: 0.5
+  m_MoveRepeatRate: 0.1
+  m_XRTrackingOrigin: {fileID: 0}
+  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
+  m_DeselectOnBackgroundClick: 1
+  m_PointerBehavior: 0
+  m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
+--- !u!114 &483348090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 483348087}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
+  m_FirstSelected: {fileID: 0}
+  m_sendNavigationEvents: 1
+  m_DragThreshold: 10
 --- !u!1 &507468943
 GameObject:
   m_ObjectHideFlags: 0
@@ -6351,6 +6571,7 @@ MonoBehaviour:
   persistentId: be77f1a2c7b042b58ac666f12c8d2f63
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 417863489}
   machine: {fileID: 298547480}
 --- !u!1 &539370734
@@ -6743,7 +6964,6 @@ MonoBehaviour:
   interactionRange: 1.8
   prospectCooldown: 5
   prospectDuration: 3
-  availableMachines: 3
   deliveryPrefab: {fileID: 51960121, guid: 25b227a3c64f400a9b84a0f192226f7b, type: 3}
   panel: {fileID: 1953888774}
   dropPrefab: {fileID: 3354881734746019844, guid: 873d1045a72f653448db24022009bcd0, type: 3}
@@ -7635,6 +7855,7 @@ MonoBehaviour:
   persistentId: 88e154f82e094e7eae8e873d00a0843c
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1222585265}
   machine: {fileID: 931074806}
 --- !u!1 &629109480
@@ -8531,6 +8752,7 @@ MonoBehaviour:
   persistentId: 9935131a609649599bc02f7cf42709ad
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1288370009}
   machine: {fileID: 1562693447}
 --- !u!1 &722738988
@@ -9464,6 +9686,7 @@ MonoBehaviour:
   persistentId: daeb8f19c2e449e7b456669c79395028
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 507468945}
   machine: {fileID: 1368923368}
 --- !u!1 &790654190
@@ -10157,6 +10380,7 @@ MonoBehaviour:
   persistentId: 1241cbb399324e9b86d521f52d753c03
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 2107652453}
   machine: {fileID: 1427268977}
 --- !u!1 &831907278
@@ -10546,6 +10770,7 @@ MonoBehaviour:
   persistentId: dcc1f04eca7b4faa9baba76c86305815
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 539370736}
   machine: {fileID: 1532749424}
 --- !u!1 &842517220
@@ -10806,6 +11031,7 @@ MonoBehaviour:
   persistentId: a6d4407a0e504a24810988cae6916fee
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1701413366}
   machine: {fileID: 901210659}
 --- !u!1 &850562977
@@ -12787,6 +13013,7 @@ MonoBehaviour:
   persistentId: e1f67d851dbc4412a6e8dde1a0a534dc
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1623538757}
   machine: {fileID: 1866820598}
 --- !u!1 &1051031643
@@ -13686,6 +13913,7 @@ MonoBehaviour:
   persistentId: d296e6bc5fec4941a74852f2373e1c0f
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 630710972}
   machine: {fileID: 129288969}
 --- !u!1 &1168416738
@@ -14459,6 +14687,7 @@ MonoBehaviour:
   persistentId: 40440047e0ed4335a3a71b3234351f57
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 2143301470}
   machine: {fileID: 29130376}
 --- !u!1 &1210267784
@@ -14965,6 +15194,7 @@ MonoBehaviour:
   persistentId: a0502de06d094ed7bac08ddfc85ea6ea
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 588978479}
   machine: {fileID: 406788135}
 --- !u!1 &1257952974
@@ -15649,6 +15879,7 @@ MonoBehaviour:
   persistentId: ab16a1142c9842b2bd94afc34f120db0
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 722738990}
   machine: {fileID: 353063630}
 --- !u!1 &1288370007
@@ -16269,6 +16500,7 @@ MonoBehaviour:
   persistentId: f23886aba46145a5a466fd6d6b3b9c43
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 730043253}
   machine: {fileID: 1260213271}
 --- !u!1 &1354382697
@@ -16382,6 +16614,7 @@ MonoBehaviour:
   persistentId: 70d31cec320940a783d635599b786b17
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 175157238}
   machine: {fileID: 1277243636}
 --- !u!1 &1359539643
@@ -16495,6 +16728,7 @@ MonoBehaviour:
   persistentId: 96ce0fe628ff4d4093940bd6a478443b
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1259357267}
   machine: {fileID: 1792882304}
 --- !u!1 &1363067644
@@ -17087,6 +17321,7 @@ MonoBehaviour:
   persistentId: 4ac755ed823a4558a66caa9b9789a705
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1865240988}
   machine: {fileID: 244810789}
 --- !u!1 &1382810805
@@ -17752,6 +17987,7 @@ MonoBehaviour:
   persistentId: cc397ed0ab5041ca9d6f4344dbd85bca
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 680802488}
   machine: {fileID: 1852563943}
 --- !u!1 &1427268977
@@ -17957,6 +18193,7 @@ MonoBehaviour:
   persistentId: bb4510a33b044762b63e78c6daf12178
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1517686470}
   machine: {fileID: 58133760}
 --- !u!1 &1431732158
@@ -18393,6 +18630,7 @@ MonoBehaviour:
   persistentId: 373d673ba94d413aa78034a7565b76a4
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 253430163}
   machine: {fileID: 1171438474}
 --- !u!1 &1468392861
@@ -18506,6 +18744,7 @@ MonoBehaviour:
   persistentId: 0f8e2ce0dcd74762a68e8675a6d96079
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1386340308}
   machine: {fileID: 1621477711}
 --- !u!1 &1470374224
@@ -18857,6 +19096,7 @@ MonoBehaviour:
   persistentId: 7bc7423e1c4944a48ca9dd59483867ae
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 2116292170}
   machine: {fileID: 1879886864}
 --- !u!1 &1478110800
@@ -19931,6 +20171,7 @@ MonoBehaviour:
   persistentId: e6756fedf18545b5821c479fae7f08bf
   level: 4
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 272610558}
   machine: {fileID: 895041734}
 --- !u!1 &1562693447
@@ -20323,6 +20564,7 @@ MonoBehaviour:
   persistentId: 
   level: 1
   displayName: Submarine
+  itemName: 
   highlight: {fileID: 1827275358}
   machine: {fileID: 0}
 --- !u!1 &1584851443
@@ -20436,6 +20678,7 @@ MonoBehaviour:
   persistentId: bd96a007e3d14acb8def5f9c43414488
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1366742342}
   machine: {fileID: 445941421}
 --- !u!1 &1585968769
@@ -20825,6 +21068,7 @@ MonoBehaviour:
   persistentId: 5f47815c40ee4a69864bd7cfd879e632
   level: 4
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1002468256}
   machine: {fileID: 547078944}
 --- !u!1 &1616106150
@@ -21447,6 +21691,7 @@ MonoBehaviour:
   persistentId: dd4b5165017f46ce89320015d8f56911
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1789774253}
   machine: {fileID: 629109480}
 --- !u!1 &1643719804
@@ -21652,6 +21897,7 @@ MonoBehaviour:
   persistentId: b42437c073414fa0936c99e79f53e697
   level: 1
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1053174066}
   machine: {fileID: 1885825474}
 --- !u!1 &1660827074
@@ -24947,6 +25193,7 @@ MonoBehaviour:
   persistentId: c34d559d2af74e6bb24899b89f59ea79
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 255258079}
   machine: {fileID: 1830590152}
 --- !u!1 &1934441014
@@ -25336,8 +25583,86 @@ MonoBehaviour:
   persistentId: 8b388580b2c94f709692d730dd7bd7cd
   level: 2
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 1704279639}
   machine: {fileID: 1643719804}
+--- !u!1 &1953888774
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1953888775}
+  - component: {fileID: 1953888777}
+  - component: {fileID: 1953888776}
+  m_Layer: 0
+  m_Name: InventoryPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &1953888775
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953888774}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 165849900}
+  - {fileID: 483348088}
+  m_Father: {fileID: 123723313}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0.000056259007, y: 0}
+  m_SizeDelta: {x: 900, y: 700}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1953888776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953888774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1953888777
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1953888774}
+  m_CullTransparentMesh: 1
 --- !u!1 &1986809921
 GameObject:
   m_ObjectHideFlags: 0
@@ -26258,6 +26583,7 @@ MonoBehaviour:
   persistentId: 2162d1c0952347478eb7f7b30fa15298
   level: 4
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 434326782}
   machine: {fileID: 810792060}
 --- !u!1 &2028225377
@@ -26463,6 +26789,7 @@ MonoBehaviour:
   persistentId: 007cc68287fa404fb78526481af65602
   level: 5
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 810405068}
   machine: {fileID: 858227992}
 --- !u!1 &2033979865
@@ -26899,6 +27226,7 @@ MonoBehaviour:
   persistentId: 64147c10af9f4781a075e2d4dbcabe58
   level: 3
   displayName: Tellurium
+  itemName: 
   highlight: {fileID: 850562979}
   machine: {fileID: 1986809921}
 --- !u!1 &2081813458
@@ -27946,297 +28274,8 @@ SpriteRenderer:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 483348088}
   - {fileID: 570103285}
   - {fileID: 1214223817}
   - {fileID: 1366615275}
   - {fileID: 123723313}
   - {fileID: 428514690}
---- !u!114 &123723315
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 123723309}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5e37fe42fc29cfc47ba96b96c2692cd8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ExcursionInventory
-  panel: {fileID: 1953888774}
-  gridParent: {fileID: 165849900}
-  slotPrefab: {fileID: 3384652143570707671, guid: d0255685eef06314c92d19c5ece1af04, type: 3}
-  columns: 8
-  rows: 6
-  defaultMaxStack: 64
-  itemInfos:
-  - itemName: Mining Machine
-    sprite: {fileID: 0}
-    maxStack: 4
-  - itemName: Tellurium
-    sprite: {fileID: 0}
-    maxStack: 16
-  - itemName: 'Medium Hydrox Tank  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Heavy Hydrox Tank  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Advanced flippers  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Stimulant Canister  '
-    sprite: {fileID: 0}
-    maxStack: 4
-  - itemName: 'Antimicrobial Medicine  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Camera Module  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Light Hydrox Tank  '
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: Full-grown Fungus Sample
-    sprite: {fileID: 0}
-    maxStack: 4
-  - itemName: Photograph of Infected Crewmate
-    sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Photograph of the Eye of the Abyss  '
-    sprite: {fileID: 0}
-    maxStack: 1
---- !u!114 &123723316
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 123723309}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
---- !u!1 &165849899
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 165849900}
-  - component: {fileID: 165849901}
-  m_Layer: 0
-  m_Name: Grid
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &165849900
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 165849899}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1953888775}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &165849901
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 165849899}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 4
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 100, y: 100}
-  m_Spacing: {x: 8, y: 8}
-  m_Constraint: 1
-  m_ConstraintCount: 8
---- !u!1 &483348087
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 483348088}
-  - component: {fileID: 483348090}
-  - component: {fileID: 483348089}
-  m_Layer: 0
-  m_Name: EventSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &483348088
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 483348087}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1953888775}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &483348089
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 483348087}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.UI.InputSystemUIInputModule
-  m_SendPointerHoverToParent: 1
-  m_MoveRepeatDelay: 0.5
-  m_MoveRepeatRate: 0.1
-  m_XRTrackingOrigin: {fileID: 0}
-  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_DeselectOnBackgroundClick: 1
-  m_PointerBehavior: 0
-  m_CursorLockBehavior: 0
-  m_ScrollDeltaPerTick: 6
---- !u!114 &483348090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 483348087}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
-  m_FirstSelected: {fileID: 0}
-  m_sendNavigationEvents: 1
-  m_DragThreshold: 10
---- !u!1 &1953888774
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1953888775}
-  - component: {fileID: 1953888777}
-  - component: {fileID: 1953888776}
-  m_Layer: 0
-  m_Name: InventoryPanel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &1953888775
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1953888774}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 165849900}
-  - {fileID: 483348088}
-  m_Father: {fileID: 123723313}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.000056259007, y: 0}
-  m_SizeDelta: {x: 900, y: 700}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1953888776
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1953888774}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1953888777
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1953888774}
-  m_CullTransparentMesh: 1

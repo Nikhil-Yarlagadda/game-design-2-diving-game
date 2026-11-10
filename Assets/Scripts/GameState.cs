@@ -40,6 +40,7 @@ public static class GameState
     // Call whenever an excursion ends and the player keeps what they found
     public static void ReturnFromExcursion()
     {
+        itemsBought = new Dictionary<string, int>();
         foreach (var pair in new List<KeyValuePair<string, int>>(excursionInventory))
             Move(excursionInventory, inventory, pair.Key, pair.Value);
 
