@@ -10,11 +10,11 @@ Sprite:
   m_Name: Draft-Rock-5
   m_Rect:
     serializedVersion: 2
-    x: 7148
-    y: 7228
-    width: 400
-    height: 964
-  m_Offset: {x: -200, y: -482}
+    x: 3472
+    y: 0
+    width: 391
+    height: 968
+  m_Offset: {x: -195.5, y: -484}
   m_Border: {x: 0, y: 0, z: 0, w: 0}
   m_PixelsToUnits: 40
   m_Pivot: {x: 0, y: 0}
@@ -102,7 +102,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 00000000cdccc0410000000000002041cdccc041000000000000000000000000000000000000204100000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 000000009a99c1410000000066661c419a99c1410000000000000000000000000000000066661c4100000000000000000000000000000000000000000000000000000000000000000000000000000000
     m_Bindpose: []
     m_BlendShapes:
       vertices: []
@@ -111,14 +111,14 @@ Sprite:
       fullWeights: []
     textureRect:
       serializedVersion: 2
-      x: 7148
-      y: 7228
-      width: 400
-      height: 964
+      x: 3472
+      y: 0
+      width: 391
+      height: 968
     textureRectOffset: {x: 0, y: 0}
     atlasRectOffset: {x: -1, y: -1}
     settingsRaw: 3072
-    uvTransform: {x: 40, y: 7148, z: 40, w: 7228}
+    uvTransform: {x: 40, y: 3472, z: 40, w: 0}
     downscaleMultiplier: 1
   m_AtlasRD:
     serializedVersion: 4
@@ -198,7 +198,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 00000000cdccc0410000000000002041cdccc041000000000000000000000000000000000000204100000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 000000009a99c1410000000066661c419a99c1410000000000000000000000000000000066661c4100000000000000000000000000000000000000000000000000000000000000000000000000000000
     m_Bindpose: []
     m_BlendShapes:
       vertices: []
@@ -207,14 +207,14 @@ Sprite:
       fullWeights: []
     textureRect:
       serializedVersion: 2
-      x: 7148
-      y: 7228
-      width: 400
-      height: 964
+      x: 3472
+      y: 0
+      width: 391
+      height: 968
     textureRectOffset: {x: 0, y: 0}
     atlasRectOffset: {x: -1, y: -1}
     settingsRaw: 3072
-    uvTransform: {x: 40, y: 7148, z: 40, w: 7228}
+    uvTransform: {x: 40, y: 3472, z: 40, w: 0}
     downscaleMultiplier: 1
   m_PhysicsShape: []
   m_Bones: []
