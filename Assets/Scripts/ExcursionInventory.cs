@@ -103,6 +103,7 @@ public class ExcursionInventory : MonoBehaviour
     private void ConfirmDrop()
     {
         if (ocean.DropItem(dropItem, dropCount)) CancelDrop();
+        else if (details != null) details.text = ocean.Message;
         Refresh();
     }
 

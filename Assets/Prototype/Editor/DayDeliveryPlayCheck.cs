@@ -258,8 +258,19 @@ namespace DivingPrototype
                 check(ocean.availableMachines == initialMachines + 1 && GameState.inventory[GameState.MiningMachine] == ownedMachines,
                     "Machine delivery changes carried quantity without granting ownership at sea");
                 check(!ocean.DropItem(ItemCatalog.Camera), "Camera cannot be dropped");
+                jump(center);
+                float pickupRange = ocean.interactionRange;
+                ocean.interactionRange = 1.4f;
+                check(!ocean.DropItem(ItemCatalog.Machine, 2) && ocean.availableMachines == initialMachines + 1,
+                    "When no drop position clears the submarine, the stack stays in the bag");
+                ocean.interactionRange = pickupRange;
                 check(ocean.DropItem(ItemCatalog.Machine, 2) && ocean.availableMachines == initialMachines - 1, "Dropping a selected quantity removes two machines");
                 var dropped = ocean.targets.Last();
+                ocean.Interact();
+                check(ocean.ReturnConfirmationOpen && dropped.gameObject.activeSelf,
+                    "Dropping at the submarine center keeps normal return available");
+                ocean.CancelReturn();
+                await Task.Delay(80);
                 jump(dropped.transform.position); ocean.Interact();
                 check(ocean.availableMachines == initialMachines + 1 && ocean.RemainingDeliveryCount == 0, "Dropped stack can be collected without counting as a delivery");
                 var mine = ocean.targets.First(t => t.kind == OceanTarget.TargetKind.MiningSpot && t.ActualTier > 0);

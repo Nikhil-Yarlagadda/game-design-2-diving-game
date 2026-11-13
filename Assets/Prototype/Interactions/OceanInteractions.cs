@@ -80,6 +80,7 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
+        private const float TargetClearance = 1.5f;
         private Dictionary<string, GameState.MiningSpotState> tutorialStartMining;
         private Dictionary<string, int> tutorialStartOrders;
 
@@ -297,7 +298,7 @@ namespace DivingPrototype
             foreach (var obstacle in obstacles)
                 if (obstacle != null && obstacle.isActiveAndEnabled && Vector2.Distance(point, obstacle.ClosestPoint(point)) < .7f) return false;
             foreach (var other in targets)
-                if (other != null && other != item && other.gameObject.activeInHierarchy && Vector2.Distance(point, other.transform.position) < 1.5f) return false;
+                if (other != null && other != item && other.gameObject.activeInHierarchy && Vector2.Distance(point, other.transform.position) < TargetClearance) return false;
             return true;
         }
 
@@ -592,6 +593,12 @@ namespace DivingPrototype
                 return false;
             }
 
+            if (!TryFindDropPoint(out var point))
+            {
+                Notify("Move away from the submarine before dropping items.");
+                return false;
+            }
+
             // create the pickup
             var drop = Instantiate(template, template.transform.parent);
             drop.kind = OceanTarget.TargetKind.Item;
@@ -599,8 +606,8 @@ namespace DivingPrototype
             drop.itemCount = count;
             drop.displayName = item.Name;
             drop.name = "Dropped " + item.Name;
+            drop.transform.position = point;
             drop.gameObject.SetActive(true);
-            drop.transform.position = FindDropPoint(drop);
 
             var list = new System.Collections.Generic.List<OceanTarget>(targets);
             list.Add(drop);
@@ -612,19 +619,25 @@ namespace DivingPrototype
             return true;
         }
 
-        private Vector2 FindDropPoint(OceanTarget drop)
+        private bool TryFindDropPoint(out Vector2 point)
         {
             Vector2 origin = transform.position;
-            for (float radius = 0.8f; radius <= 1.4f; radius += 0.3f)
+            float outerRadius = Mathf.Min(1.7f, interactionRange);
+            for (int ring = 0; ring < 4; ring++)
             {
+                float radius = Mathf.Lerp(Mathf.Min(.8f, outerRadius), outerRadius, ring / 3f);
                 for (int i = 0; i < 12; i++)
                 {
                     float angle = i * Mathf.PI * 2f / 12f;
-                    var point = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
-                    if (CanSpawn(point, drop)) return point;
+                    point = origin + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+                    if (CanSpawn(point, null) && HasClearPath(point)) return true;
                 }
             }
-            return origin; // nowhere free nearby, drop at the player's feet
+            // Keep the at-feet fallback for shedding weight away from the return point.
+            point = origin;
+            return !targets.Any(target => target != null && target.isActiveAndEnabled
+                && target.kind == OceanTarget.TargetKind.Submarine
+                && Vector2.Distance(origin, target.transform.position) < TargetClearance);
         }
 
         private void StopOceanControls()
