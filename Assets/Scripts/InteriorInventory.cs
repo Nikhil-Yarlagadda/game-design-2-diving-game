@@ -7,7 +7,9 @@ public class InteriorInventory : MonoBehaviour
 {
     public TextMeshProUGUI listText;
 
-    void Start()
+    void Start() => Refresh();
+
+    internal void Refresh()
     {
         StringBuilder sb = new StringBuilder();
 

@@ -6,14 +6,15 @@ namespace DivingPrototype
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class SwimmerController : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float maxSpeed = 5f;
-        [SerializeField, Min(0f)] private float acceleration = 8f;
-        [SerializeField, Min(0f)] private float deceleration = 7f;
+        [SerializeField, Min(0f)] private float maxSpeed = 2.5f;
+        [SerializeField, Min(0f)] private float acceleration = 1.5f;
+        [SerializeField, Min(0f)] private float deceleration = 2.5f;
 
         private Rigidbody2D body;
         private Vector2 input;
         public Vector2 MovementInput => input;
         public bool MovementLocked { get; private set; }
+        public bool PropulsionLocked { get; set; }
         public void SetMovementLocked(bool locked)
         {
             MovementLocked = locked;
@@ -41,7 +42,7 @@ namespace DivingPrototype
                 (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed ? 1 : 0)
                 - (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed ? 1 : 0)), 1f);
         }
-        private void Update() => input = MovementLocked ? Vector2.zero : ReadMovementInput();
+        private void Update() => input = MovementLocked || PropulsionLocked ? Vector2.zero : ReadMovementInput();
 
         private void FixedUpdate()
         {
@@ -50,7 +51,7 @@ namespace DivingPrototype
             foreach (var kelp in kelpZones)
                 if (kelp != null && kelp.isActiveAndEnabled && kelp.OverlapPoint(body.position))
                 { SpeedMultiplier = .5f; break; }
-            body.linearVelocity = StepVelocity(body.linearVelocity, input, maxSpeed * SpeedMultiplier,
+            body.linearVelocity = StepVelocity(body.linearVelocity, PropulsionLocked ? Vector2.zero : input, maxSpeed * SpeedMultiplier,
                 acceleration, deceleration, Time.fixedDeltaTime);
             if (SpeedMultiplier < 1f)
                 body.linearVelocity = Vector2.ClampMagnitude(body.linearVelocity, maxSpeed * SpeedMultiplier);
@@ -60,7 +61,8 @@ namespace DivingPrototype
             float speed, float accelerate, float decelerate, float deltaTime)
         {
             direction = Vector2.ClampMagnitude(direction, 1f);
-            float rate = direction.sqrMagnitude > 0f ? accelerate : decelerate;
+            float rate = direction.sqrMagnitude == 0f || Vector2.Dot(velocity, direction) < 0f
+                ? decelerate : accelerate;
             return Vector2.MoveTowards(velocity, direction * speed, rate * deltaTime);
         }
     }

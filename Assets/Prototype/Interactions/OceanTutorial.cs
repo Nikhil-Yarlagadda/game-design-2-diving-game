@@ -5,23 +5,29 @@ namespace DivingPrototype
     [RequireComponent(typeof(OceanInteractions))]
     public sealed class OceanTutorial : MonoBehaviour
     {
-        public enum TutorialMode { None, Mining, Delivery }
+        public enum TutorialMode { None, Mining, Delivery, Depletion }
         public TutorialMode Mode { get; private set; }
-        public bool IsVisible => Mode == TutorialMode.Delivery || (Mode == TutorialMode.Mining && Stage >= 1 && Stage <= 7);
-        public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations. <b>Collect your items today, or else they will be swept away by the currents.</b>";
+        public bool IsVisible => Mode == TutorialMode.Delivery || Mode == TutorialMode.Depletion || (Mode == TutorialMode.Mining && Stage >= 1 && Stage <= Messages.Length);
+        public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations.\n<b>Collect your items today, or else they will be swept away by the currents.</b>";
+        public const string DepletionMessage = "Mining machines will slowly deplete their mining spots over the course of several days. You must re-prospect a spot to see if it has been depleted yet.\n<b>Prospect your most frequently used mining spots once in a while, or you may be mining less tellurium than you think.</b>";
         public int Stage { get; private set; }
+        public bool IsMiningComplete => Mode == TutorialMode.Mining && Stage > Messages.Length;
+        public bool HighlightHydrox => Mode == TutorialMode.Mining && Stage == 6;
         public float VisibleSeconds { get; private set; }
         private bool discovered, placed, produced, retrieved, replaced;
         private OceanInteractions ocean;
-        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : IsVisible ? Messages[Stage - 1] : "";
+        private Vector2 startPosition;
+        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : Mode == TutorialMode.Depletion ? DepletionMessage
+            : IsVisible ? Messages[Stage - 1] : "";
         private static readonly string[] Messages = {
-            "Stop moving, then <b>hold E for 3 seconds</b> to use your prospecting tool.",
-            "The prospecting tool will reveal nearby tellurium mining spots.\nMove near a prospected mining spot, then left-click while it is highlighted to place a mining machine.",
-            "Mining machines will collect tellurium over time. They will gradually deplete the mining spot.\n<b>You must re-prospect a spot to see if it has been depleted yet. Prospect your mining spots frequently, or you may be mining less tellurium than you think.</b>",
-            "Move near a mining machine, then left-click while it is highlighted to retrieve it and the tellurium it mined.",
-            "Placed mining machines will continue to mine tellurium over time as long as their spot isn’t fully depleted.\nPlace a machine again. Keep prospecting for mining spots and placing machines to gather as much tellurium as you can <b>before your tank of breathing gas runs out.</b>",
-            "Mining machines cannot be left out overnight, or they will permanently break.\n<b>Always retrieve all your mining machines before ending the excursion.</b>",
-            "Keep an eye on your breathing gas, and return to the submarine whenever you’re ready to end the excursion.\n<b>Work hard. The Company is watching.</b>"
+            "Swim with WASD. Move your flashlight using the mouse.",
+            "Hold E to use your prospecting tool.",
+            "The prospecting tool will reveal nearby tellurium mining spots.\nMove near a prospected mining spot, then left click on it to place a mining machine.",
+            "Mining machines will collect tellurium over time.",
+            "Left click on a mining machine to retrieve it and the tellurium that it mined.",
+            "Placed mining machines will continue to mine tellurium over time.\nKeep prospecting for mining spots and placing machines to gather as much tellurium as you can <b>before your tank of breathing gas runs out.</b>",
+            "Mining machines cannot be left out overnight, or else they will permanently break.\n<b>Always retrieve all your mining machines before ending the excursion.</b>",
+            "Prospected mining spots will stay visible forever, even on future excursions. If you find yourself waiting around for your machines, try exploring and prospecting further out to get ahead for next time.\nKeep an eye on your breathing gas, and return to the submarine whenever you’re ready to end the excursion.\n<b>Work hard. The Company is watching.</b>"
         };
         private void Awake() => ocean = GetComponent<OceanInteractions>();
         private void OnEnable()
@@ -50,6 +56,7 @@ namespace DivingPrototype
             Stage = 0;
             Mode = TutorialMode.None;
             VisibleSeconds = 0;
+            startPosition = transform.position;
             if (GameState.days == 2)
             {
                 Mode = TutorialMode.Mining;
@@ -60,11 +67,14 @@ namespace DivingPrototype
                 Mode = TutorialMode.Delivery;
                 GameState.deliveryTutorialShown = true;
             }
+            else if (GameState.days == 4) Mode = TutorialMode.Depletion;
         }
         public void EndExcursion() { Mode = TutorialMode.None; Stage = 0; VisibleSeconds = 0; }
         public void OnDeliveryCollected(int remaining)
         {
-            if (Mode == TutorialMode.Delivery && remaining == 0) EndExcursion();
+            if (Mode != TutorialMode.Delivery || remaining != 0) return;
+            if (GameState.days == 4) { Mode = TutorialMode.Depletion; VisibleSeconds = 0; }
+            else EndExcursion();
         }
         public void OnScan(int count) { if (Stage > 0 && count > 0) discovered = true; }
         public void OnPlaced() { if (Stage <= 0) return; placed = true; if (retrieved) replaced = true; }
@@ -72,20 +82,28 @@ namespace DivingPrototype
         public void OnRetrieved() { if (Stage > 0) retrieved = true; }
         private void Update()
         {
-            if (Mode != TutorialMode.Mining || ocean.InsideSubmarine || ocean.IsTransitioning) return;
-            // A machine deployed on an earlier excursion can already contain ore.
-            foreach (var target in ocean.targets)
-                if (target != null && target.HasMachine && target.StoredOre > 0) produced = true;
+            if (!IsVisible || ocean.InsideSubmarine || ocean.IsTransitioning) return;
+            if (Mode == TutorialMode.Mining)
+                // A machine deployed on an earlier excursion can already contain ore.
+                foreach (var target in ocean.targets)
+                    if (target != null && target.HasMachine && target.StoredOre > 0) produced = true;
             Advance(Time.deltaTime);
         }
         public void Advance(float seconds)
         {
-            if (Mode != TutorialMode.Mining || Stage < 1 || Stage >= 8 || seconds < 0) return;
+            if (seconds < 0) return;
+            if (Mode == TutorialMode.Depletion)
+            {
+                VisibleSeconds += seconds;
+                if (VisibleSeconds >= 30f) EndExcursion();
+                return;
+            }
+            if (Mode != TutorialMode.Mining || Stage < 1 || Stage > Messages.Length) return;
             VisibleSeconds += seconds;
-            bool next = Stage == 1 ? discovered
-                : Stage == 2 ? placed : Stage == 3 ? produced : Stage == 4 ? retrieved
-                : Stage == 5 ? replaced : VisibleSeconds >= 30f;
-            if (next && (Stage == 1 || VisibleSeconds >= 5f)) { Stage++; VisibleSeconds = 0; }
+            bool next = Stage == 1 ? Vector2.Distance(startPosition, transform.position) >= 1f
+                : Stage == 2 ? discovered : Stage == 3 ? placed : Stage == 4 ? produced : Stage == 5 ? retrieved
+                : Stage == 6 ? replaced : VisibleSeconds >= 30f;
+            if (next) { Stage++; VisibleSeconds = 0; }
         }
     }
 }
