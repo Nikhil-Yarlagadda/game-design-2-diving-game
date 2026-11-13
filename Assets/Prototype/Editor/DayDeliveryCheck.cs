@@ -17,6 +17,10 @@ namespace DivingPrototype
         private readonly HashSet<string> talks = GameState.npcsTalks;
         private readonly Dictionary<string, int> inventory = GameState.inventory;
         private readonly Dictionary<string, int> purchases = GameState.itemsBought;
+        private readonly Dictionary<string, int> dailyPurchases = GameState.dailyPurchases;
+        private readonly int shopDay = GameState.shopDay, oreLost = GameState.oreLost;
+        private readonly bool medicineDelivered = GameState.medicineDelivered, incapacitated = GameState.excursionIncapacitated;
+        private readonly GameState.DiveLoadout loadout = GameState.lastLoadout;
         public void Dispose()
         {
             GameState.miningSpots = miningSpots;
@@ -24,6 +28,12 @@ namespace DivingPrototype
             GameState.deliveryTutorialShown = tutorialShown;
             GameState.inventory = inventory;
             GameState.npcsTalks = talks; GameState.itemsBought = purchases;
+            GameState.dailyPurchases = dailyPurchases;
+            GameState.shopDay = shopDay;
+            GameState.oreLost = oreLost;
+            GameState.medicineDelivered = medicineDelivered;
+            GameState.excursionIncapacitated = incapacitated;
+            GameState.lastLoadout = loadout;
         }
     }
 

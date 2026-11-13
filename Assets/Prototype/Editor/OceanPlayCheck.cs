@@ -25,6 +25,7 @@ namespace DivingPrototype
             using var state = new GameStateSnapshot();
             GameState.reset();
             GameState.days = 2;
+            GameState.lastLoadout.Machines = 2;
             GameState.itemsBought[GameState.MiningMachine] = 3;
             await SceneManager.LoadSceneAsync("Ocean Interactables");
             await Task.Delay(150);
@@ -94,6 +95,7 @@ namespace DivingPrototype
                 InputSystem.onAfterUpdate += keepTestKeyboardCurrent;
                 // Start can still be pending when an unfocused scene has just loaded.
                 await Task.Delay(100);
+                await DayDeliveryPlayCheck.BeginDive(ocean);
                 ocean.Hydrox.Refill();
                 var tutorial = ocean.GetComponent<OceanTutorial>();
                 require(tutorial.Stage==1,"Excursion starts tutorial at stage one");
@@ -180,7 +182,8 @@ namespace DivingPrototype
                 await Task.Delay(1900);
                 require(!ocean.IsProspecting && ocean.CooldownRemaining>3,"Completed scan starts five-second cooldown");
                 require(scanMine.IsProspected && scanMine.highlight.enabled,"Prospected spot stays rendered");
-                keys(new[]{Key.E});await Task.Delay(5100);
+                keys(new[]{Key.E});
+                for (int i = 0; i < 120 && ocean.CooldownRemaining > 0f; i++) await Task.Delay(100);
                 require(!ocean.IsProspecting && ocean.CooldownRemaining==0,"Holding E does not automatically rescan");
                 keys(Array.Empty<Key>());await Task.Delay(100);
                 keys(new[]{Key.E});await Task.Delay(200);
@@ -223,13 +226,14 @@ namespace DivingPrototype
                 var mine=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot&&t.level==5);
                 mine.Reveal(Time.time);
                 jump(mine.transform.position); keys(new[]{Key.X,Key.Space});await Task.Delay(150);keys(Array.Empty<Key>());await Task.Delay(150);
-                require(!mine.HasMachine && ocean.availableMachines==3,"Old X and Space bindings are inactive");
+                int carriedMachines = ocean.availableMachines;
+                require(!mine.HasMachine && carriedMachines > 0,"Old X and Space bindings are inactive");
                 await click();
-                require(mine.HasMachine && ocean.availableMachines==2, "Left click deploys exactly one machine");
+                require(mine.HasMachine && ocean.availableMachines==carriedMachines-1, "Left click deploys exactly one machine");
                 var placed = typeof(OceanTarget).GetField("nextTick",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
                 placed.SetValue(mine,Time.time-55.1f);
                 await click();
-                require(!mine.HasMachine && ocean.Tellurium==24 && ocean.availableMachines==3, "Left click retrieves machine and 24 tellurium from one minute of tier five ticks");
+                require(!mine.HasMachine && ocean.Tellurium==24 && ocean.availableMachines==carriedMachines, "Left click retrieves machine and 24 tellurium from one minute of tier five ticks");
                 pointer(false,false,null);await Task.Delay(100);
                 require(mine.Retrieve(Time.time)==0 && ocean.Tellurium==24,"Duplicate retrieval cannot award resources");
                 // Isolate the duplicate-click check from legitimate pickup of a neighboring target.
@@ -313,7 +317,7 @@ namespace DivingPrototype
                 require(ocean.Prospect(Time.time) && swimmer.PropulsionLocked,"Begin scan before simulated gas depletion");
                 ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
                 require(!ocean.Prospect(Time.time+10) && !ocean.PlaceMachine(),"Empty tank blocks scanning and placement");
-                await Task.Delay(200);
+                await DayDeliveryPlayCheck.WaitForGasFailure(ocean);
                 var restarted=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 require(SceneManager.GetActiveScene().name=="Ocean Interactables" && !ended && restarted!=ocean,"Day-two gas depletion restarts training without ending the excursion through Results");
                 require(GameState.tellurium==0 && GameState.days==2 && restarted.GetComponent<OceanTutorial>().Stage==1,"Tutorial retry discards failed-attempt income and restarts the first step");
