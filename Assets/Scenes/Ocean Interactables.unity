@@ -9636,7 +9636,7 @@ PolygonCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
-    oldSize: {x: 43.75, y: 11.625}
+    oldSize: {x: 43.75, y: 11}
     newSize: {x: 11.5, y: 35}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -9646,11 +9646,10 @@ PolygonCollider2D:
     m_Paths:
     - - {x: 43.6, y: 0.1609993}
       - {x: 0.15499878, y: 0.1609993}
-      - {x: 0.15499878, y: 11.461}
-      - {x: 2.5769997, y: 11}
-      - {x: 2.4609985, y: 9.731998}
-      - {x: 4.8829994, y: 10.307999}
-      - {x: 4.6519966, y: 8.233002}
+      - {x: 0.15499878, y: 10.827}
+      - {x: 5.0559998, y: 10.827}
+      - {x: 4.5949974, y: 8.521}
+      - {x: 6.3239975, y: 7.9440002}
       - {x: 6.382, y: 7.887001}
       - {x: 7.9959984, y: 5.3499985}
       - {x: 18.604998, y: 6.042}
@@ -22432,7 +22431,7 @@ Transform:
   m_GameObject: {fileID: 1741833835}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -43.6, y: -32.65, z: 0}
+  m_LocalPosition: {x: -43.6, y: -32.7, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22536,7 +22535,7 @@ PolygonCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
-    oldSize: {x: 6.2, y: 28.225}
+    oldSize: {x: 6.2, y: 28.275}
     newSize: {x: 65.25, y: 22.75}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -22544,16 +22543,15 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 0.15499878, y: 28.066002}
-      - {x: 1.3079987, y: 27.605001}
-      - {x: 3.1529999, y: 14.690002}
-      - {x: 5.574997, y: 11.115002}
-      - {x: 5.1139984, y: 7.425001}
-      - {x: 6.0359993, y: 5.8100014}
-      - {x: 4.8829994, y: 0.15999985}
-      - {x: 1.8849983, y: 1.8900013}
-      - {x: 2.230999, y: 1.0820007}
-      - {x: 0.15499878, y: 1.3130016}
+    - - {x: 0.15499878, y: 28.116001}
+      - {x: 1.3079987, y: 27.655}
+      - {x: 3.1529999, y: 14.740002}
+      - {x: 5.574997, y: 11.165001}
+      - {x: 5.1139984, y: 7.4750004}
+      - {x: 6.0359993, y: 5.8600006}
+      - {x: 4.8829994, y: 0.20999908}
+      - {x: 5.0559998, y: 0.15200043}
+      - {x: 0.15499878, y: 0.15200043}
   m_UseDelaunayMesh: 1
 --- !u!1 &1756952068
 GameObject:
@@ -26547,8 +26545,8 @@ Transform:
   m_GameObject: {fileID: 2052273563}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.93260044, y: -0.23320007, z: 0}
-  m_LocalScale: {x: 81.8364, y: 79.7376, z: 0.5}
+  m_LocalPosition: {x: -0.93260044, y: 0.9668, z: 0}
+  m_LocalScale: {x: 81.8364, y: 82.1376, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1366615275}
