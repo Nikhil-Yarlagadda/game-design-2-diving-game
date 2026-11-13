@@ -78,7 +78,7 @@ namespace DivingPrototype
                 FlashlightCheck.Near(OceanHud.MinimapPosition(Vector2.right*12.5f,25,84).x,42,"Linear in-range distance",.001f);
                 FlashlightCheck.Near(OceanHud.MinimapPosition(Vector2.one*50,25,84).magnitude,84,"Diagonal distant target clamps to border",.001f);
                 FlashlightCheck.Require(targets.Count(t => t.kind == OceanTarget.TargetKind.Submarine) == 1, "One central submarine");
-                FlashlightCheck.Require(mines.Select(t => t.level).Distinct().Count() == 5, "All five mining tiers exist");
+                FlashlightCheck.Require(mines.GroupBy(t => t.level).OrderBy(t => t.Key).Select(t => t.Count()).SequenceEqual(new[] { 7, 12, 11, 5, 7 }), "New map includes the reference distribution across all five mining tiers");
                 foreach (var mine in mines)
                 {
                     mine.Reveal(0);
@@ -119,7 +119,7 @@ namespace DivingPrototype
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Kelp")).All(b => b.isTrigger), "Kelp passable");
                 FlashlightCheck.Require(interactions.obstacles.Where(b => b.name.StartsWith("Rock") || b.name.StartsWith("Chasm")).All(b => !b.isTrigger), "Rocks and chasms solid");
                 FlashlightCheck.Require(EditorBuildSettings.scenes.Any(s => s.enabled && s.path == "Assets/Scenes/Interior.unity"), "Interior included in build");
-                FlashlightCheck.Require(mines.Length == 37 && targets.All(t=>t.kind!=OceanTarget.TargetKind.Item), "Full reference map without authored test pickups");
+                FlashlightCheck.Require(mines.Length == 42 && targets.All(t=>t.kind!=OceanTarget.TargetKind.Item), "Full reference map without authored test pickups");
                 FlashlightCheck.Require(interactions.deliveryPrefab != null && interactions.deliveryPrefab.kind == OceanTarget.TargetKind.Item, "Delivery prefab is wired");
                 FlashlightCheck.Near(interactions.deliveryRadius,10,"Default delivery radius",.001f);
                 FlashlightCheck.Require(interactions.resultsScene == "Result", "Ocean exit uses Results");

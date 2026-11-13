@@ -10,11 +10,11 @@ Sprite:
   m_Name: Draft-Kelp-4
   m_Rect:
     serializedVersion: 2
-    x: 2132
-    y: 7608
-    width: 680
-    height: 584
-  m_Offset: {x: -340, y: -292}
+    x: 972
+    y: 3382
+    width: 677
+    height: 769
+  m_Offset: {x: -338.5, y: -384.5}
   m_Border: {x: 0, y: 0, z: 0, w: 0}
   m_PixelsToUnits: 40
   m_Pivot: {x: 0, y: 0}
@@ -102,7 +102,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 000000009a99694100000000000088419a996941000000000000000000000000000000000000884100000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 00000000cdcc99410000000066668741cdcc9941000000000000000000000000000000006666874100000000000000000000000000000000000000000000000000000000000000000000000000000000
     m_Bindpose: []
     m_BlendShapes:
       vertices: []
@@ -111,14 +111,14 @@ Sprite:
       fullWeights: []
     textureRect:
       serializedVersion: 2
-      x: 2132
-      y: 7608
-      width: 680
-      height: 584
+      x: 972
+      y: 3382
+      width: 677
+      height: 769
     textureRectOffset: {x: 0, y: 0}
     atlasRectOffset: {x: -1, y: -1}
     settingsRaw: 3072
-    uvTransform: {x: 40, y: 2132, z: 40, w: 7608}
+    uvTransform: {x: 40, y: 972, z: 40, w: 3382}
     downscaleMultiplier: 1
   m_AtlasRD:
     serializedVersion: 4
@@ -198,7 +198,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 000000009a99694100000000000088419a996941000000000000000000000000000000000000884100000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 00000000cdcc99410000000066668741cdcc9941000000000000000000000000000000006666874100000000000000000000000000000000000000000000000000000000000000000000000000000000
     m_Bindpose: []
     m_BlendShapes:
       vertices: []
@@ -207,14 +207,14 @@ Sprite:
       fullWeights: []
     textureRect:
       serializedVersion: 2
-      x: 2132
-      y: 7608
-      width: 680
-      height: 584
+      x: 972
+      y: 3382
+      width: 677
+      height: 769
     textureRectOffset: {x: 0, y: 0}
     atlasRectOffset: {x: -1, y: -1}
     settingsRaw: 3072
-    uvTransform: {x: 40, y: 2132, z: 40, w: 7608}
+    uvTransform: {x: 40, y: 972, z: 40, w: 3382}
     downscaleMultiplier: 1
   m_PhysicsShape: []
   m_Bones: []
