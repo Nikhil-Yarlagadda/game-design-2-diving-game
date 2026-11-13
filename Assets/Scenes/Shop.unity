@@ -659,9 +659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 800
   title: Camera Module
-  description: A pressure-resistant waterproof camera with a powerful spotlight attached. It can be mounted to your diving helmet or simply used as a camera.
 --- !u!114 &98376191
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -945,9 +943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 400
   title: Heavy Hydrox Tank
-  description: A major upgrade. Gives approximately 8 minutes of breathing time.
 --- !u!114 &263973368
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1173,9 +1169,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 150
   title: Antimicrobial Medicine
-  description: "The Company\u2019s only providing us with a single pill."
 --- !u!114 &422246796
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1322,9 +1316,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 70
-  title: 'Stimulant Canister  '
-  description: "A small canister of envigorating gas. Can be used during excursions for a boost of energy. \\n\\nIt\u2019s a wonder how eager the Company is to supply these. "
+  title: Stimulant Canister
 --- !u!114 &440359745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2646,9 +2638,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 80
   title: Mining Machine
-  description: Attach to prospected mining spots to extract tellurium over time. Cheaply made, it will break if left on overnight
 --- !u!1 &1198900977
 GameObject:
   m_ObjectHideFlags: 0
@@ -3478,9 +3468,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 400
   title: Advanced flippers
-  description: A major upgrade. Gives approximately 8 minutes of breathing time.
 --- !u!114 &1566433923
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4440,9 +4428,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a2367f9774af7f4b9f56a7a4e6f818a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Item
-  cost: 200
   title: Medium Hydrox Tank
-  description: A slight upgrade. Gives approximately 5 minutes of breathing time.
 --- !u!114 &2059978858
 MonoBehaviour:
   m_ObjectHideFlags: 0

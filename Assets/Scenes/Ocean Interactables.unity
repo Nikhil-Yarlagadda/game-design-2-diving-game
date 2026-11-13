@@ -14595,8 +14595,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 285, y: -100}
-  m_SizeDelta: {x: 550, y: 100}
+  m_AnchoredPosition: {x: 285, y: -132}
+  m_SizeDelta: {x: 550, y: 108}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1214223812
 GameObject:
@@ -27894,44 +27894,31 @@ MonoBehaviour:
   slotPrefab: {fileID: 3384652143570707671, guid: d0255685eef06314c92d19c5ece1af04, type: 3}
   columns: 8
   rows: 6
-  defaultMaxStack: 64
   itemInfos:
   - itemName: Mining Machine
     sprite: {fileID: 0}
-    maxStack: 4
   - itemName: Tellurium
     sprite: {fileID: 0}
-    maxStack: 16
-  - itemName: 'Medium Hydrox Tank  '
+  - itemName: Medium Hydrox Tank
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Heavy Hydrox Tank  '
+  - itemName: Heavy Hydrox Tank
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Advanced flippers  '
+  - itemName: Advanced flippers
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Stimulant Canister  '
+  - itemName: Stimulant Canister
     sprite: {fileID: 0}
-    maxStack: 4
-  - itemName: 'Antimicrobial Medicine  '
+  - itemName: Antimicrobial Medicine
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Camera Module  '
+  - itemName: Camera Module
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Light Hydrox Tank  '
+  - itemName: Light Hydrox Tank
     sprite: {fileID: 0}
-    maxStack: 1
   - itemName: Full-grown Fungus Sample
     sprite: {fileID: 0}
-    maxStack: 4
   - itemName: Photograph of Infected Crewmate
     sprite: {fileID: 0}
-    maxStack: 1
-  - itemName: 'Photograph of the Eye of the Abyss  '
+  - itemName: Photograph of the Eye of the Abyss
     sprite: {fileID: 0}
-    maxStack: 1
 --- !u!114 &123723316
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27982,8 +27969,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 46}
+  m_SizeDelta: {x: 0, y: -116}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &165849901
 MonoBehaviour:
@@ -28005,7 +27992,7 @@ MonoBehaviour:
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 100, y: 100}
+  m_CellSize: {x: 100, y: 84}
   m_Spacing: {x: 8, y: 8}
   m_Constraint: 1
   m_ConstraintCount: 8
@@ -28139,7 +28126,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 0.015, g: 0.04, b: 0.07, a: 0.98}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

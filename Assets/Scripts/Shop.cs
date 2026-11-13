@@ -5,44 +5,36 @@ public class Shop : MonoBehaviour
 {
     public TextMeshProUGUI description;
     public Button button;
-    private static int cost;
-    private static string item;
-    private static string desc;
+    private static ItemCatalog.Definition item;
     
     void Start()
     {
-        cost = 0;
         item = null;
-        desc = null;
     }
     void Update()
     {
-        if(string.IsNullOrEmpty(item) || GameState.credits < cost)
-            button.interactable = false;
-        else
-            button.interactable = true;
-
-        if(item != null)
-            description.text = item + "\n"+  "Cost - " + cost +"\n"+ "\n"+ desc;
-        
+        int stock = ItemCatalog.RemainingStock(item);
+        button.interactable = CanBuy(stock);
+        if (item != null)
+            description.text = $"{item.Name}\nCost: {item.Price} credits    Weight: {item.Weight}    Stock: {stock}\n\n{item.Description}";
     }
 
     public void buyClicked()
     {
-        if (string.IsNullOrEmpty(item) || cost < 0 || GameState.credits < cost) return;
-        GameState.credits -= cost;
-        if(GameState.itemsBought.ContainsKey(item))
-            GameState.itemsBought[item]++;
-        else
-            GameState.itemsBought[item] = 1;
-        Debug.Log("Amount of item is " + GameState.itemsBought[item]);
+        if (!CanBuy(ItemCatalog.RemainingStock(item))) return;
+        GameState.credits -= item.Price;
+        ItemCatalog.ChangeCount(GameState.itemsBought, item.Id, 1);
+        if (!item.DailyStock) return;
+        if (GameState.shopDay != GameState.days)
+        {
+            GameState.shopDay = GameState.days;
+            GameState.dailyPurchases.Clear();
+        }
+        ItemCatalog.ChangeCount(GameState.dailyPurchases, item.Id, 1);
     }
 
-    public static void itemClicked(string description, string name, int price)
-    {
-        desc = description;
-        item = name;
-        cost = price;
-    }
+    private static bool CanBuy(int stock) => stock > 0 && item != null && GameState.credits >= item.Price;
+
+    public static void itemClicked(string name) => item = ItemCatalog.Find(name);
 }
 

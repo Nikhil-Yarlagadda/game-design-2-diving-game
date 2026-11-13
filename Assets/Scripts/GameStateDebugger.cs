@@ -139,7 +139,9 @@ public sealed class GameStateDebugger : MonoBehaviour
     {
         if (SceneChanger.IsTransitioning) return;
         if (value < 0) { Reject("Tellurium must be nonnegative."); return; }
-        GameState.tellurium = value;
+        var ocean = FindAnyObjectByType<OceanInteractions>();
+        if (ocean != null) ocean.SetDebugTellurium(value);
+        else GameState.tellurium = value;
         RefreshExcursionInventory();
         RefreshResults();
         Status = null;
@@ -195,6 +197,12 @@ public sealed class GameStateDebugger : MonoBehaviour
         private readonly int credits = GameState.credits;
         private readonly int tellurium = GameState.tellurium;
         private readonly bool tutorialShown = GameState.deliveryTutorialShown;
+        private readonly bool medicineDelivered = GameState.medicineDelivered;
+        private readonly int shopDay = GameState.shopDay;
+        private readonly Dictionary<string, int> dailyPurchases = new(GameState.dailyPurchases);
+        private readonly GameState.DiveLoadout lastLoadout = GameState.lastLoadout;
+        private readonly bool incapacitated = GameState.excursionIncapacitated;
+        private readonly int oreLost = GameState.oreLost;
         private readonly Dictionary<string, GameState.MiningSpotState> mining = new(GameState.miningSpots);
         private readonly Dictionary<string, int> orders = new(GameState.itemsBought);
         private readonly Dictionary<string, int> inventory = new(GameState.inventory);
@@ -208,6 +216,12 @@ public sealed class GameStateDebugger : MonoBehaviour
             GameState.credits = credits;
             GameState.tellurium = tellurium;
             GameState.deliveryTutorialShown = tutorialShown;
+            GameState.medicineDelivered = medicineDelivered;
+            GameState.shopDay = shopDay;
+            GameState.dailyPurchases = new(dailyPurchases);
+            GameState.lastLoadout = lastLoadout;
+            GameState.excursionIncapacitated = incapacitated;
+            GameState.oreLost = oreLost;
             GameState.miningSpots = new(mining);
             GameState.itemsBought = new(orders);
             GameState.inventory = new(inventory);

@@ -23,6 +23,8 @@ namespace DivingPrototype
         }
         [SerializeField] private PolygonCollider2D[] kelpZones = new PolygonCollider2D[0];
         public float SpeedMultiplier { get; private set; } = 1f;
+        public float EquipmentSpeed { get; set; } = 1f;
+        public float BreathingSpeed { get; set; } = 1f;
 
         private void Awake() => body = GetComponent<Rigidbody2D>();
 
@@ -51,10 +53,11 @@ namespace DivingPrototype
             foreach (var kelp in kelpZones)
                 if (kelp != null && kelp.isActiveAndEnabled && kelp.OverlapPoint(body.position))
                 { SpeedMultiplier = .5f; break; }
-            body.linearVelocity = StepVelocity(body.linearVelocity, PropulsionLocked ? Vector2.zero : input, maxSpeed * SpeedMultiplier,
+            SpeedMultiplier *= EquipmentSpeed * BreathingSpeed;
+            float speed = maxSpeed * SpeedMultiplier;
+            body.linearVelocity = StepVelocity(body.linearVelocity, PropulsionLocked ? Vector2.zero : input, speed,
                 acceleration, deceleration, Time.fixedDeltaTime);
-            if (SpeedMultiplier < 1f)
-                body.linearVelocity = Vector2.ClampMagnitude(body.linearVelocity, maxSpeed * SpeedMultiplier);
+            body.linearVelocity = Vector2.ClampMagnitude(body.linearVelocity, speed);
         }
 
         public static Vector2 StepVelocity(Vector2 velocity, Vector2 direction,

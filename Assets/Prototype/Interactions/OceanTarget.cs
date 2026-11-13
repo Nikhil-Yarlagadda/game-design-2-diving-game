@@ -14,6 +14,7 @@ namespace DivingPrototype
         [Min(1)] public int level = 1;
         public string displayName = "Item";
         public string itemName;
+        public int itemCount = 1;
         public SpriteRenderer highlight;
         public GameObject machine;
         public bool HasMachine { get; private set; }
@@ -22,6 +23,8 @@ namespace DivingPrototype
         public int DisplayedTier { get; private set; }
         public int ActualTier { get { InitializeMining(); return actualTier; } }
         public int StoredOre { get; private set; }
+        public bool HasWreck { get; private set; }
+        public int WreckOre { get; private set; }
         public event Action<OceanTarget> OreProduced;
         private int actualTier, tierOutput, previousDisplayedTier;
         private bool initialized;
@@ -42,6 +45,8 @@ namespace DivingPrototype
                 tierOutput = saved.TierOutput;
                 IsProspected = saved.IsProspected;
                 DisplayedTier = saved.DisplayedTier;
+                HasWreck = saved.HasWreck;
+                WreckOre = saved.WreckOre;
             }
             initialized = true;
         }
@@ -51,7 +56,7 @@ namespace DivingPrototype
             if (!CanPersist) return;
             GameState.miningSpots[persistentId] = new GameState.MiningSpotState {
                 IsProspected = IsProspected, DisplayedTier = DisplayedTier,
-                ActualTier = actualTier, TierOutput = tierOutput
+                ActualTier = actualTier, TierOutput = tierOutput, HasWreck = HasWreck, WreckOre = WreckOre
             };
         }
         private void Awake()
@@ -61,6 +66,7 @@ namespace DivingPrototype
             spot = GetComponent<SpriteRenderer>();
             if (spot != null) spot.enabled = false;
             if (highlight != null) highlight.enabled = false;
+            if (HasWreck && machine != null) machine.SetActive(true);
             var go = new GameObject("Prospected Tier", typeof(TextMeshPro));
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0, .85f, -.1f);
@@ -108,7 +114,7 @@ namespace DivingPrototype
         }
         public bool Place(float now)
         {
-            if (kind != TargetKind.MiningSpot || HasMachine || !IsProspected || DisplayedTier == 0) return false;
+            if (kind != TargetKind.MiningSpot || HasMachine || HasWreck || !IsProspected || DisplayedTier == 0) return false;
             InitializeMining();
             HasMachine = true;
             StoredOre = 0;
@@ -126,6 +132,24 @@ namespace DivingPrototype
             HasMachine = false;
             if (machine != null) machine.SetActive(false);
             return amount;
+        }
+
+        public void BreakOvernight(float now)
+        {
+            if (!HasMachine) return;
+            WreckOre = Mathf.FloorToInt(Retrieve(now) * UnityEngine.Random.Range(0f, .8f));
+            HasWreck = true;
+            actualTier = Mathf.Max(0, actualTier - 1);
+            tierOutput = 0;
+            SaveMiningState();
+        }
+
+        public void ClearWreck()
+        {
+            HasWreck = false;
+            WreckOre = 0;
+            if (machine != null) machine.SetActive(false);
+            SaveMiningState();
         }
         private Color TierColor => DisplayedTier == 5 ? new Color(.85f,.5f,1) : DisplayedTier == 4 ? new Color(1,.65f,.25f)
             : DisplayedTier == 3 ? new Color(.3f,.8f,1) : DisplayedTier == 2 ? new Color(.4f,1,.6f)
@@ -148,7 +172,7 @@ namespace DivingPrototype
             bool changed = now < changedUntil;
             label.color = changed ? Color.Lerp(TierColor, new Color(1,.65f,.1f), .5f + .5f * Mathf.Sin(now * 10)) : TierColor;
             string tier = DisplayedTier == 0 ? "Depleted" : "Tier " + DisplayedTier;
-            label.text = changed ? "Tier " + previousDisplayedTier + " → " + tier : tier;
+            label.text = HasWreck ? tier + " • Wreck" : changed ? "Tier " + previousDisplayedTier + " → " + tier : tier;
         }
         public void ShowHighlight(bool closest, float now)
         {

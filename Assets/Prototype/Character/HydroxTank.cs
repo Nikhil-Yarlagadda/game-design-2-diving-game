@@ -33,6 +33,13 @@ namespace DivingPrototype
             CurrentCapacity = maxCapacity;
         }
 
+        public void Equip(int seconds)
+        {
+            ValidateSettings();
+            maxCapacity = seconds * consumptionRate;
+            Refill();
+        }
+
         public void Advance(float deltaTime)
         {
             if (deltaTime <= 0f || float.IsNaN(deltaTime)) return;
