@@ -11,7 +11,16 @@ public class Shop : MonoBehaviour
     private static readonly System.Collections.Generic.HashSet<string> restockable =
         new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister"};
     private static int stock = 0;
+    public GameObject pill;
     
+    void Awake()
+    {
+        if(GameState.days >= 7)
+            pill.SetActive(true);
+        else
+            pill.SetActive(false);
+    }
+
     void Start()
     {
         cost = 0;

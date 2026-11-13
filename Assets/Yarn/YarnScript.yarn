@@ -1,4 +1,315 @@
-﻿title: Medic1
+﻿title: ApprenticeDiver1
+---
+Player: What’s it like out there?
+Cole: It’s dark, man! Thank god for this flashlight, I wouldn’t have been able to see my hand in front of my face without it.
+Player: Any tellurium?
+Cole: Got some right here. I’ll take it to Jonah once I get all this gear hung up for you. Seems like there’s plenty of good mining spots – you’ll see for yourself tomorrow.
+Player: Sounds good.
+===
+
+title: ApprenticeDiver3
+---
+Cole: How’d it go yesterday?
+-> Sure is dark.
+    Cole: What’d I tell ya? Tell you what, though… I’m getting used to it. There’s something peaceful about the dark and quiet.
+    -> I know what you mean. When you’re out there, it’s just you, y’know?
+        Cole: Exactly.
+    -> I can’t relate.
+        Cole: Some diver you are, then.
+-> I got a lot of mining done.
+    Cole: Look at you go, big foreman. You’ll make us rich!
+Player: When you’re all unpacked here, Kirsten wants to check on how you’re feeling. For her medical record.
+
+Cole: Heard. I can tell you right now though that it’ll be a short conversation. I’ve never felt better!
+
+Player: Good to hear.
+===
+
+title: ApprenticeDiver5
+---
+Player: What’s up?
+Cole: You know, the same old same old. Swim around, do some prospecting, set up the machines, do some more prospecting, take down the machines, bring it all back here, don’t drown.
+Cole: My knees have been killing me all of a sudden, though. What gives? I’m not a senior citizen.
+Player: Make sure to let Kirsten know. She might be able to help you out.
+Cole: I will. Maybe she’ll be glad to finally have something to write about on that clipboard of hers. Just need to finish putting all this equipment away first.
+Player: See you.
+===
+
+title: ApprenticeDiver7
+---
+Cole: Hey, man.
+Player: What’s up?
+Cole: I told you about how my knees hurt, right? Kirsten took a look yesterday while you were out. Said it’s because of the diving and the pressure and whatever. 
+Cole: She gave me some pain meds, but I don’t like ‘em. They give me a stomachache.
+Cole: She also told me about that weird gunk in the air filter. She seemed pretty worried about it, but I don’t get it.
+Cole: Stuff in an old submarine like this should get cruddy and gunky all the time, right? I don’t see what the big scare is.
+Player: It’s not good to be breathing in mold or bacteria, that’s what she’s worried about. I let management know about it, too.
+Cole: Management, huh. Wish I could tell them how crummy these headlamps that they gave us are. I wonder if we could ever get anything brighter. Y’know, so I can actually see what I’m doing out there.
+Player: I might be able to buy something with credits.
+Cole: Oh, but the all-important foreman doesn’t need to worry about what I want, huh? After all, I am just the apprentice.
+Player: What’s with the attitude?
+Cole: I’m pulling your leg. Have a good one.
+Player: See you.
+===
+
+title: ApprenticeDiver9
+---
+Cole: What’s up, boss?
+Player: Bad news. Jonah’s seriously sick all of a sudden.
+Cole: What? How did that happen? He seemed so healthy last time I saw him! Can Kirsten help?
+Player: She’s not sure, it’s some really weird kind of disease. He has these mushroom-looking growths on him, and he’s saying all kinds of weird stuff. 
+Cole: Oh, yuck… Man, that’s freaky. I’ll have to stay away from him, don’t wanna catch something like that. You gotta let management know.
+Player: Yeah, but they won’t hear me out unless I send them evidence.
+Cole: Man, how rotten is that? What kind of people are we working for?
+Player: I know, right?
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        Cole: This won’t give me a stomachache, right?
+    -> No
+<<endif>>
+===
+
+title: ApprenticeDiver11
+---
+Player: Hey.
+Cole: Yo. I saw Jonah yesterday… What’s going on, man? “Weird disease” isn’t even half of it; This guy was so normal last week, and somehow he went crazy in just a couple days! And what’s with the stuff on his skin?
+Cole: I don’t like to look weak, especially not in front of my boss, but I’m scared, dude…
+Player: As long as we keep our distance, we should be fine. As for him… I just hope he holds on until we can get help.
+Cole: Keep our distance, sure. But then how did he get sick in the first place? Who’s to say it’s not gonna happen to us?
+Player: I don’t know…
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        Cole: This won’t give me a stomachache, right?
+    -> No
+<<endif>>
+===
+
+title: ApprenticeDiver13
+---
+Player: Have you seen Jonah?
+Cole: Yeah…
+Player: Where!?
+Cole: Outside… and far…
+Player: You mean he swam away? How can that be possible?
+Cole: It was messed up, dude… these crazy mushrooms growing out of him… he was stuck in the ground like a plant, standing up straight like the mushrooms were holding him up…
+Cole: And how did he get so far away!? You can’t just swim around down here without being covered head to toe in tanks and equipment. What the hell is going on!?
+Cole: I’m sick of this, dude. I wish I could just swim far, far away. Far away from this piece of junk submarine. Way out into the ocean where this crazy disease can’t get me. I’d feel safe there… in the ocean…
+Player: We can stick this out, Cole. This job is more than halfway done. If we can just keep doing our excursions for a little bit longer, this’ll all be over.
+Cole: You’re right… I’ll take care of the lab.
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        <<cure_Cole>>
+        Cole: This won’t give me a stomachache, right?
+    -> No
+<<endif>>
+===
+
+title: ApprenticeDiver15
+---
+<<if not Cole_sick()>>
+    Cole: Hey man, thanks for giving me that medicine yesterday. I don’t really know how to explain it, but my head was feeling all foggy and weird. I finally feel like myself again.
+    <<if has_item("Full-grown Fungus Sample")>>
+        Cole: I didn’t think you were the type to be into magic spells, foreman.
+        Player: What are you talking about?
+        Cole: You were putting a little chunk of something in all the rooms. What is that, a crystal? You trying to ward off evil spirits or something? Might be a little late for that…
+        Cole: Hold on, that’s… What’s wrong with you!? Don’t tell me you’re losing your head too! First Jonah, then Kirsten, and now you, too!?
+        Player: Hold on, I can explain!
+        Narration: You tell Cole about what you read in the terminal’s encrypted files.
+        Cole: That was on the terminal the whole time, and they were hiding it all from us!? What the hell!?
+        Cole: …
+        Cole: I hope it’s true…
+    <<else>>
+        Cole: Hey man, I have bad news…
+        Player: … It happened to Kirsten too, didn’t it?
+        Cole: …
+        Cole: You gotta do something, man… I don’t know what, but you gotta do something… We can’t all just die here…
+        Cole: I don’t know what kind of disease this is, or why it’s making us all go crazy, one by one… but you gotta stop it somehow…
+    <<endif>>
+<<else>>
+    <<if has_item("Full-grown Fungus Sample")>>
+        Cole: I didn’t think you were the type to be into magic spells, foreman.
+        Player: What are you talking about?
+        Cole: You were putting a little chunk of something in all the rooms. What is that, a crystal? You trying to ward off evil spirits or something?
+        Cole: Wait, is that…
+        Cole: … Sorry, I lost my train of thought. I’m in the weirdest mood all of a sudden… What was I saying?
+        Player: You were asking about that stuff that I was putting everywhere. You see…
+        Narration: You tell Cole about what you read in the terminal’s encrypted files.
+        Cole: … What the hell…?
+        Cole: Sorry man, I just can’t seem to think straight right now. I’m gonna go lie down…
+        <<cure_Cole>>
+    <<else>>
+        Player: Thanks a lot for taking care of the lab work.
+        Cole: You got it, boss. It wasn’t the easiest thing to figure out, but it’s not like we have any other choice. Gotta keep turning in those daily expenses somehow.
+        Cole: I do really miss going on excursions, though. I miss it even more than I expected to.
+        Player: I imagine it must feel weird working in here.
+        Cole: It does…
+        Cole: It’s… really suffocating. It makes the darkness of the open ocean sound so nice in comparison.
+        Cole: None of this sickness and death… just peace, and quiet, and the water.
+        Cole: God, I miss it.
+        <<if has_item("Antimicrobial Medicine")>>
+            Give Antimicrobial Medicine?
+            -> Yes (will consume medicine)
+                <<remove_item "Antimicrobial Medicine">>
+                <<cure_Cole>>
+                Cole: This won’t give me a stomachache, right?
+            -> No
+        <<endif>>
+    <<endif>>
+<<endif>>
+===
+
+title: ApprenticeDiver17
+---
+<<if Cole_sick()>>
+    <<if days_since_fgfs() == 1>>
+        Player: You, too?
+        Cole: …
+        <<cure_Cole>>
+    <<else>>
+        Player: … Cole?
+        Cole: Why am I trapped in here… Why did you trap me in here?
+        Player: What do you mean?
+        Cole: I don’t deserve this! I’m supposed to be the foreman, not you! I’m supposed to be diving! Far, far out in the ocean…
+        Player: …
+        Cole: It told me so! It tells me so every waking minute!
+        Player: Please, try to calm down, Cole.
+        Cole: Shut up!
+        <<if has_item("Antimicrobial Medicine")>>
+            Give Antimicrobial Medicine?
+            -> Yes (will consume medicine)
+                <<remove_item "Antimicrobial Medicine">>
+                Cole: Get this thing away from me!
+                Narration: He drops the pill on the floor and crushes it under his heel.
+            -> No
+        <<endif>>
+        <<if has_item("Camera Module")>>
+            Photograph with Camera Module?
+            -> Yes
+                <<add_item "Photograph of Infected Crewmate">>
+                Camera Module interface: Image saved to disk.
+            -> No
+        <<endif>>
+    <<endif>>
+<<else>>
+    <<if time_Cole(2)>>
+        Player: Hey, how are you?
+        Cole: Funny you ask that, boss. You know that feeling when you lie down for a quick nap, and then all of a sudden three hours have gone by? For some reason, I feel like that, only, I don’t remember ever lying down for a nap. Isn’t that something!
+    <<endif>>
+    <<if days_since_fgfs() > 1>>
+        Cole: So only three more days of this, huh? God, am I ready to get back on dry land…
+        Player: Tell me about it.
+        Cole: … I can’t believe what happened to Jonah. I didn’t know the guy before this job, obviously, but it really messed me up to see him like that.
+        Cole: The past couple weeks have felt like a nightmare, even to me. I can’t imagine what he must’ve went through.
+        Cole: …
+        Cole: The three of us are alright now though, right? *laughs* It really feels like a miracle.
+    <<elseif days_since_fgfs() == 1>>
+        Cole: I didn’t think you were the type to be into magic spells, foreman.
+        Player: What are you talking about?
+        Cole: You were putting a little chunk of something in all the rooms. What is that, a crystal? You trying to ward off evil spirits or something? Might be a little late for that…
+        Cole: Hold on, that’s… What’s wrong with you!? Don’t tell me you’re losing your head too! First Jonah, then Kirsten, and now you, too!?
+        Player: Hold on, I can explain!
+        Narration: You tell Cole about what you read in the terminal’s encrypted files.
+        Cole: That was on the terminal the whole time, and they were hiding it all from us!? What the hell!?
+        Cole: …
+        Cole: I hope it’s true…
+    <<else>>
+        Cole: … So it’s just us now, huh?
+        Player: Don’t tell me… Kirsten’s gone too?
+        Cole: …
+        Cole: Who could’ve guessed that this is what we were signing up for? Signing up to lock ourselves in a metal tube at the bottom of Hell? To watch our coworkers get eaten from the inside out by some insane horror-movie disease? While the sickos up top just let it all happen?
+        Player: Only three more days of this, Cole. Three more days, we finish doing our work, and we’ll get paid and go home.
+        Cole: Get paid, huh?
+        Cole: … I don’t know how much I need to get paid to make up for what I’ve seen.
+    <<endif>>
+<<endif>>
+===
+
+title: ApprenticeDiver19
+---
+<<if Cole_sick()>>
+    <<if days_since_fgfs() == 1>>
+        Player: Hey, how are you feeling?
+        Cole: …
+        <<cure_Cole>>
+    <<else>>
+        Player: Hey, how are you feeling?
+        Cole: I’m feeling better today. I’ve calmed down.
+        Player: That’s great news!
+        Cole: I don’t need to worry, because it’ll all be over soon…
+        Player: Yeah, only one more day before we surface, and then we can get you medical attention!
+        Cole: *laughs* You must be seriously stupid if you think that’s happening! You really don’t get it at all!
+        Cole: The ocean has been calling for me, and even though you’re too stupid to hear it, it’s been calling for you, too! Very, very soon, all of this waiting will be over, and we’ll all return to where we belong.
+        Cole: Very, very, very soon…
+        <<if has_item("Antimicrobial Medicine")>>
+            Give Antimicrobial Medicine?
+            -> Yes (will consume medicine)
+                <<remove_item "Antimicrobial Medicine">>
+                Cole: Get this thing away from me!
+                Narration: He drops the pill on the floor and crushes it under his heel.
+            -> No
+        <<endif>>
+        <<if has_item("Camera Module")>>
+            Photograph with Camera Module?
+            -> Yes
+                <<add_item "Photograph of Infected Crewmate">>
+                Camera Module interface: Image saved to disk.
+            -> No
+        <<endif>>
+    <<endif>>
+<<else>>
+    <<if days_since_fgfs() == 1>>
+        Cole: I didn’t think you were the type to be into magic spells, foreman.
+        Player: What are you talking about?
+        Cole: You were putting a little chunk of something in all the rooms. What is that, a crystal? You trying to ward off evil spirits or something? Might be a little late for that…
+        Cole: Hold on, that’s… What’s wrong with you!? Don’t tell me you’re losing your head too! First Jonah, then Kirsten, and now you, too!?
+        Player: Hold on, I can explain!
+        Narration: You tell Cole about what you read in the terminal’s encrypted files.
+        Cole: That was on the terminal the whole time, and they were hiding it all from us!? What the hell!?
+        Cole: …
+        Cole: I hope it’s true…
+    <<elseif days_since_fgfs() > 1 and time_Cole(2)>>
+        // he was sick on day 17 and cured then
+        Cole: Woah… is that you, boss? I dunno why, but it feels like it’s been forever since I’ve seen you. Ugh… I feel like I just woke up from a really long, really rough nap.
+        Player: What’s the last thing you remember?
+        Cole: The last thing I remember…
+        Cole: Christ, don’t make me think about it. Jonah, dead on the ocean floor, with those crazy mushrooms growing out of him. I told you, right? But even that memory is foggy, and after that, I got nothing… Hold on, how long ago was that? Did I really nap for that long?
+        Narration: You explain the events of the past week to him.
+        Cole: Oh my god… I was about to end up just like Jonah if it weren’t for you.
+        <<if Kirsten_sick()>>
+            // Kirsten is dead
+            Cole: And Kirsten… I can’t believe it…
+            Cole: Only one more day now. What a job it’s been…
+        <<endif>>
+    <<elseif days_since_fgfs() > 1>>
+        // he was healthy on day 17
+        Cole: Are you feeling healthy, boss?
+        Player: I am.
+        Cole: Me too… We can’t be sure, but it seems like your weird plan is working. I swear the air feels clearer than it did before. Too little too late, though. Not only did we lose Jonah, but Kirsten, too…
+        Cole: …
+        Cole: I can’t believe management was hiding all of that from us! What a joke! They knew about this insane parasite, and they still sent all down here. To die. For what? For some tellurium?
+        Player: Only one more day to go. Let’s just finish this job so that it wasn’t all for nothing.
+        Cole: You got a point…
+    <<else>>
+        // fungus never collected
+        Cole: …
+        Player: Only one more day, Cole.
+        Cole: … How did it end up like this? First Jonah, then Kirsten…
+        Cole: … Who’s to say we’re not next?
+        Player: C’mon, we can hold out for just one more day.
+        Cole: I don’t know, boss… I’ve got a really, really bad feeling about this…
+        Cole: You and me have seen firsthand how insane, how unpredictable this disease is. We don’t know what’ll happen tonight, or tomorrow, or the morning after…
+        Cole: I just have this sense that if we don’t do something, we might not make it back to the surface…
+    <<endif>>
+<<endif>>
+===
+
+title: Medic1
 ---
 Kirsten: Hey, how are you feeling?
 -> Feeling good.
@@ -16,14 +327,296 @@ Kirsten: Of course, we’ll be fine. A twenty-day dive isn’t unheard of. Any s
 Player: Keep it up.
 ===
 
-title: ApprenticeDiver1
+title: Medic3
 ---
-Player: What’s it like out there?
-Cole: It’s dark, man! Thank god for this flashlight, I wouldn’t have been able to see my hand in front of my face without it.
-Player: Any tellurium?
-Cole: Got some right here. I’ll take it to Jonah once I get all this gear hung up for you. Seems like there’s plenty of good mining spots – you’ll see for yourself tomorrow.
-Player: Sounds good.
+Kirsten: How’s it going, foreman? Any symptoms after your excursion yesterday?
+-> I’m right as rain.
+    Kirsten: *jotting something down on a clipboard* Glad to hear it.
+-> I hit my elbow on a rock, think it might be bruised. 
+    Kirsten: I’m not a school nurse, foreman, but I can get you an ice pack if you really think you need it. I meant symptoms from the pressurized environment.
+    Player: In that case, no symptoms. And no need for an ice pack.
+    Kirsten: *jotting something down on a clipboard* Okay.
+Kirsten: I’ve decided that, alongside our health data, I’ll also start keeping track of the state of the submarine. No amount of dehumidifying can keep a submerged vessel dry, as I’m sure you’ve noticed. 
+Kirsten: Combine that with the high oxygen concentration, and this place could become a breeding ground for mold if we’re not careful.
 
+Player: That doesn’t sound good.
+
+Kirsten: It wouldn’t be much to worry about on a shorter operation, but since we’re going to be here for 20 days, we should make sure to keep the place clean. 
+
+Player: Absolutely.
+
+Kirsten: *jotting something down on a clipboard*
+
+Kirsten: Now that I’ve talked with you, the only data left to gather for today is Cole’s condition. He should be finishing up his excursion any minute now.
+
+Player: Take care.
+===
+
+title: Medic5
+---
+Narration: Kirsten is examining a vial containing an orange substance.
+Player: What’s that?
+Kirsten: I’m not quite sure… I found it in the air filter during my routine inspection. I’ve never seen anything like it.
+Player: The air filter in here?
+Kirsten: Yes, only in this room, strangely. I replaced the filter and disposed of the old one, of course. This sample is all that’s left of the substance.
+Kirsten: I’ll have to pay close attention to see if any more of it springs up.
+Kirsten: In any case, what could this stuff be? It’s not dry like dust, or fuzzy like typical household molds. It’s like some kind of viscous liquid, but not oily, it’s more… slimy.
+Kirsten: Could you do me a favor, foreman? Just as a precaution, I’d like you to notify management about this, and request some antimicrobial medicine from them.
+Kirsten: I’m not guaranteeing we’ll need the medicine, but I’d rather be safe than sorry, since I just don’t know what we’re dealing with here.
+-> Understood
+-> Really? It’s just some orange gunk, probably old machining fluid. I’m sure it’s nothing.
+    Kirsten: I agree that it’s probably nothing to worry about, but remember that we’re confined in here for fifteen more days. What if we got sick just because you weren’t in the mood to write an email? 
+    Kirsten: Please, just take the precaution. Besides, the filter was clean when I checked it just yesterday. That’s suspicious.
+    Player: If you insist.
+Kirsten: As always, please let me know if you’re experiencing any unusual symptoms. 
+Player: I’m still clear.
+Kirsten: In that case, take care.
+===
+
+title: Medic7
+---
+Kirsten: Hello, foreman. Any word from management?
+<<if check_terminal()>>
+    Player: Yeah, but they just said not to worry about it. They’re only letting us have one dose of the medicine, and they haven’t even shipped it yet. I still need to buy it with company credits.
+    Kirsten: They said not to worry about it? Hmm… I suppose I’ll take them at their word unless we encounter any reason to believe otherwise.
+    Kirsten: Still, try to get your hands on that medicine if you can. Honestly, I can’t believe we weren’t supplied with any to start with. I’m barely scraping by with the equipment I have here.
+    Kirsten: Did they say anything else?
+    Player: They might be willing to stock more medicine if we send them “photographic evidence of a major employee health concern.”
+    Kirsten: The nerve…! Letting an illness become “major” before they let us do anything about it. What happened to “an ounce of prevention is worth a pound of cure”?
+    Kirsten: Well, hopefully we shouldn’t need to deal with any of that. After all, everyone’s in good shape so far. Cole’s bad knees are normal for saturation divers, due to the atmospheric pressure.
+    Kirsten: Anyhow, thanks for relaying all of that information for me. You’re a good foreman to have on board.
+<<else>>
+    Player: I haven’t checked yet.
+    Kirsten: Make sure to take a look as soon as you get the chance, and let me know if they’ve written back.
+    Player: You got it.
+<<endif>>
+===
+
+title: Medic9
+---
+Kirsten: Foreman! Have you seen Jonah today? Something is seriously wrong!
+<<if spoken_to("Mineral Processor")>>
+    Player: Right? What should we do?
+    Kirsten: I don’t know…
+<<else>>
+    Player: No, what’s going on?
+    Kirsten: There are strange growths on his skin, and he’s pale and incoherent. I tried to take his temperature, but he wouldn’t let me!
+<<endif>>
+Kirsten: I’m not sure that just a single dose of that Antimicrobial Medicine would even help, it seems like whatever disease this is has spread through his body too rapidly to control.
+Kirsten: The medicine is most effective at catching infections before they reach this stage.
+Kirsten: I’ve never seen anything like this… You need to tell management about this as soon as possible. They said they wanted photographic evidence, right? Hmm… We need some kind of camera…
+Kirsten: I’ll continue to monitor Jonah’s condition. It seems like he’s still able to do his work in the lab, but I’ll pick up any slack if I need to.
+Kirsten: Ugh, I wish I could just get out of here. I bet it’s peaceful out on the ocean floor, right? Away from this mess… Just me and the water…
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        <<cure_Kirsten>>
+        Kirsten: Oh, thank you.
+    -> No
+<<endif>>
+===
+
+title: Medic11
+---
+<<if time_Kirsten(2)>>
+    Kirsten: Thank you for giving me that medicine the other day. I didn’t realize it at the time, but I wasn’t feeling like myself. Thanks to you, my head feels clear again.
+<<endif>>
+Kirsten: I’ve been monitoring Jonah’s condition to the best of my ability, since there isn’t much else that I can do to help him at the moment. 
+Kirsten: The good news is, he seems relatively stable. There hasn’t been another sudden change, and his physical capabilities are still strong. He’s even working just as hard as before.
+Kirsten: Hopefully he’ll be okay until we can get more help. And as long as we keep our distance, we should be okay too.
+Player: Do you think this has to do with that orange stuff you found?
+Kirsten: I’ve been wondering that too. I’d like to check the air filter again, but I’m trying to minimize the time I spend in the lab as to not catch this illness from Jonah, so I haven’t gotten a chance.
+Kirsten: I didn’t think that I’d be getting into something like this when I signed up for this job. Never on all my dives have I seen a disease like that… I don’t know what to do.
+<<if Kirsten_sick()>>
+    Kirsten: It’s so unprofessional of me to say this, but I wish I could just get away. You get to spend every other day swimming around, seeing the ocean… I wish I got to do that.
+    Kirsten: The open water just sounds so nice when you’re stuck in a place like this all day.
+    <<if has_item("Antimicrobial Medicine")>>
+        Give Antimicrobial Medicine?
+        -> Yes (will consume medicine)
+            <<remove_item "Antimicrobial Medicine">>
+            <<cure_Kirsten>>
+            Kirsten: Oh, thank you.
+        -> No
+    <<endif>>
+<<endif>>
+===
+
+title: Medic13
+---
+<<if time_Kirsten(2)>>
+    Kirsten: Thank you for giving me that medicine the other day. I didn’t realize it at the time, but I wasn’t feeling like myself. Thanks to you, my head feels clear again, but we have another big problem now…
+<<endif>>
+<<if Kirsten_sick()>>
+    Player: Oh no… Hey, are you okay?
+    Kirsten: Yes, I’m okay. Don’t worry.
+    Player: Don’t worry? You caught that disease!
+    Kirsten: It’s not so bad, really. I can hear things that I couldn’t before. Voices like rushing currents… The waves up above, telling me to sink deeper… deeper into the ocean.
+    Player: Stay with me, Kirsten. We can’t lose you too. You’re on a submarine for work and you’re ill, you’re not thinking straight.
+    Kirsten: Yes, work. There’s a job I’m supposed to do…
+    <<if has_item("Antimicrobial Medicine")>>
+        Give Antimicrobial Medicine?
+        -> Yes (will consume medicine)
+            <<remove_item "Antimicrobial Medicine">>
+            Kirsten: No, no, it won’t work…
+            Narration: She drops the pill on the floor and crushes it under her heel.
+        -> No
+    <<endif>>
+    <<if has_item("Camera Module")>>
+        Photograph with Camera Module?
+        -> Yes
+            <<add_item "Photograph of Infected Crewmate">>
+            Camera Module interface: Image saved to disk.
+        -> No
+    <<endif>>
+<<else>>
+    Kirsten: Have you seen Jonah anywhere!?
+    Player: No, what happened?
+    Kirsten: He went missing, there’s no sign of him anywhere! This is a small submarine, he can’t be hiding anywhere. 
+    Player: Did he swim away? He’s been saying all kinds of weird stuff about the ocean.
+    Kirsten: That’s impossible, all of your diving equipment is still in the moonpool. Oh, god… this is all on me… I was supposed to be keeping us all safe!
+    Player: It’s not your fault… I’ll ask Cole, maybe he knows something. He can’t have just disappeared without a trace.
+<<endif>>
+===
+
+title: Medic15
+---
+<<if Kirsten_sick()>>
+    <<if has_item("Full-grown Fungus Sample")>>
+        Player: How are you feeling?
+        Kirsten: …
+        <<cure_Kirsten>>
+    <<else>>
+        Player: How are you feeling?
+        Kirsten: I feel like the air is getting harder for me to breathe… As if I might drown in it…
+        Player: Oh, no… How about I bring over a hydrox tank, maybe the pressurized gas will be easier for you to breathe?
+        Kirsten: No, you have it all wrong. I don’t need air, not anymore. I think I’m supposed to breathe water now…
+        Player: No, then you’ll really drown!
+        Kirsten: …
+        <<if has_item("Antimicrobial Medicine")>>
+            Give Antimicrobial Medicine?
+            -> Yes (will consume medicine)
+                <<remove_item "Antimicrobial Medicine">>
+                Kirsten: No, no, it won’t work…
+                Narration: She drops the pill on the floor and crushes it under her heel.
+            -> No
+        <<endif>>
+        <<if has_item("Camera Module")>>
+            Photograph with Camera Module?
+            -> Yes
+                <<add_item "Photograph of Infected Crewmate">>
+                Camera Module interface: Image saved to disk.
+            -> No
+        <<endif>>
+    <<endif>>
+<<else>>
+    <<if has_item("Full-grown Fungus Sample")>>
+        Narration: Kirsten gestures towards the piece of fungus that you left in this room.
+        Kirsten: What is this? I saw you scattering these pieces around earlier.
+        Player: Has Cole told you about what happened to Jonah?
+        Kirsten: Yes… Wait, is that…? Foreman, that could be highly contagious! Are you out of your mind?
+        Player: Wait, I can explain…
+        Narration: You tell Kirsten about what you read in the terminal’s encrypted files.
+        Kirsten: Hmm… a behavior-altering parasite…  It’s chilling to think about how I was infected with something like that. And such a strange life cycle…
+        Kirsten: If that data that you found is to be trusted, the three of us might just be saved… I’ll continue monitoring everyone’s health to the very best of my ability.
+        Kirsten: Thank you, Foreman.
+    <<else>>
+        Narration: Kirsten seems to be deep in thought.
+        Kirsten: Cole told me about what happened to Jonah.
+        Player: He told me, too.
+        Kirsten: It’s all just so… bizarre. How on earth did he manage to make it so far from the submarine without any hydrox? And he was standing straight up when Cole found him, so it can’t have just been a current… 
+        Kirsten: And mushrooms growing out of him!? I almost refuse to believe it. Maybe all the stress is giving Cole an overactive imagination…
+        Kirsten: Just what kind of disease could cause something like that? And so suddenly, too?
+    <<endif>>
+<<endif>>
+===
+
+title: Medic17
+---
+<<if not Kirsten_sick()>>
+    <<if days_since_fgfs() > 1 and time_Kirsten(2)>>
+        // fungus collected earlier, and she was infected on day 15 (cured that day)
+        Kirsten: Is that you, foreman!?
+        Player: Uh… yes, it’s me?
+        Kirsten: Sorry, sorry, *laughs* of course it’s you. Did I oversleep? It feels like I just woke up from the strangest, longest dream.
+        Player: What’s the last thing that you remember?
+        Kirsten: I remember… Jonah getting sick… and I wasn’t able to help him… and then…
+        Kirsten: Hmm… Strange, it’s all murky from there…
+        Kirsten: How is he now? Wait, how long has it really been?
+        Narration: You explain the events of the past week to her.
+        Kirsten: …
+        Kirsten: I can’t believe it actually worked…
+        Kirsten: And to think that Jonah had to suffer such an awful fate for the rest of us to be saved from this parasite…
+        Kirsten: Thank you, foreman.
+    <<elseif days_since_fgfs() == 1>>
+        // fungus collected yesterday, she was healthy on day 15
+        Narration: Kirsten gestures towards the piece of fungus that you left in this room.
+        Kirsten: What is this? I saw you scattering these pieces around earlier.
+        Player: Has Cole told you about what happened to Jonah?
+        Kirsten: Yes… Wait, is that…? Foreman, that could be highly contagious! Are you out of your mind?
+        Player: Wait, I can explain…
+        Narration: You tell Kirsten about what you read in the terminal’s encrypted files.
+        Kirsten: Hmm… a behavior-altering parasite…  It’s chilling to think about how I was infected with something like that. And such a strange life cycle…
+        Kirsten: If that data that you found is to be trusted, the three of us might just be saved… I’ll continue monitoring everyone’s health to the very best of my ability.
+        Kirsten: Thank you, foreman.
+    <<elseif days_since_fgfs() > 1>>
+        // fungus collected earlier, she was healthy on day 15
+        Kirsten: I don’t want to celebrate too soon, foreman, but I think it might have really worked!
+        Player: Really? How can you tell?
+        Narration: She presents the vial that you recognize as having contained the orange substance from the air filter. Only now, it’s gray dust.
+        Kirsten: I stowed this away in the storage room a while ago when I gave up on discovering any new data about it.
+        Kirsten: I found it again this morning, and it looked exactly the same as when I’d left it: orange, viscous goo.
+        Kirsten: So to test our theory – excuse me for doing something so irresponsible – I opened it. About twelve inches away from the piece of fungus that you collected.
+        Kirsten: Almost immediately, the substance in the vial withered away into this.
+        Kirsten: … I think it’s all true, foreman.
+        Player: I can’t believe it…
+    <<else>>
+        // fungus never collected
+        Kirsten: Cole caught it too…
+        Kirsten: … Do you think we’re going to die here, foreman?
+        Player: There are only three more days before we can finally surface. Maybe we’ll be alright.
+        Kirsten: Maybe!?
+        Kirsten: … It was my job to keep us safe…
+        Player: It’s not your fault, Kirsten. There’s nothing you or any of us could’ve done. This disease isn’t something that anyone could’ve been prepared for.
+        Kirsten: … Then why? Why us?
+    <<endif>>
+<<endif>>
+===
+
+title: Medic19
+---
+<<if not Kirsten_sick()>>
+    <<if days_since_fgfs() == 1>>
+        // fungus collected yesterday
+        Narration: Kirsten gestures towards the piece of fungus that you left in this room.
+        Kirsten: What is this? I saw you scattering these pieces around earlier.
+        Player: Has Cole told you about what happened to Jonah?
+        Kirsten: Yes… Wait, is that…? Foreman, that could be highly contagious! Are you out of your mind?
+        Player: Wait, I can explain…
+        Narration: You tell Kirsten about what you read in the terminal’s encrypted files.
+        Kirsten: Hmm… a behavior-altering parasite…  It’s chilling to think about how I was infected with something like that. And such a strange life cycle…
+        Kirsten: If that data that you found is to be trusted, the three of us might just be saved… I’ll continue monitoring everyone’s health to the very best of my ability.
+        Kirsten: Thank you, foreman.
+    <<elseif days_since_fgfs() > 1>>
+        // fungus collected earlier
+        Kirsten: I can’t believe it’s finally almost over…
+        Kirsten: So the Company knew what kind of danger they were sending us into all along, and yet they told us nothing, did nothing…
+        Kirsten: … Expected me to save us all from this deadly parasite with no resources and no guidance. How could anyone manage that?
+        Kirsten: … Unless they expected us all to die down here…
+        Kirsten: …
+        Kirsten: I’ve never been so ready to surface.
+    <<else>>
+        // fungus never collected
+        Player: Only one more day of this.
+        Kirsten: Yes, but…
+        Kirsten: …
+        Player: What is it?
+        Kirsten: … Jonah is dead, Cole is likely soon to follow… This submarine is a deathtrap, foreman.
+        Kirsten: I don’t… I don’t even know if we’ll make it out of here, either. Unless something is done about this disease.
+        Kirsten: The Company doesn’t want to give us any information, but what if we could find something out ourselves, somewhere…
+        Kirsten: There’s no time to waste.
+    <<endif>>
+<<endif>>
 ===
 
 title: MineralProcessor1
@@ -60,48 +653,103 @@ Jonah: In any case, you should check out the terminal and see what’s available
 Player: Will do.
 ===
 
-title: Medic3
+title: MineralProcessor5
 ---
-Kirsten: How’s it going, foreman? Any symptoms after your excursion yesterday?
--> I’m right as rain.
-    Kirsten: *jotting something down on a clipboard* Glad to hear it.
--> I hit my elbow on a rock, think it might be bruised. 
-    Kirsten: I’m not a school nurse, foreman, but I can get you an ice pack if you really think you need it. I meant symptoms from the pressurized environment.
-    Player: In that case, no symptoms. And no need for an ice pack.
-    Kirsten: *jotting something down on a clipboard* Okay.
-Kirsten: I’ve decided that, alongside our health data, I’ll also start keeping track of the state of the submarine. No amount of dehumidifying can keep a submerged vessel dry, as I’m sure you’ve noticed. 
-Kirsten: Combine that with the high oxygen concentration, and this place could become a breeding ground for mold if we’re not careful.
-
-Player: That doesn’t sound good.
-
-Kirsten: It wouldn’t be much to worry about on a shorter operation, but since we’re going to be here for 20 days, we should make sure to keep the place clean. 
-
-Player: Absolutely.
-
-Kirsten: *jotting something down on a clipboard*
-
-Kirsten: Now that I’ve talked with you, the only data left to gather for today is Cole’s condition. He should be finishing up his excursion any minute now.
-
-Player: Take care.
+Jonah: How’s it going?
+-> Good, it’s been a productive few days.
+    Jonah: Tell me about it! You and Cole have been keeping me busy in the lab.
+-> Could be better, mining isn’t easy.
+    Jonah: I bet. But you and Cole have been doing great work out there; I’ve been busy processing samples all day.
+Jonah: In fact, all the time I’ve been spending dealing with samples is starting to make me wish I had your job.
+-> Why’s that?
+    Jonah: It gets to be claustrophobic in here, holed up in the lab, doing the same monotonous task over and over. I wish I could explore out there, like you.
+-> Seriously? I thought you hated open water.
+    Jonah: I thought I did, too. But the idea of it is starting to not sound so bad to me anymore. A few days in a submarine can do that to a person, I suppose.
+Jonah: But that’s all just daydreaming. My job takes place in here; I don’t have any of the training that you and Cole do. Maybe on the next operation.
+Player: Maybe.
 ===
 
-title: ApprenticeDiver3
+title: MineralProcessor7
 ---
-Cole: How’d it go yesterday?
--> Sure is dark.
-    Cole: What’d I tell ya? Tell you what, though… I’m getting used to it. There’s something peaceful about the dark and quiet.
-    -> I know what you mean. When you’re out there, it’s just you, y’know?
-        Cole: Exactly.
-    -> I can’t relate.
-        Cole: Some diver you are, then.
--> I got a lot of mining done.
-    Cole: Look at you go, big foreman. You’ll make us rich!
-Player: When you’re all unpacked here, Kirsten wants to check on how you’re feeling. For her medical record.
-
-Cole: Heard. I can tell you right now though that it’ll be a short conversation. I’ve never felt better!
-
-Player: Good to hear.
+Player: How’s it going?
+Jonah: It’s going well! I was nervous about this job at first, but now that we’re a week into it, I’m feeling great!
+Player: That’s great to hear.
+Jonah: There’s only one thing that’s really been bugging me. I think I told you about it the other day.
+-> Too much work?
+    Jonah: That’s not quite it. I don’t mind keeping busy.
+-> You feel cooped up?
+    Jonah: You don’t know the half of it.
+Jonah: The truth is, I’m dying to get out there and see the ocean. I don’t know what’s gotten into me over the past week, but I envy you and Cole so badly.
+Jonah: As soon as these 20 days are up, I’m applying for another submarine job. As a diver this time.
+Jonah: If you would’ve told me a week ago that I’d actually love being 600 meters under the ocean, I would’ve called you crazy. *laughs* It’s like this job made me a different person.
+Jonah: Anyhow, I should get back to logging this cargo.
+Player: Keep up the good work.
 ===
+
+title: MineralProcessor9
+---
+Player: What’s going on? Are you okay?
+Jonah: What do you mean?
+Player: You’re pale all of a sudden, and that stuff on your skin…
+Jonah: Oh, *laughs* I don’t know…
+Player: Something isn’t right, we need to get you some kind of treatment.
+Jonah: No, no, I feel fine. I think… I think I feel better than I’ve ever felt before. I certainly don’t want to feel any different. All along, I was meant to be here. In the deep.
+Player: What are you talking about!?
+Jonah: I can hear the water rushing around this cold steel hull, calling to me, telling me I’m home.
+Player: No, Jonah. You’re seriously ill!
+Jonah: Maybe one day you’ll hear it too.
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        Jonah: What's– agh… no, I don't want this!
+        Narration: He drops the pill on the floor and crushes it under his heel.
+    -> No
+<<endif>>
+
+<<if has_item("Camera Module")>>
+    Photograph with Camera Module?
+    -> Yes
+        <<add_item "Photograph of Infected Crewmate">>
+        Camera Module interface: Image saved to disk.
+    -> No
+<<endif>>
+===
+
+title: MineralProcessor11
+---
+Player: Hey, how are you feeling?
+Jonah: I feel fantastic, foreman! Look at all this work I’m getting done!
+Player: That’s good. But you know, you can rest if you’re sick.
+Jonah: …
+Jonah: … It’s getting louder.
+Player: What’s getting louder?
+Jonah: The ocean, calling to me. I can hear the entire vastness of the abyss now, echoing, beckoning… I can’t believe I couldn’t hear it before.
+Jonah: I thought I was home, but I’m not. Not in here.
+Player: … That’s right. You’re at work. Home is up on the surface.
+Jonah: *laughs* You’re misunderstanding, foreman.
+Player: Then what do you mean?
+Jonah: …
+<<if has_item("Antimicrobial Medicine")>>
+    Give Antimicrobial Medicine?
+    -> Yes (will consume medicine)
+        <<remove_item "Antimicrobial Medicine">>
+        Jonah: What's– agh… no, I don't want this!
+        Narration: He drops the pill on the floor and crushes it under his heel.
+    -> No
+<<endif>>
+
+<<if has_item("Camera Module")>>
+    Photograph with Camera Module?
+    -> Yes
+        <<add_item "Photograph of Infected Crewmate">>
+        Camera Module interface: Image saved to disk.
+    -> No
+<<endif>>
+===
+
+
+
 
 title: Bed
 ---
@@ -114,4 +762,14 @@ Do you want to start a new day?
 title: Bedearly
 ---
 I should check on all of my crew members before sleeping.
+===
+
+title: Beddraft
+---
+I should tell the Company about the orange slime in the air filter.
+===
+
+title: Bedterminal
+---
+I should check if management replied to my request.
 ===
