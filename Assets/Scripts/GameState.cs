@@ -17,6 +17,13 @@ public static class GameState
     public static HashSet<string> npcsTalks;
     public static Dictionary<string, int> itemsBought;
     public static Dictionary<string, int> inventory;
+    public static bool checkTerminal;
+    public static bool draftMessage;
+    public static bool draftEvidenceMessage;
+    public static bool adminUnlocked;
+    public static int dayOfKirstenCured;
+    public static int dayOfColeCured;
+    public static int dayFgfsCollected;
     
 
     // Also initialize safely when a scene is opened directly in the editor.
@@ -62,5 +69,12 @@ public static class GameState
         inventory["Light Hydrox Tank"] = 1;
         excursionInventory = new Dictionary<string, int>();
         layout = new ItemStack[48];
+        checkTerminal = false;
+        dayOfKirstenCured = -1;
+        dayOfColeCured = -1;
+        dayFgfsCollected = -1;
+        draftMessage = false;
+        draftEvidenceMessage = false;
+        adminUnlocked = false;
     }
 }
