@@ -3,8 +3,10 @@ using TMPro;
 
 public class ResultsText : MonoBehaviour
 {
-   private TextMeshProUGUI label;
-   public int text;
+    private TextMeshProUGUI label;
+    public int text;
+    private int Expense => GameState.excursionIncapacitated ? 100 : 50;
+    private int TotalCredits => GameState.credits + GameState.tellurium * 10 - Expense;
 
     void Awake()
     {
@@ -14,19 +16,28 @@ public class ResultsText : MonoBehaviour
 
     internal void RefreshTotals()
     {
-        if(text == 1)
-            label.text = GameState.tellurium + " Tellurium Samples Collected = " + GameState.tellurium*10 +" Credits";
-        if(text == 2)
-            label.text = "Total credits: " +  (GameState.credits + (GameState.tellurium*10) - 50);
+        if (text == 1)
+            label.text = $"{GameState.tellurium} Tellurium Samples Recovered = {GameState.tellurium * 10} Credits";
+        if (text == 2)
+            label.text = $"Total credits: {TotalCredits}";
+        if (text == 3)
+            label.text = GameState.excursionIncapacitated
+                ? $"Incapacitated • {GameState.oreLost} samples lost\nDaily Expenses: -{Expense} Credits"
+                : $"Daily Expenses: -{Expense} Credits";
     }
 
-    public void onLeave(){
-        if (SceneChanger.IsTransitioning) return;
-        GameState.credits += (GameState.tellurium*10) - 50;
-        GameState.tellurium = 0;
-        GameState.days++;
+    public void onLeave()
+    {
+        SceneChanger.ChangeSceneWithFade("Interior", () =>
+        {
+            GameState.credits = TotalCredits;
+            GameState.tellurium = 0;
+            GameState.oreLost = 0;
+            GameState.excursionIncapacitated = false;
+            GameState.days++;
 #if UNITY_EDITOR
-        GameStateDebugger.CaptureDayStart("Interior");
+            GameStateDebugger.CaptureDayStart("Interior");
 #endif
+        });
     }
 }

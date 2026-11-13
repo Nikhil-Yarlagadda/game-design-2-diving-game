@@ -93,6 +93,9 @@ namespace DivingPrototype
                 interactions.oceanCamera.transform.position = nearby.transform.position + new Vector3(0,0,-10);
                 foreach (var m in mines) typeof(OceanTarget).GetField("<IsProspected>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(m, false);
                 var body = interactions.GetComponent<Rigidbody2D>();
+                using var state = new GameStateSnapshot();
+                GameState.reset();
+                FlashlightCheck.Require(interactions.BeginDive(), "Confirm loadout before prospecting");
                 body.linearVelocity = Vector2.right;
                 FlashlightCheck.Require(interactions.Prospect(100) && interactions.GetComponent<SwimmerController>().PropulsionLocked && body.linearVelocity == Vector2.right, "Prospecting disables propulsion without clearing momentum");
                 interactions.CompleteProspect(102.99f);
@@ -150,6 +153,7 @@ namespace DivingPrototype
                 var camera = co.AddComponent<Camera>(); camera.scene = scene; camera.enabled = false; camera.orthographic = true; camera.orthographicSize = 8; camera.transform.position = new Vector3(0,0,-10); camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.black; camera.targetTexture = target;
                 material.SetVector("_FlashlightOrigin", Vector4.zero); material.SetVector("_FlashlightDirection", Vector2.right);
                 material.SetFloat("_ConeAngle", 60); material.SetFloat("_HalfStrengthDistance", 10); material.SetFloat("_AmbientBrightness", 0); material.SetFloat("_PlayerLightRadius", .5f); material.SetFloat("_SelfBlocker", -1);
+                material.SetFloat("_PlayerHaloStrength", 0);
                 var edges = new Vector4[256]; edges[0]=new Vector4(3,-1,5,-1); edges[1]=new Vector4(5,-1,5,1); edges[2]=new Vector4(5,1,3,1); edges[3]=new Vector4(3,1,3,-1);
                 var owners = Enumerable.Repeat(32f,256).ToArray();
                 material.SetVectorArray("_PolygonEdges",edges); material.SetFloatArray("_EdgeOwners",owners);

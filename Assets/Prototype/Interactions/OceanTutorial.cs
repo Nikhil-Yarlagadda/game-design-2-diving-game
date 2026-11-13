@@ -82,7 +82,7 @@ namespace DivingPrototype
         public void OnRetrieved() { if (Stage > 0) retrieved = true; }
         private void Update()
         {
-            if (!IsVisible || ocean.InsideSubmarine || ocean.IsTransitioning) return;
+            if (!IsVisible || ocean.LoadoutOpen || ocean.InsideSubmarine || ocean.IsTransitioning || ocean.Hydrox.IsDepleted) return;
             if (Mode == TutorialMode.Mining)
                 // A machine deployed on an earlier excursion can already contain ore.
                 foreach (var target in ocean.targets)

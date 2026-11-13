@@ -64,6 +64,7 @@ namespace DivingPrototype
         private Color originalBackground;
         private Vector2 direction = Vector2.right;
         public Vector2 AimDirection => direction;
+        public float EquippedConeBonus { get; set; }
         public Camera AimCamera => aimCamera;
         private readonly System.Collections.Generic.List<Material> lightingMaterials = new System.Collections.Generic.List<Material>(4);
 
@@ -194,7 +195,7 @@ namespace DivingPrototype
             material.SetVector(OriginId, transform.position);
             material.SetVector(DirectionId, new Vector4(direction.x, direction.y, 0f, 0f));
             material.SetFloat(AmbientId, Mathf.Clamp01(ambientBrightness));
-            material.SetFloat(AngleId, coneAngle);
+            material.SetFloat(AngleId, Mathf.Min(180f, coneAngle + EquippedConeBonus));
             material.SetFloat(DistanceId, halfStrengthDistance);
             material.SetFloat(RadiusId, playerLightRadius);
             material.SetFloat("_CoreAngle", coreAngle);
