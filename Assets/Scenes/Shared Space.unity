@@ -663,7 +663,7 @@ Transform:
   m_GameObject: {fileID: 366322300}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.18178076, z: -0, w: 0.98333913}
-  m_LocalPosition: {x: 812, y: 55.37, z: -3384}
+  m_LocalPosition: {x: 668, y: 24, z: -3326}
   m_LocalScale: {x: 287.681, y: 246.8491, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -729,6 +729,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TerminalHandler
   description: {fileID: 0}
   admin: {fileID: 0}
+  popup: {fileID: 0}
+  popupText: {fileID: 0}
+  popupButton: {fileID: 0}
 --- !u!1 &501725860
 GameObject:
   m_ObjectHideFlags: 0
@@ -757,14 +760,14 @@ RectTransform:
   m_GameObject: {fileID: 501725860}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.9997245}
-  m_LocalScale: {x: 44.999714, y: 44.999714, z: 1.5004779}
+  m_LocalScale: {x: 60, y: 60, z: 2.00065}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 134, y: -65}
+  m_AnchoredPosition: {x: 414, y: -108}
   m_SizeDelta: {x: 4.52, y: 13.99}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!61 &501725862
@@ -823,7 +826,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: Apprentice Diver
   dialogueStartNode: ApprenticeDiver
@@ -1025,9 +1028,9 @@ Transform:
   m_GameObject: {fileID: 646230430}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -297, y: -69, z: 0.9997245}
-  m_LocalScale: {x: 50.000328, y: 43.711777, z: 2.327252}
-  m_ConstrainProportionsScale: 1
+  m_LocalPosition: {x: -28, y: -105, z: 0.9997245}
+  m_LocalScale: {x: 60, y: 65, z: 2.327252}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1069,7 +1072,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.83, y: 13.16}
+    oldSize: {x: 5.81, y: 13.14}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -1087,7 +1090,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: Medic
   dialogueStartNode: Medic
@@ -1495,7 +1498,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 25, y: -25.00003}
+  m_AnchoredPosition: {x: 25, y: -25}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1348874095
@@ -1814,7 +1817,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 4111521666424639861, guid: c73a00eb5fbae214794d55e8051e0261, type: 3}
+  m_Sprite: {fileID: 21300000, guid: acf5d19b50564e269429364428d32c9a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

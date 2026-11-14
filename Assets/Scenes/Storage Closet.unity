@@ -662,7 +662,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 25, y: -25.00003}
+  m_AnchoredPosition: {x: 25, y: -25}
   m_SizeDelta: {x: 50, y: 50}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &375962047
@@ -859,9 +859,9 @@ Transform:
   m_GameObject: {fileID: 529188171}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -297, y: -69, z: 1}
-  m_LocalScale: {x: 50, y: 43.711494, z: 2.326996}
-  m_ConstrainProportionsScale: 1
+  m_LocalPosition: {x: -162, y: -118, z: 1}
+  m_LocalScale: {x: 60, y: 65, z: 2.326996}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -918,7 +918,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.83, y: 13.16}
+    oldSize: {x: 5.81, y: 13.14}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -1064,14 +1064,14 @@ RectTransform:
   m_GameObject: {fileID: 803547926}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.9997245}
-  m_LocalScale: {x: 44.999714, y: 44.999714, z: 1.5004779}
+  m_LocalScale: {x: 50, y: 50, z: 1.6672083}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 134, y: -65}
+  m_AnchoredPosition: {x: 62.26, y: -76}
   m_SizeDelta: {x: 4.52, y: 13.99}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!61 &803547928
@@ -1130,7 +1130,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: Apprentice Diver
   dialogueStartNode: ApprenticeDiver
@@ -1632,8 +1632,8 @@ Transform:
   m_GameObject: {fileID: 1544656642}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 472, y: -26, z: 0.9997245}
-  m_LocalScale: {x: 50.000328, y: 50.000328, z: 50.000328}
+  m_LocalPosition: {x: 331, y: -93, z: 0.9997245}
+  m_LocalScale: {x: 60.000004, y: 60.000004, z: 60.000004}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 574710982}
@@ -1694,7 +1694,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: Mineral Processor
   dialogueStartNode: MineralProcessor
@@ -1816,7 +1816,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -6279694077145696563, guid: 49ede5c63c1af6d44a20f94fb5a0216e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 70bb918fe27341cfae4af8e948e17975, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2070,7 +2070,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
   npcId: Mineral Processor
   dialogueStartNode: MineralProcessor

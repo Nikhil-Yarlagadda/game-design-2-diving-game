@@ -1,10 +1,7 @@
 fileFormatVersion: 2
-guid: c73a00eb5fbae214794d55e8051e0261
+guid: 6a53680fab024d379d65be26c2112e0a
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: 4111521666424639861
-    second: SharedSpace_0
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -46,9 +43,9 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
@@ -100,34 +97,12 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites:
-    - serializedVersion: 2
-      name: SharedSpace_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1920
-        height: 1080
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 571109dfb2f0f0930800000000000000
-      internalID: 4111521666424639861
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
+    sprites: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 6c72f9ef805d406b9b71bfbeb5cbcdd7
     internalID: 0
     vertices: []
     indices: 
@@ -136,10 +111,7 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable:
-      SharedSpace_0: 4111521666424639861
-  mipmapLimitGroupName: 
-  pSDRemoveMatte: 0
+    nameFileIdTable: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 

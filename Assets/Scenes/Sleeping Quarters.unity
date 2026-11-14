@@ -583,7 +583,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -9095717837082945937, guid: 207ee8102dd4143d288186ef0be518ee, type: 3}
-  m_Color: {r: 0.79749686, g: 0.8207547, b: 0.17421682, a: 0.20392157}
+  m_Color: {r: 0.79749686, g: 0.8207547, b: 0.17421682, a: 0.11372549}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -601,13 +601,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 464471648}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.32354605, y: -0.4781996, z: 0.6838008, w: 0.44616088}
-  m_LocalPosition: {x: -222, y: -77, z: -34}
-  m_LocalScale: {x: 400, y: 353.1167, z: 525.23535}
+  m_LocalRotation: {x: 0.37188402, y: -0.442236, z: 0.64133704, w: 0.50479347}
+  m_LocalPosition: {x: -410, y: -176, z: -289}
+  m_LocalScale: {x: 364.75192, y: 270.47998, z: 478.95154}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 574710982}
-  m_LocalEulerAnglesHint: {x: 70.509, y: 2.71, z: 115.669}
+  m_LocalEulerAnglesHint: {x: 70.509, y: 5.25, z: 107.3}
 --- !u!60 &464471652
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -1709,7 +1709,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 2894167519072138494, guid: 194299fe70f3e184288b15cd470d32c3, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6a53680fab024d379d65be26c2112e0a, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
