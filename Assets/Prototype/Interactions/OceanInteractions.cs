@@ -470,6 +470,20 @@ namespace DivingPrototype
                 UpdateSpeed();
                 Notify($"Wreck salvaged. +{ore} tellurium.");
             }
+            else if (Closest.kind is OceanTarget.TargetKind.Corpse or OceanTarget.TargetKind.AbyssEye)
+            {
+                string id = Closest.kind == OceanTarget.TargetKind.Corpse ? ItemCatalog.Fungus : ItemCatalog.EyePhoto;
+                string blocked = QuestTargetBlock(Closest.kind);
+                if (blocked != null)
+                {
+                    Notify(blocked);
+                    return;
+                }
+                if (!CanCarry(id, 1)) return;
+                ItemCatalog.ChangeCount(carried, id, 1);
+                UpdateSpeed();
+                Notify(id == ItemCatalog.Fungus ? "Fungus sample collected." : "Photograph taken.");
+            }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)
             {
                 if (!CanCarry(ItemCatalog.Machine, 1, Closest.YieldAt(Time.time))) return;
@@ -481,6 +495,18 @@ namespace DivingPrototype
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
+        }
+
+        /// <summary>Returns the reason a quest interaction is unavailable, or null when it can proceed.</summary>
+        internal string QuestTargetBlock(OceanTarget.TargetKind kind)
+        {
+            bool corpse = kind == OceanTarget.TargetKind.Corpse;
+            if (corpse && !GameState.adminUnlocked) return "You find nothing of use.";
+            if (!corpse && !GameState.passkeyHintSeen) return "You see something in the abyss.";
+            if (!corpse && !Loadout.Camera) return "Equip a camera module to photograph the Eye.";
+            string id = corpse ? ItemCatalog.Fungus : ItemCatalog.EyePhoto;
+            return CarriedCount(id) > 0 || ItemCatalog.Count(GameState.inventory, id) > 0
+                ? "You already collected this." : null;
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
@@ -557,6 +583,19 @@ namespace DivingPrototype
             ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Stimulant, -Loadout.Stimulants);
             if (Loadout.Flippers) ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Flippers, -1);
             if (Loadout.Camera) ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Camera, -1);
+            bool medicAboard = GameState.IsCrewAboard("Medic");
+            GameState.oreLost = incapacitated
+                ? medicAboard ? Mathf.RoundToInt(Tellurium * Random.Range(.7f, .9f)) : Tellurium
+                : 0;
+            if (incapacitated && !medicAboard)
+            {
+                ItemCatalog.ChangeCount(carried, ItemCatalog.Machine,
+                    -Mathf.RoundToInt(CarriedCount(ItemCatalog.Machine) * Random.Range(.2f, .5f)));
+                ItemCatalog.ChangeCount(carried, ItemCatalog.Stimulant,
+                    -Mathf.RoundToInt(CarriedCount(ItemCatalog.Stimulant) * Random.Range(.2f, .5f)));
+            }
+            if (CarriedCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
+                GameState.dayFgfsCollected = GameState.days;
             foreach (var pair in carried)
                 if (pair.Key != ItemCatalog.Ore) ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
             if (CarriedCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
@@ -569,7 +608,6 @@ namespace DivingPrototype
             ExcursionEnded?.Invoke();
             InsideSubmarine = true;
             GameState.excursionIncapacitated = incapacitated;
-            GameState.oreLost = incapacitated ? Mathf.RoundToInt(Tellurium * Random.Range(.7f, .9f)) : 0;
             GameState.tellurium = Tellurium - GameState.oreLost;
             return true;
         }

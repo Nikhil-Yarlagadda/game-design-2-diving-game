@@ -357,6 +357,10 @@ namespace DivingPrototype
             var target = interactions.Closest;
             prompt.text = inside ? "LEFT CLICK  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
                 ? interactions.TutorialBlocksReturn ? "Complete the tutorial before returning" : "LEFT CLICK  Return to submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
+                : target.kind == OceanTarget.TargetKind.Corpse
+                    ? interactions.QuestTargetBlock(target.kind) ?? "LEFT CLICK  Collect fungus sample"
+                : target.kind == OceanTarget.TargetKind.AbyssEye
+                    ? interactions.QuestTargetBlock(target.kind) ?? "LEFT CLICK  Photograph the Eye"
                 : target.HasWreck ? $"LEFT CLICK  Salvage wreck  |  {target.WreckOre} tellurium"
                 : target.HasMachine ? "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
                 : target.DisplayedTier == 0 ? "Depleted (last prospected)"

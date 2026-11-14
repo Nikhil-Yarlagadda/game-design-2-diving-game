@@ -16,7 +16,7 @@ public sealed class GameStateDebugger : MonoBehaviour
     [SerializeField] private bool enableNextDayShortcut;
     [SerializeField] private bool enableResetDayShortcut;
 
-    public const int LastDay = 20;
+    public const int LastDay = GameState.LastDay;
     public string CheckpointScene => checkpoint?.Day == GameState.days ? checkpoint.Scene : null;
     public string Status { get; private set; }
 
@@ -63,7 +63,8 @@ public sealed class GameStateDebugger : MonoBehaviour
     }
 
     private static bool IsInteriorScene(string scene) => scene is InteriorScene or "Shared Space" or
-        "Airlock" or "Storage Closet" or "Sleeping Quarters" or "Mineral Lab" or "Terminal" or "Shop";
+        "Airlock" or "Storage Closet" or "Sleeping Quarters" or "Mineral Lab" or "Terminal" or "Shop"
+        or "Contact Management" or "AdminTab";
 
     private void Update()
     {
@@ -202,6 +203,17 @@ public sealed class GameStateDebugger : MonoBehaviour
         private readonly Dictionary<string, int> dailyPurchases = new(GameState.dailyPurchases);
         private readonly GameState.DiveLoadout lastLoadout = GameState.lastLoadout;
         private readonly bool incapacitated = GameState.excursionIncapacitated;
+        private readonly bool checkTerminal = GameState.checkTerminal;
+        private readonly bool draftMessage = GameState.draftMessage;
+        private readonly bool fgfsSpread = GameState.fgfsSpread;
+        private readonly bool adminUnlocked = GameState.adminUnlocked;
+        private readonly bool infectionPhoto = GameState.infectionPhoto;
+        private readonly bool abyssPhoto = GameState.abyssPhoto;
+        private readonly bool passkeyHintSeen = GameState.passkeyHintSeen;
+        private readonly int evidenceRequestDay = GameState.evidenceRequestDay;
+        private readonly int dayOfKirstenCured = GameState.dayOfKirstenCured;
+        private readonly int dayOfColeCured = GameState.dayOfColeCured;
+        private readonly int dayFgfsCollected = GameState.dayFgfsCollected;
         private readonly int oreLost = GameState.oreLost;
         private readonly Dictionary<string, GameState.MiningSpotState> mining = new(GameState.miningSpots);
         private readonly Dictionary<string, int> orders = new(GameState.itemsBought);
@@ -222,6 +234,17 @@ public sealed class GameStateDebugger : MonoBehaviour
             GameState.lastLoadout = lastLoadout;
             GameState.excursionIncapacitated = incapacitated;
             GameState.oreLost = oreLost;
+            GameState.checkTerminal = checkTerminal;
+            GameState.draftMessage = draftMessage;
+            GameState.fgfsSpread = fgfsSpread;
+            GameState.adminUnlocked = adminUnlocked;
+            GameState.infectionPhoto = infectionPhoto;
+            GameState.abyssPhoto = abyssPhoto;
+            GameState.passkeyHintSeen = passkeyHintSeen;
+            GameState.evidenceRequestDay = evidenceRequestDay;
+            GameState.dayOfKirstenCured = dayOfKirstenCured;
+            GameState.dayOfColeCured = dayOfColeCured;
+            GameState.dayFgfsCollected = dayFgfsCollected;
             GameState.miningSpots = new(mining);
             GameState.itemsBought = new(orders);
             GameState.inventory = new(inventory);

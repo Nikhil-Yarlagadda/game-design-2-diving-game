@@ -28,7 +28,8 @@ public class ResultsText : MonoBehaviour
 
     public void onLeave()
     {
-        SceneChanger.ChangeSceneWithFade("Interior", () =>
+        string next = GameState.days >= GameState.LastDay ? "Ending" : "Interior";
+        SceneChanger.ChangeSceneWithFade(next, () =>
         {
             GameState.credits = TotalCredits;
             GameState.tellurium = 0;
@@ -36,7 +37,7 @@ public class ResultsText : MonoBehaviour
             GameState.excursionIncapacitated = false;
             GameState.days++;
 #if UNITY_EDITOR
-            GameStateDebugger.CaptureDayStart("Interior");
+            if (next == "Interior") GameStateDebugger.CaptureDayStart(next);
 #endif
         });
     }

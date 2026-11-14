@@ -33,6 +33,39 @@ public static class GameState
     public static int oreLost;
     
 
+    public static bool checkTerminal;
+    public static bool draftMessage;
+    public static bool fgfsSpread;
+    public static bool adminUnlocked;
+    public static bool infectionPhoto;
+    public static bool abyssPhoto;
+    public static bool passkeyHintSeen;
+    public static int evidenceRequestDay;
+    public static int dayOfKirstenCured;
+    public static int dayOfColeCured;
+    public static int dayFgfsCollected;
+
+    public const int LastDay = 20;
+
+    /// <summary>Returns whether this crew member is still aboard on the current day.</summary>
+    public static bool IsCrewAboard(string id) => id switch
+    {
+        "Mineral Processor" => days < 13,
+        "Medic" => days < 17 || (dayOfKirstenCured >= 0 && dayOfKirstenCured < 17)
+            || (dayFgfsCollected >= 0 && dayFgfsCollected < 17),
+        "Apprentice Diver" => true,
+        _ => false
+    };
+
+    /// <summary>Returns whether the foreman has spoken with each crew member still aboard.</summary>
+    public static bool HasSpokenToLivingCrew() =>
+        HasSpokenToOtherCrew() && npcsTalks.Contains("Apprentice Diver");
+
+    /// <summary>Returns whether Cole can return from his dive.</summary>
+    public static bool HasSpokenToOtherCrew() =>
+        (!IsCrewAboard("Mineral Processor") || npcsTalks.Contains("Mineral Processor")) &&
+        (!IsCrewAboard("Medic") || npcsTalks.Contains("Medic"));
+
     // Also initialize safely when a scene is opened directly in the editor.
     static GameState() => reset();
 
@@ -55,5 +88,16 @@ public static class GameState
         lastLoadout = new DiveLoadout { Tank = ItemCatalog.LightTank, Machines = 4 };
         excursionIncapacitated = false;
         oreLost = 0;
+        checkTerminal = false;
+        draftMessage = false;
+        fgfsSpread = false;
+        adminUnlocked = false;
+        infectionPhoto = false;
+        abyssPhoto = false;
+        passkeyHintSeen = false;
+        evidenceRequestDay = -1;
+        dayOfKirstenCured = -1;
+        dayOfColeCured = -1;
+        dayFgfsCollected = -1;
     }
 }

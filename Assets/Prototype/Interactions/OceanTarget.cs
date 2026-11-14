@@ -6,8 +6,9 @@ namespace DivingPrototype
 {
     public sealed class OceanTarget : MonoBehaviour
     {
-        public enum TargetKind { Submarine, Item, MiningSpot }
+        public enum TargetKind { Submarine, Item, MiningSpot, Corpse, AbyssEye }
         public TargetKind kind;
+        public string corpseId;
         [SerializeField, Tooltip("Unique, stable ID for retaining this spot across excursions.")]
         private string persistentId;
         public string PersistentId => persistentId;
