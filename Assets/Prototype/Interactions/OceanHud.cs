@@ -205,11 +205,7 @@ namespace DivingPrototype
                 + "     Machines  " + interactions.availableMachines;
             message.text = interactions.Message;
             var target = interactions.Closest;
-            prompt.text = inside ? "LEFT CLICK  Return to ocean" : target == null ? "" : target.kind == OceanTarget.TargetKind.Submarine
-                ? interactions.TutorialBlocksReturn ? "Complete the tutorial before returning" : "LEFT CLICK  Return to submarine" : target.kind == OceanTarget.TargetKind.Item ? "LEFT CLICK  Pick up item"
-                : target.HasMachine ? "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium"
-                : target.DisplayedTier == 0 ? "Depleted (last prospected)"
-                : "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier) + " / min (last prospected)  |  LEFT CLICK  Place machine";
+            prompt.text = PromptFor(target, inside);
             if (interactions.IsProspecting) prompt.text = "Hold E to finish prospecting • Release to cancel";
             if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact\n"
                 + (interactions.IsProspecting ? "SCANNING  Thrust disabled | Release E to cancel"
@@ -236,6 +232,39 @@ namespace DivingPrototype
             Vector2 direction = interactions.GetComponent<FlashlightController>().AimDirection;
             playerDirection.anchoredPosition = direction * 10;
             playerDirection.localRotation = Quaternion.Euler(0,0,Mathf.Atan2(direction.y,direction.x)*Mathf.Rad2Deg-90);
+        }
+
+        private string PromptFor(OceanTarget target, bool inside)
+        {
+            if (inside) return "LEFT CLICK  Return to ocean";
+            if (target == null) return "";
+
+            switch (target.kind)
+            {
+                case OceanTarget.TargetKind.Submarine:
+                    return interactions.TutorialBlocksReturn
+                        ? "Complete the tutorial before returning"
+                        : "LEFT CLICK  Return to submarine";
+
+                case OceanTarget.TargetKind.Item:
+                    return "LEFT CLICK  Pick up item";
+
+                case OceanTarget.TargetKind.Corpse:
+                    return "LEFT CLICK  Search body";
+
+                case OceanTarget.TargetKind.AbyssEye:
+                    return "LEFT CLICK  Take photograph";
+
+                case OceanTarget.TargetKind.MiningSpot:
+                    if (target.HasMachine)
+                        return "LEFT CLICK  Retrieve machine  |  " + target.YieldAt(Time.time) + " tellurium";
+                    if (target.DisplayedTier == 0)
+                        return "Depleted (last prospected)";
+                    return "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier)
+                        + " / min (last prospected)  |  LEFT CLICK  Place machine";
+            }
+
+            return "";
         }
     }
 }
