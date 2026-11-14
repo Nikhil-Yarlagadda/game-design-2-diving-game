@@ -431,6 +431,35 @@ namespace DivingPrototype
 
                 Notify(sample + " collected.");
             }
+            else if (Closest.kind == OceanTarget.TargetKind.AbyssEye)
+            {
+                const string camera = "Camera Module";
+                const string photo = "Photograph of the Eye of the Abyss";
+
+                GameState.excursionInventory.TryGetValue(camera, out int cameras);
+                if (cameras <= 0)
+                {
+                    Notify("You need a camera module to photograph this.");
+                    return;
+                }
+
+                GameState.excursionInventory.TryGetValue(photo, out int inExcursion);
+                GameState.inventory.TryGetValue(photo, out int inStorage);
+                if (inExcursion + inStorage > 0)
+                {
+                    Notify("You already have a photograph of this.");
+                    return;
+                }
+
+                if (inventoryUI != null && inventoryUI.RoomFor(photo) <= 0)
+                {
+                    Notify("Inventory full.");
+                    return;
+                }
+
+                GameState.excursionInventory[photo] = 1;
+                Notify("Photograph taken.");
+            }
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }

@@ -6,7 +6,7 @@ namespace DivingPrototype
 {
     public sealed class OceanTarget : MonoBehaviour
     {
-        public enum TargetKind { Submarine, Item, MiningSpot, Corpse }
+        public enum TargetKind { Submarine, Item, MiningSpot, Corpse, AbyssEye }
         public TargetKind kind;
         [SerializeField, Tooltip("Unique, stable ID for retaining this spot across excursions.")]
         private string persistentId;
@@ -99,6 +99,7 @@ namespace DivingPrototype
         public float RevealAlpha(float now) => IsProspected ? 1f : 0f;
         public void Reveal(float now)
         {
+            if (kind != TargetKind.MiningSpot) return;
             AdvanceMining(now);
             previousDisplayedTier = DisplayedTier;
             if (IsProspected && DisplayedTier != actualTier) changedUntil = now + 3f;
@@ -132,7 +133,8 @@ namespace DivingPrototype
 
             // not everything fits: hand over what fits and keep the machine running
             int remaining = amount - maxAmount;
-            PlacedAt = now - remaining * 60f / level; // makes YieldAt(now) equal "remaining"
+            StoredOre -= maxAmount;
+            SaveMiningState();
             return maxAmount;
         }
         private Color TierColor => DisplayedTier == 5 ? new Color(.85f,.5f,1) : DisplayedTier == 4 ? new Color(1,.65f,.25f)
@@ -149,6 +151,7 @@ namespace DivingPrototype
         }
         private void RefreshPresentation(float now)
         {
+             if (kind != TargetKind.MiningSpot) return;
             if (spot == null) spot = GetComponent<SpriteRenderer>();
             if (spot != null) { spot.enabled = IsProspected; if (IsProspected) RevealRenderer(spot, TierColor); }
             if (label == null) return;
