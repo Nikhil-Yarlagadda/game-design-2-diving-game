@@ -1,14 +1,22 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Yarn.Unity;
 
 public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance;
-    public List<Room> allRooms; // assign in Inspector
+    public List<Room> allRooms; 
+    public DialogueRunner runner;
 
     void Awake()
     {
         Instance = this;
+        if(GameState.dayFgfsCollected == GameState.days - 1 && !GameState.fgfsSpread)
+        {
+            GameState.fgfsSpread = true;
+            runner.StartDialogue("FungusSpread");
+        }
+            
     }
 
     void Start()

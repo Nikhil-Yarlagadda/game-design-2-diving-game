@@ -6,7 +6,7 @@ namespace DivingPrototype
 {
     public sealed class OceanTarget : MonoBehaviour
     {
-        public enum TargetKind { Submarine, Item, MiningSpot }
+        public enum TargetKind { Submarine, Item, MiningSpot, Corpse }
         public TargetKind kind;
         [SerializeField, Tooltip("Unique, stable ID for retaining this spot across excursions.")]
         private string persistentId;
@@ -32,6 +32,7 @@ namespace DivingPrototype
         public static int Rate(int tier) => tier == 5 ? 24 : tier == 4 ? 12 : tier == 3 ? 6 : tier == 2 ? 4 : tier == 1 ? 2 : 0;
         public static float Interval(int tier) => tier >= 4 ? 5 : tier == 3 ? 10 : tier == 2 ? 15 : 30;
         private static int Allowance(int tier) => tier == 5 ? 60 : tier * 10;
+        public string corpseId; 
         private void InitializeMining()
         {
             if (initialized) return;

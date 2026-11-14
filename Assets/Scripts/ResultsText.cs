@@ -25,8 +25,14 @@ public class ResultsText : MonoBehaviour
         GameState.credits += (GameState.tellurium*10) - 50;
         GameState.tellurium = 0;
         GameState.days++;
+
+        if(GameState.days > 20)
+            SceneChanger.ChangeScene("Ending");
+        else
+        {
 #if UNITY_EDITOR
-        GameStateDebugger.CaptureDayStart("Interior");
+            GameStateDebugger.CaptureDayStart("Interior");
 #endif
+        }
     }
 }
