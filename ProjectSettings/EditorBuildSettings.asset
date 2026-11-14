@@ -59,5 +59,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Contact Management.unity
     guid: 400beff3bc3a89548bf0338d6598a9f0
+  - enabled: 1
+    path: Assets/Scenes/AdminTab.unity
+    guid: 0cc4ba264592cf64aa43f3b6d7a24c37
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

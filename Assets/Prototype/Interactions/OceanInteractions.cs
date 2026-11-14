@@ -401,6 +401,36 @@ namespace DivingPrototype
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
             else if (Closest.kind == OceanTarget.TargetKind.Submarine) RequestEnterSubmarine();
+            else if (Closest.kind == OceanTarget.TargetKind.Corpse)
+            {
+                const string sample = "Full-grown Fungus Sample";
+
+                if ((GameState.inventory.ContainsKey(sample) && GameState.inventory[sample] > 0)  || (GameState.excursionInventory.ContainsKey(sample) && GameState.inventory[sample] > 0))
+                {
+                    Notify("You've already collected the sample");
+                    return;
+                }
+
+                if (!GameState.adminUnlocked)
+                {
+                    Notify("You find nothing of use.");
+                    return;
+                }
+
+                if (inventoryUI != null && inventoryUI.CanFit(sample))
+                {
+                    Notify("Inventory full.");
+                    return;
+                }
+
+                GameState.excursionInventory[sample] =
+                    (GameState.excursionInventory.TryGetValue(sample, out int have) ? have : 0) + 1;
+
+                if (GameState.dayFgfsCollected < 0)
+                    GameState.dayFgfsCollected = GameState.days;   // the fungus day for Kirsten and Cole's dialogue
+
+                Notify(sample + " collected.");
+            }
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }

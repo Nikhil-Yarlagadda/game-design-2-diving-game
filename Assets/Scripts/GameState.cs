@@ -20,7 +20,10 @@ public static class GameState
     public static bool checkTerminal;
     public static bool draftMessage;
     public static bool draftEvidenceMessage;
+    public static bool fgfsSpread;
     public static bool adminUnlocked;
+    public static bool infectionPhoto;
+    public static bool abyssPhoto;
     public static int dayOfKirstenCured;
     public static int dayOfColeCured;
     public static int dayFgfsCollected;
@@ -76,5 +79,8 @@ public static class GameState
         draftMessage = false;
         draftEvidenceMessage = false;
         adminUnlocked = false;
+        fgfsSpread = false;
+        infectionPhoto = false;
+        abyssPhoto = false;
     }
 }
