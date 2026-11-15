@@ -40,7 +40,7 @@ public class ContactManager : MonoBehaviour
 
     public void OnClicked()
     {
-        if (GameState.days == 5 && !GameState.draftMessage && !drafted)
+        if (GameState.days == 5 && !GameState.draftMessage && !drafted && GameState.npcsTalks.Contains("Medic"))
         {
             message = "This is the foreman of the HZ-3280. Our medic found an unidentifiable orange substance in the mineral lab air filter and suspects that it might be a sign of some health risk present on the vessel. Therefore, we request a shipment of antimicrobial medicine, as well as any information that the Company might have regarding what this substance might be.";
             draftLabel.text = "Send";

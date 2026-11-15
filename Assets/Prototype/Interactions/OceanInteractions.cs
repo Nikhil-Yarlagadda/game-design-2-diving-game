@@ -417,7 +417,7 @@ namespace DivingPrototype
                     return;
                 }
 
-                if (inventoryUI != null && inventoryUI.CanFit(sample))
+                if (inventoryUI != null && !inventoryUI.CanFit(sample))
                 {
                     Notify("Inventory full.");
                     return;

@@ -386,6 +386,7 @@ Kirsten: Hello, foreman. Any word from management?
     Kirsten: Well, hopefully we shouldn’t need to deal with any of that. After all, everyone’s in good shape so far. Cole’s bad knees are normal for saturation divers, due to the atmospheric pressure.
     Kirsten: Anyhow, thanks for relaying all of that information for me. You’re a good foreman to have on board.
 <<else>>
+    <<unspeak "Medic">>
     Player: I haven’t checked yet.
     Kirsten: Make sure to take a look as soon as you get the chance, and let me know if they’ve written back.
     Player: You got it.
@@ -776,5 +777,5 @@ I should check if management replied to my request.
 
 title: FungusSpread
 ---
-Narration: You break the Full-Grown Fungus Sample into five pieces and place one in each room of the submarine.
+You break the Full-Grown Fungus Sample into five pieces and place one in each room of the submarine.
 ===

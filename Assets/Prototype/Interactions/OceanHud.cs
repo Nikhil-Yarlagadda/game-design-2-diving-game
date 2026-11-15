@@ -157,6 +157,7 @@ namespace DivingPrototype
             {
                 var target = interactions.targets[i];
                 if (target == null) continue;
+                if (target.kind == OceanTarget.TargetKind.Corpse || target.kind == OceanTarget.TargetKind.AbyssEye) continue;
                 bool machine = target.kind == OceanTarget.TargetKind.MiningSpot;
                 bool submarine = target.kind == OceanTarget.TargetKind.Submarine;
                 markers[i] = Image(target.name + (machine ? " Machine" : "") + " Minimap Marker", submarine || machine ? squareSprite : circleSprite,
