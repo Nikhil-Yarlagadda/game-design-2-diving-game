@@ -26,7 +26,7 @@ public class ResultsText : MonoBehaviour
         GameState.tellurium = 0;
         GameState.days++;
 
-        if(GameState.days > 20)
+        if(GameState.days >= 20)
             SceneChanger.ChangeScene("Ending");
         else
         {

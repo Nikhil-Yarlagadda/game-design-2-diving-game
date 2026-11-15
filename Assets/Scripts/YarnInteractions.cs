@@ -48,8 +48,14 @@ public class WorldInteractions : MonoBehaviour
         return GameState.npcsTalks.Contains(name);
     }
 
+    [YarnCommand("unspeak")]
+    public static void Unspeak(string name)
+    {
+        GameState.npcsTalks.Remove(name);
+    }
+
     [YarnCommand("cure_Kirsten")]
-    public static void CureKristen(string name)
+    public static void CureKristen()
     {
         GameState.dayOfKirstenCured = GameState.days;
     }
@@ -70,7 +76,7 @@ public class WorldInteractions : MonoBehaviour
     }
 
     [YarnCommand("cure_Cole")]
-    public static void CureCole(string name)
+    public static void CureCole()
     {
         GameState.dayOfColeCured = GameState.days;
     }

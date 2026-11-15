@@ -68,7 +68,7 @@ public static class GameState
         itemsBought = new Dictionary<string, int>();
         itemsBought["Mining Machine"] = 0;
         inventory = new Dictionary<string, int>();
-        inventory["Mining Machine"] = 3;
+        inventory["Mining Machine"] = 4;
         inventory["Light Hydrox Tank"] = 1;
         excursionInventory = new Dictionary<string, int>();
         layout = new ItemStack[48];

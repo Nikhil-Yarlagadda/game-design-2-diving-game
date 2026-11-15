@@ -11,6 +11,7 @@ public class EquipScreen : MonoBehaviour
     public Transform storageList;      // list of rows, as before
     public Transform loadoutGrid;      // the new grid
     public Button rowPrefab;
+    public Button done;
     public InventorySlotUI slotPrefab;
     public int columns = 8;
     public int rows = 6;
@@ -48,6 +49,7 @@ public class EquipScreen : MonoBehaviour
     {
         RefreshStorage();
         RefreshLoadout();
+        done.interactable = AnyTankPacked();
     }
 
     int MaxStack(string name)
@@ -70,6 +72,16 @@ public class EquipScreen : MonoBehaviour
         foreach (string tank in hydroxTanks)
         {
             if (tank == name) continue;
+            if (GameState.excursionInventory.TryGetValue(tank, out int count) && count > 0)
+                return true;
+        }
+        return false;
+    }
+
+    bool AnyTankPacked()
+    {
+        foreach (string tank in hydroxTanks)
+        {
             if (GameState.excursionInventory.TryGetValue(tank, out int count) && count > 0)
                 return true;
         }

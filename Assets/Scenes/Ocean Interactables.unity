@@ -1794,25 +1794,25 @@ MonoBehaviour:
   - itemName: Tellurium
     sprite: {fileID: 0}
     maxStack: 16
-  - itemName: 'Medium Hydrox Tank  '
+  - itemName: Medium Hydrox Tank
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Heavy Hydrox Tank  '
+  - itemName: Heavy Hydrox Tank
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Advanced flippers  '
+  - itemName: Advanced Flippers
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Stimulant Canister  '
+  - itemName: Stimulant Canister
     sprite: {fileID: 0}
     maxStack: 4
-  - itemName: 'Antimicrobial Medicine  '
+  - itemName: Antimicrobial Medicine
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Camera Module  '
+  - itemName: Camera Module
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Light Hydrox Tank  '
+  - itemName: Light Hydrox Tank
     sprite: {fileID: 0}
     maxStack: 1
   - itemName: Full-grown Fungus Sample
@@ -1821,7 +1821,7 @@ MonoBehaviour:
   - itemName: Photograph of Infected Crewmate
     sprite: {fileID: 0}
     maxStack: 1
-  - itemName: 'Photograph of the Eye of the Abyss  '
+  - itemName: Photograph of the Eye of the Abyss
     sprite: {fileID: 0}
     maxStack: 1
   dragGhost: {fileID: 0}
@@ -6298,12 +6298,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 483348087}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 722.50006, y: 383.5, z: 0}
+  m_LocalScale: {x: 1.0966307, y: 1.0966307, z: 1.0966307}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1953888775}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &483348089
 MonoBehaviour:
@@ -26015,7 +26015,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 165849900}
-  - {fileID: 483348088}
   m_Father: {fileID: 123723313}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -28675,6 +28674,7 @@ SpriteRenderer:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 483348088}
   - {fileID: 570103285}
   - {fileID: 1214223817}
   - {fileID: 1366615275}

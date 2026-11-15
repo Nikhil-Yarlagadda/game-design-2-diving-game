@@ -359,7 +359,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 900, y: -240}
+  m_SizeDelta: {x: 1200, y: -240}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!1 &384454431
 GameObject:
@@ -891,8 +891,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -80}
-  m_SizeDelta: {x: 860, y: 640}
+  m_AnchoredPosition: {x: 0, y: -120}
+  m_SizeDelta: {x: 1150, y: 640}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &989456983
 MonoBehaviour:
@@ -914,7 +914,7 @@ MonoBehaviour:
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
-  m_CellSize: {x: 100, y: 100}
+  m_CellSize: {x: 120, y: 120}
   m_Spacing: {x: 8, y: 8}
   m_Constraint: 1
   m_ConstraintCount: 8
@@ -1107,6 +1107,7 @@ MonoBehaviour:
   storageList: {fileID: 167746282}
   loadoutGrid: {fileID: 989456982}
   rowPrefab: {fileID: 6475935101217232059, guid: 84b4fd5834bf1214ca34ed515505bd24, type: 3}
+  done: {fileID: 384454433}
   slotPrefab: {fileID: 3384652143570707671, guid: d0255685eef06314c92d19c5ece1af04, type: 3}
   columns: 8
   rows: 6
