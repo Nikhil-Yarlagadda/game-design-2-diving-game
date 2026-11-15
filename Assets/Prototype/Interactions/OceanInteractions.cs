@@ -74,6 +74,8 @@ namespace DivingPrototype
         private float timeScaleBeforeReturn;
         private int resumeInputFrame = -1;
         private SwimmerController swimmer;
+        private FlashlightController flashlight;
+        private bool EquippedCameraCarried => Loadout.Camera && CarriedCount(ItemCatalog.Camera) > 0;
         private Rigidbody2D body;
         private readonly HashSet<OceanTarget> deliveries = new HashSet<OceanTarget>();
         private readonly RaycastHit2D[] hits = new RaycastHit2D[32];
@@ -96,6 +98,7 @@ namespace DivingPrototype
             }
             swimmer = GetComponent<SwimmerController>();
             body = GetComponent<Rigidbody2D>();
+            flashlight = GetComponent<FlashlightController>();
             var inventory = FindAnyObjectByType<ExcursionInventory>();
             if (inventory != null) inventorySlots = inventory.columns * inventory.rows;
             Loadout = GameState.lastLoadout;
@@ -115,8 +118,23 @@ namespace DivingPrototype
 
         internal void SetDebugTellurium(int amount)
         {
-            ItemCatalog.ChangeCount(carried, ItemCatalog.Ore, amount - Tellurium);
-            if (!LoadoutOpen) UpdateSpeed();
+            if (LoadoutOpen) GameState.tellurium = amount;
+            else SetDebugCarriedItem(ItemCatalog.Ore, amount);
+        }
+
+        /// <summary>Sets the live bag count and reapplies the effects of the carried inventory.</summary>
+        internal void SetDebugCarriedItem(string id, int amount)
+        {
+            ItemCatalog.ChangeCount(carried, id, amount - CarriedCount(id));
+            UpdateSpeed();
+        }
+
+        /// <summary>Preserves the post-loadout bag before the debugger unloads the excursion scene.</summary>
+        internal void KeepDebugInventoryForDayJump()
+        {
+            if (LoadoutOpen || transitioning || InsideSubmarine) return;
+            StoreCarriedItems();
+            GameState.tellurium = Tellurium;
         }
 #endif
 
@@ -149,9 +167,10 @@ namespace DivingPrototype
             ItemCatalog.ChangeCount(carried, ItemCatalog.Stimulant, Loadout.Stimulants);
             if (Loadout.Flippers) carried.Add(ItemCatalog.Flippers, 1);
             if (Loadout.Camera) carried.Add(ItemCatalog.Camera, 1);
+#if UNITY_EDITOR
+            ItemCatalog.ChangeCount(carried, ItemCatalog.Ore, GameState.tellurium);
+#endif
             Hydrox.Equip(ItemCatalog.Find(Loadout.Tank).TankSeconds);
-            var flashlight = GetComponent<FlashlightController>();
-            if (flashlight != null) flashlight.EquippedConeBonus = Loadout.Camera ? 10f : 0f;
             LoadoutOpen = false;
             swimmer.SetMovementLocked(false);
             UpdateSpeed();
@@ -178,7 +197,9 @@ namespace DivingPrototype
         {
             float weight = CarriedWeight / 100f;
             float speed = weight < .5f ? 1f : weight <= 1f ? 1.25f - .5f * weight : 1.75f - weight;
-            swimmer.EquipmentSpeed = Mathf.Max(0f, speed + .5f * StimulantTimeLeft / StimulantSeconds + (Loadout.Flippers ? .3f : 0f));
+            bool flippersCarried = Loadout.Flippers && CarriedCount(ItemCatalog.Flippers) > 0;
+            swimmer.EquipmentSpeed = Mathf.Max(0f, speed + .5f * StimulantTimeLeft / StimulantSeconds + (flippersCarried ? .3f : 0f));
+            if (flashlight != null) flashlight.EquippedConeBonus = EquippedCameraCarried ? 10f : 0f;
             swimmer.BreathingSpeed = BreathingTimeLeft / GraceSeconds;
         }
 
@@ -503,10 +524,11 @@ namespace DivingPrototype
             bool corpse = kind == OceanTarget.TargetKind.Corpse;
             if (corpse && !GameState.adminUnlocked) return "You find nothing of use.";
             if (!corpse && !GameState.passkeyHintSeen) return "You see something in the abyss.";
-            if (!corpse && !Loadout.Camera) return "Equip a camera module to photograph the Eye.";
+            if (!corpse && !EquippedCameraCarried) return "Equip a camera module to photograph the Eye.";
             string id = corpse ? ItemCatalog.Fungus : ItemCatalog.EyePhoto;
-            return CarriedCount(id) > 0 || ItemCatalog.Count(GameState.inventory, id) > 0
-                ? "You already collected this." : null;
+            if (CarriedCount(id) > 0 || ItemCatalog.Count(GameState.inventory, id) > 0)
+                return "You already collected this.";
+            return null;
         }
 
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
@@ -579,10 +601,6 @@ namespace DivingPrototype
             StopOceanControls();
             foreach (var target in targets)
                 if (target != null) target.BreakOvernight(Time.time);
-            ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Machine, -Loadout.Machines);
-            ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Stimulant, -Loadout.Stimulants);
-            if (Loadout.Flippers) ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Flippers, -1);
-            if (Loadout.Camera) ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Camera, -1);
             bool medicAboard = GameState.IsCrewAboard("Medic");
             GameState.oreLost = incapacitated
                 ? medicAboard ? Mathf.RoundToInt(Tellurium * Random.Range(.7f, .9f)) : Tellurium
@@ -594,12 +612,7 @@ namespace DivingPrototype
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Stimulant,
                     -Mathf.RoundToInt(CarriedCount(ItemCatalog.Stimulant) * Random.Range(.2f, .5f)));
             }
-            if (CarriedCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
-                GameState.dayFgfsCollected = GameState.days;
-            foreach (var pair in carried)
-                if (pair.Key != ItemCatalog.Ore) ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
-            if (CarriedCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
-            GameState.lastLoadout = Loadout;
+            StoreCarriedItems();
             foreach (var item in deliveries)
                 if (item != null) item.gameObject.SetActive(false);
             deliveries.Clear();
@@ -611,6 +624,27 @@ namespace DivingPrototype
             GameState.tellurium = Tellurium - GameState.oreLost;
             return true;
         }
+
+        /// <summary>Reconciles the selected equipment with the non-ore items remaining in the excursion bag.</summary>
+        private void StoreCarriedItems()
+        {
+            StoreCarriedItem(ItemCatalog.Machine, Loadout.Machines);
+            StoreCarriedItem(ItemCatalog.Stimulant, Loadout.Stimulants);
+            StoreCarriedItem(ItemCatalog.Flippers, Loadout.Flippers ? 1 : 0);
+            StoreCarriedItem(ItemCatalog.Camera, Loadout.Camera ? 1 : 0);
+            foreach (var pair in carried)
+                if (pair.Key != ItemCatalog.Ore && pair.Key != ItemCatalog.Machine && pair.Key != ItemCatalog.Stimulant
+                    && pair.Key != ItemCatalog.Flippers && pair.Key != ItemCatalog.Camera)
+                    ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
+            if (CarriedCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
+                GameState.dayFgfsCollected = GameState.days;
+            if (CarriedCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
+            GameState.lastLoadout = Loadout;
+        }
+
+        /// <summary>Applies the net change from the quantity packed to the quantity still carried.</summary>
+        private void StoreCarriedItem(string id, int packed) =>
+            ItemCatalog.ChangeCount(GameState.inventory, id, CarriedCount(id) - packed);
 
         public bool DropItem(string itemName, int count = 1)
         {

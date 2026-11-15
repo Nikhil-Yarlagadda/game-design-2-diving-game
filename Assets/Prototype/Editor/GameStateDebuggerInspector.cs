@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DivingPrototype;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,11 +8,11 @@ using UnityEngine;
 public sealed class GameStateDebuggerInspector : Editor
 {
     private int destinationDay;
-    private string ownedName = "";
-    private int ownedCount;
-    private string orderName = "";
-    private int orderCount;
+    private bool showOwned = true, showOrders, showCarried, showQuest = true;
     private string crewId = "";
+    private static readonly ItemCatalog.Definition[] Items = ItemCatalog.All
+        .Where(item => item.Id != ItemCatalog.Ore).OrderBy(item => item.Name).ToArray();
+    private static readonly ItemCatalog.Definition[] Orderable = Items.Where(item => item.Stock > 0).ToArray();
 
     private void OnEnable() => destinationDay = GameState.days;
 
@@ -39,14 +40,22 @@ public sealed class GameStateDebuggerInspector : Editor
 
             EditorGUILayout.Space();
             EditInt("Credits", GameState.credits, debugger.SetCredits);
-            EditInt("Tellurium", GameState.tellurium, debugger.SetTellurium);
+            var ocean = FindAnyObjectByType<OceanInteractions>();
+            bool diving = ocean != null && !ocean.LoadoutOpen;
+            EditInt("Tellurium", diving ? ocean.Tellurium : GameState.tellurium, debugger.SetTellurium);
             bool shown = EditorGUILayout.Toggle("Delivery tutorial shown", GameState.deliveryTutorialShown);
             if (shown != GameState.deliveryTutorialShown) debugger.SetDeliveryTutorialShown(shown);
 
-            DrawItems("Owned items", GameState.inventory, ref ownedName, ref ownedCount,
+            DrawItems("Owned items", Items, GameState.inventory, ref showOwned,
                 (name, count) => debugger.SetItemCount(name, count, pending: false));
-            DrawItems("Pending orders", GameState.itemsBought, ref orderName, ref orderCount,
+            if (diving)
+                DrawItems("Excursion bag", Items, ocean.CarriedItems, ref showCarried,
+                    (name, count) => debugger.SetCarriedItemCount(ocean, name, count));
+            DrawItems("Pending orders", Orderable, GameState.itemsBought, ref showOrders,
                 (name, count) => debugger.SetItemCount(name, count, pending: true));
+
+            showQuest = EditorGUILayout.Foldout(showQuest, "Quest state", true);
+            if (showQuest) DrawQuestState();
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Crew conversations", EditorStyles.boldLabel);
@@ -74,19 +83,36 @@ public sealed class GameStateDebuggerInspector : Editor
         if (value != current) apply(value);
     }
 
-    private static void DrawItems(string heading, Dictionary<string, int> items, ref string name,
-        ref int count, System.Action<string, int> apply)
+    /// <summary>Shows an editable count even for catalog items the player does not yet have.</summary>
+    private static void DrawItems(string heading, ItemCatalog.Definition[] definitions,
+        IReadOnlyDictionary<string, int> items, ref bool expanded, System.Action<string, int> apply)
     {
-        EditorGUILayout.Space();
-        EditorGUILayout.LabelField(heading, EditorStyles.boldLabel);
-        foreach (var item in items.OrderBy(item => item.Key).ToArray())
-            EditInt(item.Key, item.Value, value => apply(item.Key, value));
-        name = EditorGUILayout.TextField("Exact item name", name);
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            count = EditorGUILayout.IntField("Count", count);
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(name)))
-                if (GUILayout.Button("Set", GUILayout.Width(70))) apply(name, count);
-        }
+        expanded = EditorGUILayout.Foldout(expanded, heading, true);
+        if (!expanded) return;
+        using var indent = new EditorGUI.IndentLevelScope();
+        foreach (var item in definitions)
+            EditInt(item.Name, ItemCatalog.Count(items, item.Id), value => apply(item.Id, value));
     }
+
+    /// <summary>Edits the quest milestones independently of possession of their associated items.</summary>
+    private static void DrawQuestState()
+    {
+        using var indent = new EditorGUI.IndentLevelScope();
+        GameState.draftMessage = EditorGUILayout.Toggle("Medicine requested", GameState.draftMessage);
+        GameState.checkTerminal = EditorGUILayout.Toggle("Medicine reply read", GameState.checkTerminal);
+        GameState.medicineDelivered = EditorGUILayout.Toggle("Medicine delivered", GameState.medicineDelivered);
+        GameState.infectionPhoto = EditorGUILayout.Toggle("Crew photo uploaded", GameState.infectionPhoto);
+        GameState.passkeyHintSeen = EditorGUILayout.Toggle("Passkey hint seen", GameState.passkeyHintSeen);
+        GameState.abyssPhoto = EditorGUILayout.Toggle("Eye photo uploaded", GameState.abyssPhoto);
+        GameState.adminUnlocked = EditorGUILayout.Toggle("Admin files unlocked", GameState.adminUnlocked);
+        GameState.fgfsSpread = EditorGUILayout.Toggle("Fungus spread aboard", GameState.fgfsSpread);
+        EditInt("Evidence request day", GameState.evidenceRequestDay, value => GameState.evidenceRequestDay = QuestDay(value));
+        EditInt("Kirsten cured day", GameState.dayOfKirstenCured, value => GameState.dayOfKirstenCured = QuestDay(value));
+        EditInt("Cole cured day", GameState.dayOfColeCured, value => GameState.dayOfColeCured = QuestDay(value));
+        EditInt("Fungus recovered day", GameState.dayFgfsCollected, value => GameState.dayFgfsCollected = QuestDay(value));
+        EditorGUILayout.LabelField("Enter -1 for milestones that have not happened.", EditorStyles.miniLabel);
+    }
+
+    /// <summary>Normalizes an unset or out-of-range quest milestone day.</summary>
+    private static int QuestDay(int value) => value < 1 ? -1 : Mathf.Min(value, GameStateDebugger.LastDay);
 }

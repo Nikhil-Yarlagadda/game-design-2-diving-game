@@ -76,6 +76,7 @@ public sealed class GameStateDebugger : MonoBehaviour
             GoToDay(GameState.days + 1);
     }
 
+    /// <summary>Starts the destination day with the current inventory as its reset checkpoint.</summary>
     public bool GoToDay(int day)
     {
         if (!CanChangeDay()) return false;
@@ -85,13 +86,16 @@ public sealed class GameStateDebugger : MonoBehaviour
         string scene = day % 2 == 0 ? OceanScene : InteriorScene;
         return LoadDay(scene, () =>
         {
+            FindAnyObjectByType<OceanInteractions>()?.KeepDebugInventoryForDayJump();
             GameState.days = day;
-            GameState.tellurium = 0;
+            GameState.excursionIncapacitated = false;
+            GameState.oreLost = 0;
             GameState.npcsTalks.Clear();
             CaptureDayStart(scene);
         });
     }
 
+    /// <summary>Reloads the current day and restores its start-of-day state.</summary>
     public bool ResetCurrentDay()
     {
         if (!CanChangeDay()) return false;
@@ -151,15 +155,31 @@ public sealed class GameStateDebugger : MonoBehaviour
     public void SetItemCount(string name, int count, bool pending)
     {
         if (SceneChanger.IsTransitioning) return;
-        if (string.IsNullOrWhiteSpace(name) || count < 0)
+        var definition = ItemCatalog.Find(name);
+        if (definition == null || definition.Id == ItemCatalog.Ore || count < 0 || (pending && definition.Stock == 0))
         {
-            Reject("Enter an item name and a nonnegative count.");
+            Reject("Choose an available item and enter a nonnegative count.");
             return;
         }
+        name = definition.Id;
         var items = pending ? GameState.itemsBought : GameState.inventory;
         if (count == 0) items.Remove(name);
         else items[name] = count;
         if (!pending) RefreshExcursionInventory();
+        Status = null;
+    }
+
+    /// <summary>Changes an item count in the current dive without modifying the day-start checkpoint.</summary>
+    public void SetCarriedItemCount(OceanInteractions ocean, string id, int count)
+    {
+        if (SceneChanger.IsTransitioning || ocean == null || ocean.LoadoutOpen || ocean.IsTransitioning) return;
+        if (count < 0)
+        {
+            Reject("Item counts must be nonnegative.");
+            return;
+        }
+        ocean.SetDebugCarriedItem(id, count);
+        RefreshExcursionInventory();
         Status = null;
     }
 

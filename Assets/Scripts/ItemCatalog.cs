@@ -42,19 +42,22 @@ public static class ItemCatalog
 
     private static readonly Dictionary<string, Definition> definitions = new(StringComparer.OrdinalIgnoreCase)
     {
-        { Machine, new(Machine, "Attach to prospected mining spots to extract tellurium. Breaks if left out overnight.", 15, 4, true, 80, 5, true) },
+        { Machine, new(Machine, "Attach to prospected mining spots to extract tellurium. Breaks if left out overnight.", 15, 4, droppable: true, price: 80, stock: 5, dailyStock: true) },
         { MediumTank, new(MediumTank, "Provides approximately 5 minutes of breathing time.", 20, price: 200, stock: 1, tankSeconds: 300) },
         { HeavyTank, new(HeavyTank, "Provides approximately 8 minutes of breathing time.", 30, price: 400, stock: 1, tankSeconds: 480) },
         { Flippers, new(Flippers, "Large and cumbersome on dry land, but a great help in the water. Increases swimming speed.", 4, price: 400, stock: 1) },
-        { Stimulant, new(Stimulant, "A small canister of invigorating gas. Press R during an excursion for a brief speed boost.", 2, 4, true, 70, 5, true) },
+        { Stimulant, new(Stimulant, "A small canister of invigorating gas. Press R during an excursion for a brief speed boost.", 2, 4, droppable: true, price: 70, stock: 5, dailyStock: true) },
         { Medicine, new(Medicine, "Should cure a mild infection. The Company is only providing a single pill.", 0, price: 150, stock: 1, interiorOnly: true) },
         { Camera, new(Camera, "A pressure-resistant waterproof camera with a spotlight. Widens the flashlight beam when equipped.", 10, price: 800, stock: 1) },
         { LightTank, new(LightTank, "A portable tank with approximately 3 minutes of breathing time.", 10, tankSeconds: 180) },
-        { Ore, new(Ore, "Dirty with sediment and biotic matter. The Company grants 10 credits per sample.", 2, 16, true, name: "Raw Tellurium Sample") },
+        { Ore, new(Ore, "Dirty with sediment and biotic matter. The Company grants 10 credits per sample.", 2, 16, droppable: true, name: "Raw Tellurium Sample") },
         { Fungus, new(Fungus, "If the encrypted files are to be trusted, this is the key to your survival.", 5, 4) },
         { CrewPhoto, new(CrewPhoto, "Upload this to the terminal to ask the Company for aid.", 0, interiorOnly: true) },
         { EyePhoto, new(EyePhoto, "Meet the void’s gaze, somewhere on the abyssal plain.", 0) }
     };
+
+    /// <summary>Enumerates the item definitions in the catalog.</summary>
+    public static IEnumerable<Definition> All => definitions.Values;
 
     public static Definition Find(string id) =>
         id != null && definitions.TryGetValue(id.Trim(), out var definition) ? definition : null;
