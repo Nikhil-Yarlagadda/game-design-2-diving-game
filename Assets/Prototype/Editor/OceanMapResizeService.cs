@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -47,39 +46,12 @@ namespace DivingPrototype
                 .Where(t => t.kind == OceanTarget.TargetKind.Submarine).ToArray();
             if (submarines.Length != 1) throw new InvalidOperationException("The map must contain exactly one submarine.");
             var transforms = map.GetComponentsInChildren<Transform>(true).Where(t => t != map).ToArray();
-            var entries = new List<OceanMapResizeBaseline.Entry>();
-            foreach (var t in transforms)
+            var entries = transforms.Select(t => new OceanMapResizeBaseline.Entry
             {
-                var shape = Classify(t);
-                var renderer = t.GetComponent<SpriteRenderer>();
-                var polygons = t.GetComponents<PolygonCollider2D>();
-                if (polygons.Length > 0 && (renderer == null || renderer.sprite == null || renderer.drawMode == SpriteDrawMode.Tiled))
-                    throw new InvalidOperationException(t.name + " needs a Simple or Sliced SpriteRenderer for polygon resizing.");
-                if (polygons.Length > 0 && renderer.sprite.border != Vector4.zero)
-                    throw new InvalidOperationException(t.name + " has an unsupported bordered terrain sprite.");
-                var entry = new OceanMapResizeBaseline.Entry {
-                    id = Id(t), parentId = Id(t.parent), name = t.name, componentIds = ComponentIds(t),
-                    position = t.position, localPosition = t.localPosition, localRotation = t.localRotation,
-                    localScale = t.localScale, worldMatrix = t.localToWorldMatrix,
-                    movePosition = IsIndependent(t, map), shape = shape,
-                    rendererId = renderer == null ? null : Id(renderer),
-                    originalSprite = renderer == null ? null : renderer.sprite,
-                    rendererDrawMode = renderer == null ? SpriteDrawMode.Simple : renderer.drawMode,
-                    rendererSize = renderer == null ? Vector2.zero : renderer.size,
-                    visualSize = renderer == null || renderer.sprite == null ? Vector2.zero :
-                        renderer.drawMode == SpriteDrawMode.Simple ? (Vector2)renderer.sprite.bounds.size : renderer.size,
-                    polygons = polygons.Select(p => new OceanMapResizeBaseline.Polygon {
-                        id = Id(p), offset = p.offset,
-                        paths = Enumerable.Range(0, p.pathCount).Select(i => new OceanMapResizeBaseline.Path { points = p.GetPath(i) }).ToArray()
-                    }).ToArray(),
-                    boxes = shape == OceanMapResizeBaseline.Shape.Boundary ? t.GetComponents<BoxCollider2D>()
-                        .Select(b => new OceanMapResizeBaseline.Box { id = Id(b), offset = b.offset, size = b.size }).ToArray()
-                        : Array.Empty<OceanMapResizeBaseline.Box>()
-                };
-                if (polygons.Length > 0 && t.localToWorldMatrix.determinant == 0)
-                    throw new InvalidOperationException(t.name + " has a non-invertible terrain transform.");
-                entries.Add(entry);
-            }
+                id = Id(t), parentId = Id(t.parent), name = t.name, componentIds = ComponentIds(t),
+                position = t.position, localPosition = t.localPosition, localRotation = t.localRotation,
+                localScale = t.localScale, movePosition = IsIndependent(t, map), shape = Classify(t)
+            }).ToArray();
             var seabed = transforms.SingleOrDefault(t => t.name == "Seabed")?.GetComponent<SpriteRenderer>();
             if (seabed == null) throw new InvalidOperationException("The map needs its Seabed renderer to measure dimensions.");
 
@@ -98,7 +70,9 @@ namespace DivingPrototype
             baseline.mapMatrix = map.localToWorldMatrix;
             baseline.dimensions = seabed.bounds.size;
             baseline.appliedScale = 1f;
-            baseline.entries = entries.ToArray();
+            baseline.spawnMin = ocean.spawnMin;
+            baseline.spawnMax = ocean.spawnMax;
+            baseline.entries = entries;
             return baseline;
         }
 
@@ -108,7 +82,8 @@ namespace DivingPrototype
             for (var ancestor = t.parent; ancestor != null && ancestor != map; ancestor = ancestor.parent)
             {
                 if (ancestor.GetComponent<OceanTarget>() != null) return false;
-                if (ancestor.GetComponent<SpriteRenderer>() != null && Classify(ancestor) == OceanMapResizeBaseline.Shape.Object)
+                if (ancestor.GetComponent<SpriteRenderer>() != null ||
+                    Classify(ancestor) is OceanMapResizeBaseline.Shape.Polygon or OceanMapResizeBaseline.Shape.Boundary)
                     return false;
             }
             return true;
@@ -135,6 +110,8 @@ namespace DivingPrototype
             if (baseline == null) return "Capture a baseline to establish the current layout as scale 1.";
             if (baseline.sceneGuid != AssetDatabase.AssetPathToGUID(ocean.gameObject.scene.path) || baseline.mapId != Id(ocean.oceanMap.transform))
                 return "The baseline belongs to a different map. Recapture the baseline.";
+            if (baseline.spawnMin.x >= baseline.spawnMax.x || baseline.spawnMin.y >= baseline.spawnMax.y)
+                return "The baseline lacks valid spawn bounds. Check the bounds and recapture the baseline.";
             if (ocean.oceanMap.transform.localToWorldMatrix != baseline.mapMatrix)
                 return "The Map root transform changed. Recapture the baseline.";
             var transforms = ocean.oceanMap.GetComponentsInChildren<Transform>(true).Where(t => t != ocean.oceanMap.transform).ToArray();
@@ -144,8 +121,6 @@ namespace DivingPrototype
             {
                 if (!byId.TryGetValue(entry.id, out var t) || Id(t.parent) != entry.parentId || t.name != entry.name || ComponentIds(t) != entry.componentIds)
                     return "A map object or component changed or is missing. Recapture the baseline.";
-                if (entry.polygons.Length > 0 && entry.originalSprite == null)
-                    return "A baseline terrain sprite is missing. Restore it or recapture the baseline.";
             }
             if (Resolve<Transform>(baseline.submarineId) == null) return "The submarine is missing. Recapture the baseline.";
             return null;
@@ -179,63 +154,24 @@ namespace DivingPrototype
             Undo.SetCurrentGroupName("Resize Ocean Map");
             try
             {
-                var changed = new List<Object> { baseline };
-                foreach (var entry in entries)
+                var transforms = entries.Select(entry => Resolve<Transform>(entry.id)).ToArray();
+                var changed = new Object[] { baseline, ocean }.Concat(transforms).ToArray();
+                Undo.RegisterCompleteObjectUndo(changed, "Resize Ocean Map");
+                // Terrain art and colliders share their transform, including the sprite pivot.
+                // Process parents first so attached artwork inherits its parent's changes.
+                for (int i = 0; i < entries.Length; i++)
                 {
-                    changed.Add(Resolve<Transform>(entry.id));
-                    changed.AddRange(entry.polygons.Select(p => Resolve<PolygonCollider2D>(p.id)));
-                    changed.AddRange(entry.boxes.Select(b => Resolve<BoxCollider2D>(b.id)));
-                    if (entry.polygons.Length > 0) changed.Add(Resolve<SpriteRenderer>(entry.rendererId));
-                }
-                Undo.RegisterCompleteObjectUndo(changed.ToArray(), "Resize Ocean Map");
-                // GetComponentsInChildren returns parents before their descendants.
-                foreach (var entry in entries)
-                {
-                    var t = Resolve<Transform>(entry.id);
+                    var entry = entries[i];
+                    var t = transforms[i];
                     t.localRotation = entry.localRotation;
-                    t.localScale = entry.localScale;
-                    if (entry.shape == OceanMapResizeBaseline.Shape.Seabed)
-                        t.localScale = Vector3.Scale(entry.localScale, new Vector3(scale, scale, 1));
-                    else if (entry.shape == OceanMapResizeBaseline.Shape.GridX)
-                        t.localScale = Vector3.Scale(entry.localScale, new Vector3(1, scale, 1));
-                    else if (entry.shape == OceanMapResizeBaseline.Shape.GridY)
-                        t.localScale = Vector3.Scale(entry.localScale, new Vector3(scale, 1, 1));
-                    if (entry.id == baseline.submarineId) t.position = baseline.anchor;
-                    else if (entry.movePosition) t.position = ScalePoint(entry.position, baseline.anchor, scale);
-                    else t.localPosition = entry.localPosition;
-
-                    foreach (var polygon in entry.polygons)
-                    {
-                        var collider = Resolve<PolygonCollider2D>(polygon.id);
-                        collider.offset = polygon.offset;
-                        collider.pathCount = polygon.paths.Length;
-                        for (int i = 0; i < polygon.paths.Length; i++)
-                        {
-                            var points = polygon.paths[i].points.Select(p => {
-                                var world = entry.worldMatrix.MultiplyPoint3x4(p + polygon.offset);
-                                return (Vector2)t.InverseTransformPoint(ScalePoint(world, baseline.anchor, scale)) - collider.offset;
-                            }).ToArray();
-                            collider.SetPath(i, points);
-                        }
-                    }
-                    foreach (var box in entry.boxes)
-                    {
-                        var collider = Resolve<BoxCollider2D>(box.id);
-                        collider.offset = box.offset * scale;
-                        collider.size = box.size * scale;
-                    }
-                    if (entry.polygons.Length > 0)
-                    {
-                        var renderer = Resolve<SpriteRenderer>(entry.rendererId);
-                        // With zero borders, Sliced stretches the whole silhouette around its
-                        // existing pivot. Size and draw mode are scene properties covered by Undo.
-                        renderer.sprite = entry.originalSprite;
-                        renderer.drawMode = scale == 1f ? entry.rendererDrawMode : SpriteDrawMode.Sliced;
-                        renderer.size = scale == 1f ? entry.rendererSize : entry.visualSize * scale;
-                        renderer.ResetLocalBounds();
-                        renderer.ResetBounds();
-                    }
+                    t.localScale = ScaledLocalSize(entry, scale);
+                    if (scale != 1f && entry.movePosition && entry.id != baseline.submarineId)
+                        t.position = ScalePoint(entry.position, baseline.anchor, scale);
+                    else
+                        t.localPosition = entry.localPosition;
                 }
+                ocean.spawnMin = scale == 1f ? baseline.spawnMin : (Vector2)ScalePoint(baseline.spawnMin, baseline.anchor, scale);
+                ocean.spawnMax = scale == 1f ? baseline.spawnMax : (Vector2)ScalePoint(baseline.spawnMax, baseline.anchor, scale);
                 baseline.appliedScale = scale;
                 foreach (var value in changed)
                 {
@@ -253,16 +189,38 @@ namespace DivingPrototype
             }
         }
 
+        /// <summary>Scales terrain in both axes and grid lines only along their length.</summary>
+        static Vector3 ScaledLocalSize(OceanMapResizeBaseline.Entry entry, float scale)
+        {
+            if (!entry.movePosition) return entry.localScale;
+            var axes = entry.shape switch
+            {
+                OceanMapResizeBaseline.Shape.Polygon or OceanMapResizeBaseline.Shape.Boundary
+                    or OceanMapResizeBaseline.Shape.Seabed => new Vector3(scale, scale, 1),
+                OceanMapResizeBaseline.Shape.GridX => new Vector3(1, scale, 1),
+                OceanMapResizeBaseline.Shape.GridY => new Vector3(scale, 1, 1),
+                _ => Vector3.one
+            };
+            return Vector3.Scale(entry.localScale, axes);
+        }
+
         static void ValidateScale(OceanMapResizeBaseline baseline, float scale)
         {
+            var dimensions = baseline.dimensions * scale;
+            Vector2 spawnMin = ScalePoint(baseline.spawnMin, baseline.anchor, scale);
+            Vector2 spawnMax = ScalePoint(baseline.spawnMax, baseline.anchor, scale);
+            if (!Finite(dimensions.x) || !Finite(dimensions.y) || dimensions.x <= 0 || dimensions.y <= 0 ||
+                !Finite(spawnMin.x) || !Finite(spawnMin.y) || !Finite(spawnMax.x) || !Finite(spawnMax.y) ||
+                spawnMin.x >= spawnMax.x || spawnMin.y >= spawnMax.y)
+                throw new InvalidOperationException("The resulting map dimensions cannot be represented.");
+
             foreach (var entry in baseline.entries)
             {
-                var p = ScalePoint(entry.position, baseline.anchor, scale);
-                if (!Finite(p.x) || !Finite(p.y) || !Finite(baseline.dimensions.x * scale) || !Finite(baseline.dimensions.y * scale))
-                    throw new InvalidOperationException("The resulting map is too large. Choose a smaller scale.");
-                if (entry.polygons.Length > 0 && (!Finite(entry.visualSize.x * scale) || !Finite(entry.visualSize.y * scale)
-                    || entry.visualSize.x * scale <= 0 || entry.visualSize.y * scale <= 0))
-                    throw new InvalidOperationException("The resulting terrain size cannot be represented.");
+                var position = ScalePoint(entry.position, baseline.anchor, scale);
+                var size = ScaledLocalSize(entry, scale);
+                if (!Finite(position.x) || !Finite(position.y) || !Finite(size.x) || !Finite(size.y) ||
+                    (entry.localScale.x != 0 && size.x == 0) || (entry.localScale.y != 0 && size.y == 0))
+                    throw new InvalidOperationException("The resulting map geometry cannot be represented.");
             }
         }
 
