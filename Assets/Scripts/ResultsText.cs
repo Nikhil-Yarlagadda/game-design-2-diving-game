@@ -33,6 +33,7 @@ public class ResultsText : MonoBehaviour
 #if UNITY_EDITOR
             GameStateDebugger.CaptureDayStart("Interior");
 #endif
+        SceneChanger.ChangeScene("Interior");
         }
     }
 }

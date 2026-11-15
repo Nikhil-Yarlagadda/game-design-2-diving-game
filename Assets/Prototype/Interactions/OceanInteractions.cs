@@ -69,10 +69,6 @@ namespace DivingPrototype
         private Dictionary<string, int> tutorialStartOrders;
         private Dictionary<string, int> tutorialStartInventory;
         private int tutorialStartTellurium;
-        private ExcursionInventory inventoryUI;
-        private static readonly System.Collections.Generic.HashSet<string> droppable =
-            new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister", "Tellurium" };
-
 
 
 
