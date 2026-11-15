@@ -63,7 +63,7 @@ public sealed class GameStateDebugger : MonoBehaviour
     }
 
     private static bool IsInteriorScene(string scene) => scene is InteriorScene or "Shared Space" or
-        "Airlock" or "Storage Closet" or "Sleeping Quarters" or "Mineral Lab" or "Terminal" or "Shop"
+        "Moonpool" or "Storage Closet" or "Sleeping Quarters" or "Mineral Lab" or "Terminal" or "Shop"
         or "Contact Management" or "AdminTab";
 
     private void Update()

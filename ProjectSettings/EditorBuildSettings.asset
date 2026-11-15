@@ -27,7 +27,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Storage Closet.unity
     guid: 3d7cdbf2c885e2043899b78b55717928
   - enabled: 1
-    path: Assets/Scenes/Airlock.unity
+    path: Assets/Scenes/Moonpool.unity
     guid: 165248db35e7e2f48b06d2b9eb08fb7b
   - enabled: 1
     path: Assets/Scenes/Shop.unity

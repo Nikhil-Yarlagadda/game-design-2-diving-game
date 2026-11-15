@@ -34,7 +34,12 @@ public class NPC : MonoBehaviour, IClickable
     {
         string room = npcId switch
         {
-            "Apprentice Diver" => "Airlock",
+            "Apprentice Diver" => GameState.days switch
+            {
+                15 or 19 => "Mineral Lab",
+                17 => "Storage Closet",
+                _ => "Moonpool"
+            },
             "Medic" => GameState.days switch
             {
                 5 or 13 or 17 => "Mineral Lab",
@@ -46,6 +51,6 @@ public class NPC : MonoBehaviour, IClickable
         };
 
         gameObject.SetActive(GameState.IsCrewAboard(npcId) && SceneChanger.getScene() == room &&
-            (npcId != "Apprentice Diver" || GameState.HasSpokenToOtherCrew()));
+            (npcId != "Apprentice Diver" || GameState.days >= 15 || GameState.HasSpokenToOtherCrew()));
     }
 }
