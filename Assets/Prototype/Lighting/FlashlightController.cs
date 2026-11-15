@@ -7,9 +7,6 @@ namespace DivingPrototype
     [RequireComponent(typeof(SwimmerController))]
     public sealed class FlashlightController : MonoBehaviour
     {
-        public enum AimMode { Mouse, MovementKeys }
-
-        [SerializeField] private AimMode aimMode = AimMode.Mouse;
         [SerializeField] private Camera aimCamera;
         [SerializeField, Range(0f, 1f)] private float ambientBrightness;
         [Header("Bright cone (total angles in degrees)")]
@@ -126,11 +123,10 @@ namespace DivingPrototype
         public void RefreshLighting()
         {
             if (instance == null) return;
-            if (Application.isPlaying && Time.timeScale > 0f)
+            if (Application.isPlaying && Time.timeScale > 0f && swimmer?.MovementLocked != true)
             {
                 Vector2 candidate = Vector2.zero;
-                if (aimMode == AimMode.MovementKeys) candidate = swimmer.MovementInput;
-                else if (Mouse.current != null && aimCamera != null)
+                if (Mouse.current != null && aimCamera != null)
                 {
                     Vector2 screen = Mouse.current.position.ReadValue();
                     var ray = aimCamera.ScreenPointToRay(screen);

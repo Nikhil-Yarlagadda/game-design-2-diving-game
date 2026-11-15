@@ -19,7 +19,6 @@ namespace DivingPrototype
             var swimmer = controller.GetComponent<SwimmerController>();
             var body = controller.GetComponent<Rigidbody2D>();
             var centered = camera.GetComponent<CenteredCamera>();
-            int oldMode = settings.FindProperty("aimMode").enumValueIndex;
             float oldAmbient = settings.FindProperty("ambientBrightness").floatValue;
             float oldRadius = settings.FindProperty("playerLightRadius").floatValue;
             var oldPosition = body.position;
@@ -30,18 +29,14 @@ namespace DivingPrototype
             var oldBackground = camera.backgroundColor;
             float oldSize = camera.orthographicSize;
             bool oldPaused = EditorApplication.isPaused;
-            var oldKeyboard = Keyboard.current;
             var oldMouse = Mouse.current;
-            Keyboard keyboard = null;
             Mouse mouse = null;
             RenderTexture target = null;
             Texture2D pixels = null;
             try
             {
                 EditorApplication.isPaused = true;
-                keyboard = InputSystem.AddDevice<Keyboard>();
                 mouse = InputSystem.AddDevice<Mouse>();
-                keyboard.MakeCurrent();
                 mouse.MakeCurrent();
                 target = new RenderTexture(1024, 1024, 24, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
                 target.Create();
@@ -52,28 +47,6 @@ namespace DivingPrototype
                 controller.transform.position = Vector3.zero;
                 body.linearVelocity = Vector2.zero;
                 centered.SendMessage("LateUpdate");
-                Set(settings, "aimMode", 1);
-                var keys = new[] {
-                    new[] { Key.D }, new[] { Key.W, Key.D }, new[] { Key.W }, new[] { Key.W, Key.A },
-                    new[] { Key.A }, new[] { Key.S, Key.A }, new[] { Key.S }, new[] { Key.S, Key.D },
-                    new[] { Key.UpArrow, Key.RightArrow }
-                };
-                var directions = new[] { Vector2.right, Vector2.one.normalized, Vector2.up,
-                    new Vector2(-1f, 1f).normalized, Vector2.left, -Vector2.one.normalized,
-                    Vector2.down, new Vector2(1f, -1f).normalized, Vector2.one.normalized };
-                for (int i = 0; i < keys.Length; i++)
-                {
-                    InputState.Change(keyboard, new KeyboardState(keys[i]));
-                    swimmer.SendMessage("Update");
-                    controller.RefreshLighting();
-                    Direction(controller.AimDirection, directions[i], "Keyboard direction " + i);
-                    Direction(swimmer.MovementInput, directions[i], "Shared movement input " + i);
-                }
-                InputState.Change(keyboard, new KeyboardState());
-                swimmer.SendMessage("Update");
-                controller.RefreshLighting();
-                Direction(controller.AimDirection, Vector2.one.normalized, "Retain keyboard aim on release");
-                Set(settings, "aimMode", 0);
                 AimMouse(mouse, camera, controller, Vector2.right);
                 Direction(controller.AimDirection, Vector2.right, "Mouse aim right");
                 var material = controller.GetComponent<SpriteRenderer>().sharedMaterial;
@@ -152,15 +125,12 @@ namespace DivingPrototype
                 FlashlightCheck.Near(material.GetFloat("_AmbientBrightness"), .05f, "Runtime ambient uploads");
                 FlashlightCheck.Require(camera.backgroundColor.g > 0f, "Camera background follows ambient setting");
                 SwimmingCheck.Run();
-                Debug.Log("Flashlight Play mode check passed: direct Inspector radius control, small-circle player visibility and sprite-size independence, trapezoid, 8 keyboard directions/arrows, mouse aim, camera following, idle/overlap fallback, actual rock shadows/surfaces/corners, ambient, swimming.");
+                Debug.Log("Flashlight Play mode check passed: direct Inspector radius control, small-circle player visibility and sprite-size independence, trapezoid, mouse aim, camera following, idle/overlap fallback, actual rock shadows/surfaces/corners, ambient, swimming.");
             }
             finally
             {
-                if (keyboard != null) InputSystem.RemoveDevice(keyboard);
                 if (mouse != null) InputSystem.RemoveDevice(mouse);
-                if (oldKeyboard != null && oldKeyboard.added) oldKeyboard.MakeCurrent();
                 if (oldMouse != null && oldMouse.added) oldMouse.MakeCurrent();
-                Set(settings, "aimMode", oldMode);
                 Set(settings, "ambientBrightness", oldAmbient);
                 Set(settings, "playerLightRadius", oldRadius);
                 controller.transform.localScale = oldScale;

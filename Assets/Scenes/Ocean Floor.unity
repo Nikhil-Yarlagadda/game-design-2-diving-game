@@ -8299,7 +8299,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e5a546f9ad154186929bf635c425c56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.FlashlightController
-  aimMode: 0
   aimCamera: {fileID: 519420031}
   ambientBrightness: 0
   coneAngle: 125

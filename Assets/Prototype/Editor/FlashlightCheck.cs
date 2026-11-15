@@ -104,7 +104,6 @@ namespace DivingPrototype
                 Require(vfx != null && new SerializedObject(vfx).FindProperty("particleShader").objectReferenceValue != null, "Ocean particle effects wired");
                 Require(new SerializedObject(vfx).FindProperty("waterOverlayShader").objectReferenceValue != null, "Water overlay wired in both ocean scenes");
                 var settings = new SerializedObject(controller);
-                Require(settings.FindProperty("aimMode").enumValueIndex == 0, "Mouse aim default");
                 Near(settings.FindProperty("ambientBrightness").floatValue, 0f, "Black ambient default");
                 float configuredAngle = settings.FindProperty("coneAngle").floatValue;
                 Require(configuredAngle >= 2f && configuredAngle <= 180f, "Valid tunable cone angle");

@@ -12,7 +12,6 @@ namespace DivingPrototype
 
         private Rigidbody2D body;
         private Vector2 input;
-        public Vector2 MovementInput => input;
         public bool MovementLocked { get; private set; }
         public bool PropulsionLocked { get; set; }
         public void SetMovementLocked(bool locked)
@@ -28,21 +27,14 @@ namespace DivingPrototype
 
         private void Awake() => body = GetComponent<Rigidbody2D>();
 
-        public static bool HasMovementKeysPressed()
-        {
-            var keyboard = Keyboard.current;
-            return keyboard != null && (keyboard.wKey.isPressed || keyboard.aKey.isPressed
-                || keyboard.sKey.isPressed || keyboard.dKey.isPressed || keyboard.upArrowKey.isPressed
-                || keyboard.leftArrowKey.isPressed || keyboard.downArrowKey.isPressed || keyboard.rightArrowKey.isPressed);
-        }
-        public static Vector2 ReadMovementInput()
+        private static Vector2 ReadMovementInput()
         {
             var keyboard = Keyboard.current;
             return keyboard == null ? Vector2.zero : Vector2.ClampMagnitude(new Vector2(
-                (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1 : 0)
-                - (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? 1 : 0),
-                (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed ? 1 : 0)
-                - (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed ? 1 : 0)), 1f);
+                (keyboard.dKey.isPressed ? 1 : 0)
+                - (keyboard.aKey.isPressed ? 1 : 0),
+                (keyboard.wKey.isPressed ? 1 : 0)
+                - (keyboard.sKey.isPressed ? 1 : 0)), 1f);
         }
         private void Update() => input = MovementLocked || PropulsionLocked ? Vector2.zero : ReadMovementInput();
 
