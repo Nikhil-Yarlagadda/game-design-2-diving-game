@@ -33,7 +33,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
 
         if(GameState.infectionPhoto)
         {
-            description.text = "Admin Tab";
+            description.text = "Admin Access";
             admin.interactable = true;
         }
     }
