@@ -62,6 +62,9 @@ namespace DivingPrototype
         private readonly System.Collections.Generic.List<Vector2> spawnCells = new System.Collections.Generic.List<Vector2>();
         private readonly System.Collections.Generic.HashSet<Vector2Int> reachable = new System.Collections.Generic.HashSet<Vector2Int>();
         private const float SpawnCellSize = 1f;
+        private ExcursionInventory inventoryUI;
+        private static readonly System.Collections.Generic.HashSet<string> droppable =
+            new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister", "Tellurium" };
         private Dictionary<string, GameState.MiningSpotState> tutorialStartMining;
         private Dictionary<string, int> tutorialStartOrders;
         private Dictionary<string, int> tutorialStartInventory;
@@ -69,6 +72,8 @@ namespace DivingPrototype
         private ExcursionInventory inventoryUI;
         private static readonly System.Collections.Generic.HashSet<string> droppable =
             new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister", "Tellurium" };
+
+
 
 
 
