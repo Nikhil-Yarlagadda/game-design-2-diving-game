@@ -66,8 +66,6 @@ namespace DivingPrototype
         private Dictionary<string, int> tutorialStartOrders;
         private Dictionary<string, int> tutorialStartInventory;
         private int tutorialStartTellurium;
-        public GameObject panel;            // InventoryPanel
-        public OceanTarget dropPrefab;
         private ExcursionInventory inventoryUI;
         private static readonly System.Collections.Generic.HashSet<string> droppable =
             new System.Collections.Generic.HashSet<string> { "Mining Machine", "Stimulant Canister", "Tellurium" };
@@ -79,8 +77,6 @@ namespace DivingPrototype
 #if UNITY_EDITOR
             GameStateDebugger.CaptureFirstOceanEntry(gameObject.scene.name);
 #endif
-
-            Debug.Log("Item Count to start is " + itemCount);
             inventoryUI = FindAnyObjectByType<ExcursionInventory>();
             if (GameState.days == 2)
             {
