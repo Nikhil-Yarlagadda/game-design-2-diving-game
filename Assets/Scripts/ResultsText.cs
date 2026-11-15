@@ -28,7 +28,7 @@ public class ResultsText : MonoBehaviour
 
     public void onLeave()
     {
-        string next = GameState.days >= GameState.LastDay ? "Ending" : "Interior";
+        string next = GameState.days + 1 >= GameState.LastDay ? "Ending" : "Interior";
         SceneChanger.ChangeSceneWithFade(next, () =>
         {
             GameState.credits = TotalCredits;

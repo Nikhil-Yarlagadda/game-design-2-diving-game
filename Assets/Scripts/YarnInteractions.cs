@@ -48,6 +48,10 @@ public class WorldInteractions : MonoBehaviour
         return GameState.npcsTalks.Contains(name);
     }
 
+    /// <summary>Requires another conversation with this crew member before the day can end.</summary>
+    [YarnCommand("unspeak")]
+    public static void Unspeak(string name) => GameState.npcsTalks.Remove(name);
+
     /// <summary>Records Kirsten’s first cure for the dialogue and crew schedule.</summary>
     [YarnCommand("cure_Kirsten")]
     public static void CureKristen()
