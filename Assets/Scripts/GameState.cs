@@ -23,6 +23,7 @@ public static class GameState
     public static int credits;
     public static int tellurium;
     public static HashSet<string> npcsTalks;
+    private static readonly Dictionary<string, float> crewConversationReadyTimes = new();
     public static Dictionary<string, int> itemsBought;
     public static Dictionary<string, int> inventory;
     public static Dictionary<string, int> dailyPurchases;
@@ -66,6 +67,14 @@ public static class GameState
         (!IsCrewAboard("Mineral Processor") || npcsTalks.Contains("Mineral Processor")) &&
         (!IsCrewAboard("Medic") || npcsTalks.Contains("Medic"));
 
+    /// <summary>Returns whether the character’s post-conversation cooldown has elapsed.</summary>
+    public static bool CanTalkToCrew(string id) =>
+        !crewConversationReadyTimes.TryGetValue(id, out float readyTime) || Time.unscaledTime >= readyTime;
+
+    /// <summary>Prevents another conversation with this character for one second, across room changes.</summary>
+    public static void StartCrewConversationCooldown(string id) =>
+        crewConversationReadyTimes[id] = Time.unscaledTime + 1f;
+
     // Also initialize safely when a scene is opened directly in the editor.
     static GameState() => reset();
 
@@ -77,6 +86,7 @@ public static class GameState
         deliveryTutorialShown = false;
         tellurium = 0;
         npcsTalks = new HashSet<string>();
+        crewConversationReadyTimes.Clear();
         itemsBought = new Dictionary<string, int>();
         itemsBought[MiningMachine] = 0;
         inventory = new Dictionary<string, int>();

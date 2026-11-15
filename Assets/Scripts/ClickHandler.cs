@@ -7,6 +7,8 @@ public class ClickHandler : MonoBehaviour
     public LayerMask npcLayer;
     public LayerMask roomLayer;
 
+    [SerializeField] private DialogueAdvancer roomDialogue;
+
     private Room hoveredRoom;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -18,7 +20,8 @@ public class ClickHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (InventoryButton.IsOpen || SceneChanger.IsTransitioning) return;
+        if (InventoryButton.IsOpen || SceneChanger.IsTransitioning || Mouse.current == null ||
+            (roomDialogue != null && roomDialogue.BlocksRoomInput)) return;
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
 

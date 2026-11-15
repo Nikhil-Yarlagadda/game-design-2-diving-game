@@ -158,9 +158,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f8e0f11480f90b43829a9c2032090b8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClickToAdvance
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueAdvancer
   dialogueRunner: {fileID: 89572217}
   lineAdvancer: {fileID: 2114363053}
+  roomDialogueCanvas: {fileID: 2100005001}
 --- !u!1 &134136226
 GameObject:
   m_ObjectHideFlags: 0
@@ -1095,6 +1096,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3bb38456cdb0474596499a4548ded15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClickHandler
+  roomDialogue: {fileID: 89572219}
   npcLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -1792,10 +1794,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: hasTransferredLegacyMapping
       value: 1
       objectReference: {fileID: 0}
@@ -1879,6 +1877,18 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: separateHurryUpAndAdvanceControls
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: multiAdvanceIsCancel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: m_SortingOrder
+      value: 20
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1927,6 +1937,11 @@ MonoBehaviour:
   hurryUpOptionsAction: {fileID: 0}
   cancelDialogueAction: {fileID: 0}
   enableActions: 1
+--- !u!223 &2100005001 stripped
+Canvas:
+  m_CorrespondingSourceObject: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
+  m_PrefabInstance: {fileID: 2114363052}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -653,6 +653,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
+  runner: {fileID: 895084163}
   npcId: Mineral Processor
   dialogueStartNode: MineralProcessor
   portrait: {fileID: 0}
@@ -903,6 +904,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
+  runner: {fileID: 895084163}
   npcId: Medic
   dialogueStartNode: Medic
   portrait: {fileID: 0}
@@ -1062,6 +1064,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
+  runner: {fileID: 895084163}
   npcId: Apprentice Diver
   dialogueStartNode: ApprenticeDiver
   portrait: {fileID: 0}
@@ -1186,10 +1189,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: hasTransferredLegacyMapping
       value: 1
       objectReference: {fileID: 0}
@@ -1273,6 +1272,18 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: separateHurryUpAndAdvanceControls
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: multiAdvanceIsCancel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: m_SortingOrder
+      value: 20
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1330,6 +1341,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DialogueAdvancer
   dialogueRunner: {fileID: 895084163}
   lineAdvancer: {fileID: 895084161}
+  roomDialogueCanvas: {fileID: 2100005001}
 --- !u!114 &895084165
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1498,6 +1510,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3bb38456cdb0474596499a4548ded15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClickHandler
+  roomDialogue: {fileID: 895084164}
   npcLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -2201,6 +2214,11 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!223 &2100005001 stripped
+Canvas:
+  m_CorrespondingSourceObject: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
+  m_PrefabInstance: {fileID: 895084159}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

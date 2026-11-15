@@ -105,7 +105,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         string scene = SceneManager.GetActiveScene().name;
         if (!Application.isPlaying || SceneChanger.IsTransitioning || Time.timeScale <= 0f ||
             PauseManager.BlocksInput || InventoryButton.IsOpen ||
-            (!IsInteriorScene(scene) && scene is not (OceanScene or "Dialogue" or "Result")))
+            (!IsInteriorScene(scene) && scene is not (OceanScene or "Result")))
             return Reject("Day commands are unavailable on this screen or while the game is paused.");
 
         var ocean = FindAnyObjectByType<OceanInteractions>();

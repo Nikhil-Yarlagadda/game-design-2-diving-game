@@ -1,28 +1,32 @@
 using UnityEngine;
+using Yarn.Unity;
 
 public class NPC : MonoBehaviour, IClickable
 {
     public string npcId;
     public string dialogueStartNode;
     public Sprite portrait;
+    [SerializeField] private DialogueRunner runner;
 
-    public void OnClicked()
+    private bool conversationInProgress;
+
+    /// <summary>Starts this character’s dialogue in the current room.</summary>
+    public async void OnClicked()
     {
-        DialogueContext.nodeName = dialogueStartNode + GameState.days;
+        if (conversationInProgress || runner.IsDialogueRunning || !GameState.CanTalkToCrew(npcId)) return;
 
-        if (portrait != null)
+        conversationInProgress = true;
+        try
         {
-            DialogueContext.portrait = portrait;
+            await runner.StartDialogue(dialogueStartNode + GameState.days);
+            GameState.npcsTalks.Add(npcId);
+            await runner.DialogueTask;
         }
-        else
+        finally
         {
-            SpriteRenderer sr = GetComponent<SpriteRenderer>();
-            DialogueContext.portrait = sr != null ? sr.sprite : null;
+            if (this != null) GameState.StartCrewConversationCooldown(npcId);
+            conversationInProgress = false;
         }
-
-        DialogueContext.scene = SceneChanger.getScene();
-        GameState.npcsTalks.Add(npcId);
-        SceneChanger.ChangeScene("Dialogue");
     }
 
     /// <summary>Shows this NPC only in their assigned room while they are aboard.</summary>
