@@ -52,8 +52,7 @@ public static class GameState
     public static bool IsCrewAboard(string id) => id switch
     {
         "Mineral Processor" => days < 13,
-        "Medic" => days < 17 || (dayOfKirstenCured >= 0 && dayOfKirstenCured < 17)
-            || (dayFgfsCollected >= 0 && dayFgfsCollected < 17),
+        "Medic" => days < 17 || (dayOfKirstenCured >= 0 && dayOfKirstenCured < 17),
         "Apprentice Diver" => true,
         _ => false
     };

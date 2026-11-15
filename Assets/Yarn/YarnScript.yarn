@@ -113,7 +113,7 @@ Cole: You’re right… I’ll take care of the lab.
 title: ApprenticeDiver15
 ---
 <<if not Cole_sick()>>
-    Cole: Hey man, thanks for giving me that medicine yesterday. I don’t really know how to explain it, but my head was feeling all foggy and weird. I finally feel like myself again.
+    Cole: Hey man, thanks for giving me that medicine the other day. I don’t really know how to explain it, but my head was feeling all foggy and weird. I finally feel like myself again.
     <<if has_item("Full-grown Fungus Sample")>>
         Cole: I didn’t think you were the type to be into magic spells, foreman.
         Player: What are you talking about?
