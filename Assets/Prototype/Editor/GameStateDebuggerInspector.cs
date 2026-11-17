@@ -73,6 +73,7 @@ public sealed class GameStateDebuggerInspector : Editor
                 string addLabel = crewId.Length == 0 ? "Add Empty ID" : "Add";
                 if (GUILayout.Button(addLabel)) debugger.SetCrewTalk(crewId, true);
             }
+            if (GUILayout.Button("Talk to All Crewmates")) debugger.TalkToAllCrewmates();
         }
         if (!string.IsNullOrEmpty(debugger.Status)) EditorGUILayout.HelpBox(debugger.Status, MessageType.Info);
     }

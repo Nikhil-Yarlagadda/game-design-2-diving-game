@@ -88,6 +88,8 @@ public sealed class GameStateDebugger : MonoBehaviour
         {
             FindAnyObjectByType<OceanInteractions>()?.KeepDebugInventoryForDayJump();
             GameState.days = day;
+            if (GameState.interiorDayResults) GameState.tellurium = 0;
+            GameState.interiorDayResults = false;
             GameState.excursionIncapacitated = false;
             GameState.oreLost = 0;
             GameState.npcsTalks.Clear();
@@ -191,6 +193,17 @@ public sealed class GameStateDebugger : MonoBehaviour
         Status = null;
     }
 
+    /// <summary>Marks each crewmate still aboard as spoken to on the current day.</summary>
+    public void TalkToAllCrewmates()
+    {
+        if (SceneChanger.IsTransitioning) return;
+        foreach (string id in new[] { "Mineral Processor", "Medic", "Apprentice Diver" })
+        {
+            if (GameState.IsCrewAboard(id)) GameState.npcsTalks.Add(id);
+        }
+        Status = null;
+    }
+
     public void SetDeliveryTutorialShown(bool shown)
     {
         if (SceneChanger.IsTransitioning) return;
@@ -247,6 +260,7 @@ public sealed class GameStateDebugger : MonoBehaviour
             GameState.days = Day;
             GameState.credits = credits;
             GameState.tellurium = tellurium;
+            GameState.interiorDayResults = false;
             GameState.deliveryTutorialShown = tutorialShown;
             GameState.medicineDelivered = medicineDelivered;
             GameState.shopDay = shopDay;
