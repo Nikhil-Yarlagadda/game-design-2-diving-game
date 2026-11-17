@@ -40,12 +40,14 @@ public class ResultsText : MonoBehaviour
         SceneChanger.ChangeSceneWithFade(next, () =>
         {
             GameState.credits = TotalCredits;
+            GameState.Playtest.Settle(interiorDay, GameState.tellurium, SampleCredits, Expense, GameState.credits);
             GameState.tellurium = 0;
             GameState.oreLost = 0;
             GameState.excursionIncapacitated = false;
             GameState.interiorDayResults = false;
             if (interiorDay) GameState.npcsTalks.Clear();
             GameState.days++;
+            if (next != "Ending") GameState.Playtest.StartDay(GameState.days, GameState.credits);
 #if UNITY_EDITOR
             if (next != "Ending") GameStateDebugger.CaptureDayStart(next);
 #endif

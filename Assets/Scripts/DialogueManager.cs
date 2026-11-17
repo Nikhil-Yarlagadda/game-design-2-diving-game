@@ -16,7 +16,7 @@ public class DialogueManager : MonoBehaviour
     }
     void Update()
     {
-        if (SceneChanger.IsTransitioning) return;
+        if (PauseManager.BlocksInput || SceneChanger.IsTransitioning || Mouse.current == null) return;
         if (dialoguePanel.activeSelf && Mouse.current.leftButton.wasPressedThisFrame)
         {
             if(justOpened){

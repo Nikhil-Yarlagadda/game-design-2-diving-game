@@ -21,6 +21,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Administrator Access available.";
             popup.SetActive(true);
             GameState.infectionPhoto = true;
+            GameState.Playtest.Milestone("Infected crewmate photo uploaded");
         }
 
         if(!GameState.abyssPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.EyePhoto) > 0)
@@ -29,6 +30,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Eye photograph available in Administrator Access";
             popup.SetActive(true);
             GameState.abyssPhoto = true;
+            GameState.Playtest.Milestone("Eye photo uploaded");
         }
 
         if(GameState.infectionPhoto)

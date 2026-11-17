@@ -18,6 +18,7 @@ public class RoomManager : MonoBehaviour
             !GameState.fgfsSpread)
         {
             GameState.fgfsSpread = true;
+            GameState.Playtest.Milestone("Fungus spread aboard");
             runner.StartDialogue("FungusSpread");
         }
 

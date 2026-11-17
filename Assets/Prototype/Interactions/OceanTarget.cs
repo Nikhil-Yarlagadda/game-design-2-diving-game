@@ -96,6 +96,7 @@ namespace DivingPrototype
             }
             if (produced > 0)
             {
+                if (GameState.Playtest.ActiveDive is { } attempt) attempt.produced += produced;
                 SaveMiningState();
                 OreProduced?.Invoke(this);
             }

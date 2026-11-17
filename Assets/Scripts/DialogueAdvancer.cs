@@ -44,7 +44,7 @@ public class DialogueAdvancer : MonoBehaviour
     private void LateUpdate()
     {
         var mouse = Mouse.current;
-        if (mouse == null || SceneChanger.IsTransitioning || !dialogueRunner.IsDialogueRunning) return;
+        if (mouse == null || PauseManager.BlocksInput || SceneChanger.IsTransitioning || !dialogueRunner.IsDialogueRunning) return;
 
         if (mouse.leftButton.wasPressedThisFrame)
             lineAdvancer.OnInputHurryUpLines();

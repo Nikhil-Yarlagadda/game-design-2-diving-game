@@ -28,12 +28,25 @@ public class WorldInteractions : MonoBehaviour
         ItemCatalog.ChangeCount(GameState.inventory, ItemCatalog.Find(itemName)?.Id ?? itemName, -1);
     }
 
+    /// <summary>Records an answered medicine prompt and consumes a dose when one is given.</summary>
+    [YarnCommand("medicine_choice")]
+    public static void MedicineChoice(string crewmate, bool give)
+    {
+        GameState.Playtest.Choice("Medicine choice", give ? "Give" : "Decline", crewmate);
+        if (!give || !HasItem(ItemCatalog.Medicine)) return;
+        RemoveItem(ItemCatalog.Medicine);
+        GameState.Playtest.Choice("Medicine dose consumed", "", crewmate);
+    }
+
     [YarnCommand("add_item")]
     public static void AddItem(string itemName)
     {
         string id = ItemCatalog.Find(itemName)?.Id ?? itemName;
         if (id != ItemCatalog.CrewPhoto || !HasItem(id))
+        {
             ItemCatalog.ChangeCount(GameState.inventory, id, 1);
+            if (id == ItemCatalog.CrewPhoto) GameState.Playtest.Milestone("Infected crewmate photo captured");
+        }
     }
 
     [YarnFunction("check_terminal")]
@@ -56,7 +69,9 @@ public class WorldInteractions : MonoBehaviour
     [YarnCommand("cure_Kirsten")]
     public static void CureKristen()
     {
-        if (GameState.dayOfKirstenCured < 0) GameState.dayOfKirstenCured = GameState.days;
+        if (GameState.dayOfKirstenCured >= 0) return;
+        GameState.dayOfKirstenCured = GameState.days;
+        GameState.Playtest.Choice("Crewmate cured", "", "Kirsten");
     }
 
     [YarnFunction("time_Kirsten")]
@@ -78,7 +93,9 @@ public class WorldInteractions : MonoBehaviour
     [YarnCommand("cure_Cole")]
     public static void CureCole()
     {
-        if (GameState.dayOfColeCured < 0) GameState.dayOfColeCured = GameState.days;
+        if (GameState.dayOfColeCured >= 0) return;
+        GameState.dayOfColeCured = GameState.days;
+        GameState.Playtest.Choice("Crewmate cured", "", "Cole");
     }
 
     [YarnFunction("time_Cole")]

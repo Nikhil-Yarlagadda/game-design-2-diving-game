@@ -302,6 +302,7 @@ namespace DivingPrototype
 
         private void LateUpdate()
         {
+            if (PauseManager.BlocksInput) return;
             if (markers == null) return;
             if (returnOverlay.gameObject.activeSelf != interactions.ReturnConfirmationOpen)
             {
@@ -367,6 +368,10 @@ namespace DivingPrototype
                 : target.DisplayedTier == 0 ? "Depleted (last prospected)"
                 : "Tier " + target.DisplayedTier + "  |  " + OceanTarget.Rate(target.DisplayedTier) + " / min (last prospected)  |  LEFT CLICK  Place machine";
             if (interactions.IsProspecting) prompt.text = "Hold E to finish prospecting • Release to cancel";
+            if (!inside && !inventoryOpen && !interactions.LoadoutOpen &&
+                !interactions.ReturnConfirmationOpen && !interactions.IsProspecting &&
+                target?.kind == OceanTarget.TargetKind.AbyssEye)
+                GameState.Playtest.Milestone("Eye of the Abyss encountered");
             if (!inside) status.text += "\nWASD  Swim    LEFT CLICK  Interact    TAB  Inventory\n"
                 + (interactions.IsProspecting ? "SCANNING  Thrust disabled | Release E to cancel"
                     : "HOLD E  Prospect (3s)" + (interactions.CooldownRemaining > 0f

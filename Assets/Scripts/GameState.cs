@@ -21,6 +21,7 @@ public static class GameState
     public static bool deliveryTutorialShown;
     public static int days;
     public static int credits;
+    internal static PlaytestReport Playtest { get; private set; }
     public static int tellurium;
     internal static bool interiorDayResults;
     public static HashSet<string> npcsTalks;
@@ -83,6 +84,8 @@ public static class GameState
         miningSpots = new Dictionary<string, MiningSpotState>();
         days = 1;
         credits = 0;
+        Playtest = new PlaytestReport();
+        Playtest.StartDay(days, credits);
         deliveryTutorialShown = false;
         tellurium = 0;
         interiorDayResults = false;

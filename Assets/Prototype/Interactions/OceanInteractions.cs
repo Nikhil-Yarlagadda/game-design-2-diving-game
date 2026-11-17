@@ -126,6 +126,7 @@ namespace DivingPrototype
         internal void SetDebugCarriedItem(string id, int amount)
         {
             ItemCatalog.ChangeCount(carried, id, amount - CarriedCount(id));
+            RecordCarriedOre();
             UpdateSpeed();
         }
 
@@ -172,6 +173,8 @@ namespace DivingPrototype
 #endif
             Hydrox.Equip(ItemCatalog.Find(Loadout.Tank).TankSeconds);
             LoadoutOpen = false;
+            GameState.Playtest.BeginDive(Loadout);
+            RecordCarriedOre();
             swimmer.SetMovementLocked(false);
             UpdateSpeed();
             return true;
@@ -329,6 +332,8 @@ namespace DivingPrototype
             if (panel != null && panel.activeSelf) { CancelProspect(); return; }
             if (Time.time > messageUntil) Message = "";
             if (transitioning || LoadoutOpen || InsideSubmarine) return;
+            if (GameState.Playtest.ActiveDive is { } attempt)
+                attempt.activeSeconds += Time.deltaTime;
             var mouse = Mouse.current;
             bool pointerInside = mouse != null && oceanCamera != null && oceanCamera.pixelRect.Contains(mouse.position.ReadValue());
             float secondsOfGas = Hydrox.CurrentCapacity / Hydrox.ConsumptionRate;
@@ -417,12 +422,22 @@ namespace DivingPrototype
             CancelProspect();
             nextProspect = now + prospectCooldown;
             int revealed = 0;
+            int newlyRevealed = 0;
             foreach (var target in targets)
             {
                 if (target == null || !target.isActiveAndEnabled || target.kind != OceanTarget.TargetKind.MiningSpot) continue;
                 Vector3 viewport = oceanCamera.WorldToViewportPoint(target.transform.position);
                 if (viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f)
-                { target.Reveal(now); revealed++; }
+                {
+                    if (!target.IsProspected) newlyRevealed++;
+                    target.Reveal(now);
+                    revealed++;
+                }
+            }
+            if (GameState.Playtest.ActiveDive is { } attempt)
+            {
+                attempt.scans++;
+                attempt.spotsRevealed += newlyRevealed;
             }
             ScanCompleted?.Invoke(revealed);
             RefreshClosest();
@@ -447,6 +462,7 @@ namespace DivingPrototype
             if (Closest == null || Closest.kind != OceanTarget.TargetKind.MiningSpot || InsideSubmarine) return false;
             if (availableMachines <= 0) { Notify("No machines left. Left-click a deployed machine to retrieve it."); return false; }
             if (!Closest.Place(Time.time)) return false;
+            if (GameState.Playtest.ActiveDive is { } attempt) attempt.machinesDeployed++;
             ItemCatalog.ChangeCount(carried, ItemCatalog.Machine, -1);
             UpdateSpeed();
             Notify("Mining started: " + OceanTarget.Rate(Closest.DisplayedTier) + " tellurium / minute (last prospected).");
@@ -473,10 +489,12 @@ namespace DivingPrototype
                 bool isDelivery = deliveries.Remove(Closest);
                 ItemsCollected++;
                 ItemCatalog.ChangeCount(carried, item.Id, Closest.itemCount);
+                if (item.Id == ItemCatalog.Medicine) GameState.Playtest.Milestone("Medicine picked up");
                 UpdateSpeed();
                 Closest.gameObject.SetActive(false);
                 if (isDelivery)
                 {
+                    if (GameState.Playtest.ActiveDive is { } attempt) attempt.deliveriesCollected++;
                     RemainingDeliveryCount--;
                     DeliveryCollected?.Invoke(RemainingDeliveryCount);
                 }
@@ -488,6 +506,7 @@ namespace DivingPrototype
                 if (!CanCarry(ItemCatalog.Ore, ore)) return;
                 Closest.ClearWreck();
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Ore, ore);
+                if (GameState.Playtest.ActiveDive is { } attempt) attempt.salvaged += ore;
                 UpdateSpeed();
                 Notify($"Wreck salvaged. +{ore} tellurium.");
             }
@@ -502,6 +521,7 @@ namespace DivingPrototype
                 }
                 if (!CanCarry(id, 1)) return;
                 ItemCatalog.ChangeCount(carried, id, 1);
+                GameState.Playtest.Milestone(id == ItemCatalog.Fungus ? "Fungus picked up" : "Eye photo captured");
                 UpdateSpeed();
                 Notify(id == ItemCatalog.Fungus ? "Fungus sample collected." : "Photograph taken.");
             }
@@ -510,12 +530,14 @@ namespace DivingPrototype
                 if (!CanCarry(ItemCatalog.Machine, 1, Closest.YieldAt(Time.time))) return;
                 int amount = Closest.Retrieve(Time.time);
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Ore, amount);
+                if (GameState.Playtest.ActiveDive is { } attempt) attempt.retrieved += amount;
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Machine, 1);
                 UpdateSpeed();
                 if (amount > 0) PositiveRetrieval?.Invoke();
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
+            RecordCarriedOre();
         }
 
         /// <summary>Returns the reason a quest interaction is unavailable, or null when it can proceed.</summary>
@@ -578,6 +600,7 @@ namespace DivingPrototype
         {
             if (!SceneChanger.ChangeSceneWithFade(gameObject.scene.name, () =>
             {
+                GameState.Playtest.FinishDive("Tutorial retry", Tellurium, 0, DeployedMachineCount, RemainingDeliveryCount);
                 GameState.miningSpots = tutorialStartMining;
                 GameState.itemsBought = tutorialStartOrders;
             }))
@@ -599,6 +622,8 @@ namespace DivingPrototype
             }
             transitioning = true;
             StopOceanControls();
+            int abandoned = DeployedMachineCount;
+            int missed = RemainingDeliveryCount;
             foreach (var target in targets)
                 if (target != null) target.BreakOvernight(Time.time);
             bool medicAboard = GameState.IsCrewAboard("Medic");
@@ -612,7 +637,9 @@ namespace DivingPrototype
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Stimulant,
                     -Mathf.RoundToInt(CarriedCount(ItemCatalog.Stimulant) * Random.Range(.2f, .5f)));
             }
+            bool recoveredFungus = GameState.dayFgfsCollected < 0 && CarriedCount(ItemCatalog.Fungus) > 0;
             StoreCarriedItems();
+            if (recoveredFungus) GameState.Playtest.Milestone("Fungus recovered");
             foreach (var item in deliveries)
                 if (item != null) item.gameObject.SetActive(false);
             deliveries.Clear();
@@ -622,6 +649,8 @@ namespace DivingPrototype
             InsideSubmarine = true;
             GameState.excursionIncapacitated = incapacitated;
             GameState.tellurium = Tellurium - GameState.oreLost;
+            GameState.Playtest.FinishDive(incapacitated ? "Incapacitated" : "Returned",
+                Tellurium, GameState.oreLost, abandoned, missed);
             return true;
         }
 
@@ -645,6 +674,12 @@ namespace DivingPrototype
         /// <summary>Applies the net change from the quantity packed to the quantity still carried.</summary>
         private void StoreCarriedItem(string id, int packed) =>
             ItemCatalog.ChangeCount(GameState.inventory, id, CarriedCount(id) - packed);
+
+        /// <summary>Captures the live ore count after the excursion bag changes.</summary>
+        private void RecordCarriedOre()
+        {
+            if (GameState.Playtest.ActiveDive is { } attempt) attempt.carriedNow = Tellurium;
+        }
 
         public bool DropItem(string itemName, int count = 1)
         {
@@ -686,6 +721,7 @@ namespace DivingPrototype
             targets = list.ToArray();
 
             ItemCatalog.ChangeCount(carried, item.Id, -count);
+            RecordCarriedOre();
             UpdateSpeed();
             Notify($"{count} × {item.Name} dropped.");
             return true;

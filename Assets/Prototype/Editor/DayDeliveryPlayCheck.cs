@@ -35,6 +35,50 @@ namespace DivingPrototype
             await WaitForIdle();
         }
 
+        /// <summary>Opens stats through the authored pause button, then resumes the retained gameplay scene.</summary>
+        private static async Task OpenStatsAndResume(Action whilePaused = null)
+        {
+            Scene gameplay = SceneManager.GetActiveScene();
+            float timeScale = Time.timeScale;
+            PauseManager.Pause();
+            await WaitForOverlay("Pause Screen", loaded: true);
+            var statsButton = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>()
+                .Single(button => button.gameObject.scene.name == "Pause Screen" && button.name == "PlaytestStats");
+            statsButton.onClick.Invoke();
+            await WaitForOverlay("Playtest Stats", loaded: true);
+            FlashlightCheck.Require(SceneManager.GetActiveScene() == gameplay && Time.timeScale == 0f,
+                "Stats retains and pauses the gameplay scene");
+            var report = UnityEngine.Object.FindAnyObjectByType<PlaytestStatsScreen>();
+            var scroll = report.GetComponentInChildren<UnityEngine.UI.ScrollRect>();
+            var page = scroll.transform.parent;
+            var header = (RectTransform)page.Find("Header");
+            var views = (RectTransform)page.Find("Views");
+            var handle = scroll.verticalScrollbar.handleRect;
+            FlashlightCheck.Require(header.rect.height <= 44.1f && views.rect.height <= 34.1f &&
+                handle.offsetMin == Vector2.zero && handle.offsetMax == Vector2.zero,
+                "Stats keeps its controls compact and its scroll thumb inside the track");
+            whilePaused?.Invoke();
+            var back = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>()
+                .Single(button => button.gameObject.scene.name == "Playtest Stats" && button.name == "Back");
+            back.onClick.Invoke();
+            await WaitForOverlay("Playtest Stats", loaded: false);
+            FlashlightCheck.Require(PauseManager.isPaused, "Back from stats keeps gameplay paused");
+            PauseManager.Resume();
+            await WaitForOverlay("Pause Screen", loaded: false);
+            FlashlightCheck.Require(SceneManager.GetActiveScene() == gameplay && Time.timeScale == timeScale,
+                "Resuming restores the same scene and its previous time scale");
+        }
+
+        /// <summary>Waits for an additive overlay and its completion callback to finish.</summary>
+        private static async Task WaitForOverlay(string scene, bool loaded)
+        {
+            for (int attempt = 0; attempt < 100 && SceneManager.GetSceneByName(scene).isLoaded != loaded; attempt++)
+                await Task.Delay(20);
+            await Task.Delay(40);
+            FlashlightCheck.Require(SceneManager.GetSceneByName(scene).isLoaded == loaded,
+                $"Overlay {scene} reaches its expected load state");
+        }
+
         [MenuItem("Diving Prototype/Check Day Deliveries In Play Mode")]
         public static async void Run()
         {
@@ -67,6 +111,12 @@ namespace DivingPrototype
                 check(SceneManager.GetActiveScene().name == "Result" && GameState.days == day &&
                     GameState.credits == bank, "Bed opens Results before advancing the day or settling credits");
                 int samples = GameState.tellurium;
+                if (day == 1)
+                {
+                    await OpenStatsAndResume();
+                    check(GameState.days == day && GameState.credits == bank && GameState.tellurium == samples,
+                        "Viewing stats preserves pending interior-day settlement");
+                }
                 check(day == 1 ? samples == 6 : samples is >= 3 and <= 6,
                     "Cole mines six samples on day one and three to six samples on later days");
                 int total = bank + samples * 10 - 50;
@@ -329,10 +379,8 @@ namespace DivingPrototype
                     && ocean.CarriedWeight == weight - ItemCatalog.Find(ItemCatalog.Stimulant).Weight
                     && swimmer.EquipmentSpeed > 1.7f, "Stimulant gives a boost, removes its weight, and cannot be consumed during cooldown");
                 float cooldown = ocean.StimulantTimeLeft, gas = ocean.Hydrox.CurrentCapacity;
-                PauseManager.Pause(); await Task.Delay(250);
-                check(Mathf.Approximately(ocean.StimulantTimeLeft, cooldown) && Mathf.Approximately(ocean.Hydrox.CurrentCapacity, gas),
-                    "Pause freezes the stimulant and tank");
-                PauseManager.Resume();
+                await OpenStatsAndResume(() => check(Mathf.Approximately(ocean.StimulantTimeLeft, cooldown) &&
+                    Mathf.Approximately(ocean.Hydrox.CurrentCapacity, gas), "Stats freezes the stimulant and tank"));
                 for (int i = 0; i < 50 && PauseManager.BlocksInput; i++) await Task.Delay(30);
                 UnityEngine.Object.FindAnyObjectByType<GameStateDebugger>().SetTellurium(110);
                 check(swimmer.EquipmentSpeed == 0f, "Excessive weight clamps the final speed without reversing movement");
@@ -340,8 +388,9 @@ namespace DivingPrototype
                 jump(center); ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity); await Task.Delay(150);
                 float grace = ocean.BreathingTimeLeft;
                 check(ocean.RequestEnterSubmarine(), "Grace window permits return confirmation");
-                await Task.Delay(220);
-                check(Mathf.Approximately(ocean.BreathingTimeLeft, grace), "Return confirmation freezes the grace window");
+                await OpenStatsAndResume();
+                check(ocean.ReturnConfirmationOpen && Mathf.Approximately(ocean.BreathingTimeLeft, grace),
+                    "Stats preserves the return confirmation and its frozen grace window");
                 check(ocean.ConfirmReturn(), "End equipment excursion");
                 await WaitForIdle();
                 GameState.days = 14;

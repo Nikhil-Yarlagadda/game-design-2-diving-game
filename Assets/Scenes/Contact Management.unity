@@ -1334,6 +1334,7 @@ GameObject:
   - component: {fileID: 1630034014}
   - component: {fileID: 1630034013}
   - component: {fileID: 1630034012}
+  - component: {fileID: 1908900010}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -2090,6 +2091,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2125980064}
   m_CullTransparentMesh: 1
+--- !u!114 &1908900010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630034011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de5ecdc904ac8304dbf5abd3faa0513b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PauseManager
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
