@@ -615,7 +615,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 1377653129521034536, guid: 64dca3075c696d745a1622e55da8636c, type: 3}
+  m_Sprite: {fileID: -1922100989661492207, guid: c9d6d09731c2a194a9f4b87a73df44ee, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -635,8 +635,8 @@ Transform:
   m_GameObject: {fileID: 529188171}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -360, y: -37, z: 1}
-  m_LocalScale: {x: 60, y: 60, z: 50}
+  m_LocalPosition: {x: -395, y: -37, z: 1}
+  m_LocalScale: {x: 100, y: 100, z: 50}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 574710982}
@@ -653,10 +653,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
-  runner: {fileID: 895084163}
   npcId: Mineral Processor
   dialogueStartNode: MineralProcessor
   portrait: {fileID: 0}
+  runner: {fileID: 895084163}
 --- !u!61 &529188177
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -695,7 +695,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.2, y: 14.7}
+    oldSize: {x: 6.75, y: 9.98}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -840,8 +840,8 @@ Transform:
   m_GameObject: {fileID: 643913618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2, y: -26, z: 0.9994812}
-  m_LocalScale: {x: 60, y: 65, z: 2.6620424}
+  m_LocalPosition: {x: 345, y: -71, z: 0.9994812}
+  m_LocalScale: {x: 100, y: 100, z: 2.6620424}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 574710982}
@@ -884,7 +884,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.81, y: 13.14}
+    oldSize: {x: 3.96, y: 9.38}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -904,10 +904,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
-  runner: {fileID: 895084163}
   npcId: Medic
   dialogueStartNode: Medic
   portrait: {fileID: 0}
+  runner: {fileID: 895084163}
 --- !u!212 &643913622
 SpriteRenderer:
   serializedVersion: 3
@@ -957,7 +957,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 8112327734567362056, guid: 8afd04978aa7bcd49803c9f32429639c, type: 3}
+  m_Sprite: {fileID: 871997625433075640, guid: 08a2fde3a7782f8419fbb9054c8fca81, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -996,14 +996,14 @@ RectTransform:
   m_GameObject: {fileID: 893641360}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.9997245}
-  m_LocalScale: {x: 60, y: 60, z: 2.0006132}
+  m_LocalScale: {x: 100, y: 100, z: 3.3343554}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 574710982}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 273, y: -29}
+  m_AnchoredPosition: {x: -216, y: -52}
   m_SizeDelta: {x: 4.52, y: 13.99}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!61 &893641362
@@ -1044,7 +1044,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 4.52, y: 13.99}
+    oldSize: {x: 4.28, y: 9.76}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -1064,10 +1064,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0321d0c68a205241bb89fcb1c2c0804, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPC
-  runner: {fileID: 895084163}
   npcId: Apprentice Diver
   dialogueStartNode: ApprenticeDiver
   portrait: {fileID: 0}
+  runner: {fileID: 895084163}
 --- !u!212 &893641364
 SpriteRenderer:
   serializedVersion: 3
@@ -1117,7 +1117,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7136881898635167237, guid: 1a87937235c3ce143b0f22ffce4e641f, type: 3}
+  m_Sprite: {fileID: 66538097989589876, guid: 4e2ff95df119fdb41a88e3bcb27add4b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1189,8 +1189,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: multiAdvanceIsCancel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: hasTransferredLegacyMapping
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: separateHurryUpAndAdvanceControls
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7262066351540048079, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: m_Name
@@ -1264,6 +1272,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: m_SortingOrder
+      value: 20
+      objectReference: {fileID: 0}
     - target: {fileID: 8309902628685535410, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: yarnProject
       value: 
@@ -1271,18 +1283,6 @@ PrefabInstance:
     - target: {fileID: 9078442560890639579, guid: 52571f68872914e24837210513edea1d, type: 3}
       propertyPath: m_IsActive
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
-      propertyPath: separateHurryUpAndAdvanceControls
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3859336324316773513, guid: 52571f68872914e24837210513edea1d, type: 3}
-      propertyPath: multiAdvanceIsCancel
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150228081625468094, guid: 52571f68872914e24837210513edea1d, type: 3}
-      propertyPath: m_SortingOrder
-      value: 20
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1510,13 +1510,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3bb38456cdb0474596499a4548ded15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClickHandler
-  roomDialogue: {fileID: 895084164}
   npcLayer:
     serializedVersion: 2
     m_Bits: 256
   roomLayer:
     serializedVersion: 2
     m_Bits: 512
+  roomDialogue: {fileID: 895084164}
 --- !u!114 &969622938
 MonoBehaviour:
   m_ObjectHideFlags: 0

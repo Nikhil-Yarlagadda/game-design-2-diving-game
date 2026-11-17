@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class ClickHandler : MonoBehaviour
 {
@@ -10,6 +13,7 @@ public class ClickHandler : MonoBehaviour
     [SerializeField] private DialogueAdvancer roomDialogue;
 
     private Room hoveredRoom;
+    private readonly List<RaycastResult> pointerHits = new();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -29,6 +33,8 @@ public class ClickHandler : MonoBehaviour
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
+            if (IsOverUiControl(mouseScreenPos)) return;
+
             Debug.Log("Click at world pos: " + mouseWorldPos);
 
             RaycastHit2D npcHit = Physics2D.Raycast(mouseWorldPos, Vector2.zero, Mathf.Infinity, npcLayer);
@@ -49,6 +55,24 @@ public class ClickHandler : MonoBehaviour
                 clickable?.OnClicked();
             }
         }
+    }
+
+    /// <summary>Checks whether the UI target at the current screen position owns the mouse press.</summary>
+    private bool IsOverUiControl(Vector2 screenPosition)
+    {
+        EventSystem eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+
+        // Raycast the current press instead of relying on the input module's last pointer update.
+        var pointer = new PointerEventData(eventSystem) { position = screenPosition };
+        eventSystem.RaycastAll(pointer, pointerHits);
+        RaycastResult hit = pointerHits.Count > 0 ? pointerHits[0] : default;
+        pointerHits.Clear();
+
+        return hit.module is GraphicRaycaster &&
+            (ExecuteEvents.GetEventHandler<IPointerDownHandler>(hit.gameObject) != null ||
+             ExecuteEvents.GetEventHandler<IPointerClickHandler>(hit.gameObject) != null ||
+             ExecuteEvents.GetEventHandler<IDragHandler>(hit.gameObject) != null);
     }
 
     void UpdateHover(Vector2 mouseWorldPos)
