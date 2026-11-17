@@ -23,6 +23,7 @@ public class Shop : MonoBehaviour
     {
         if (!CanBuy(ItemCatalog.RemainingStock(item))) return;
         GameState.credits -= item.Price;
+        GameState.Playtest.Purchase(item.Id, item.Price, GameState.credits);
         ItemCatalog.ChangeCount(GameState.itemsBought, item.Id, 1);
         if (!item.DailyStock) return;
         if (GameState.shopDay != GameState.days)

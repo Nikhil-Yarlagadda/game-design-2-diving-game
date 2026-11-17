@@ -55,7 +55,12 @@ public sealed class GameStateDebuggerInspector : Editor
                 (name, count) => debugger.SetItemCount(name, count, pending: true));
 
             showQuest = EditorGUILayout.Foldout(showQuest, "Quest state", true);
-            if (showQuest) DrawQuestState();
+            if (showQuest)
+            {
+                EditorGUI.BeginChangeCheck();
+                DrawQuestState();
+                if (EditorGUI.EndChangeCheck()) debugger.MarkQuestEdited();
+            }
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Crew conversations", EditorStyles.boldLabel);

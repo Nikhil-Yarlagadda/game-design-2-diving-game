@@ -51,6 +51,7 @@ public class ContactManager : MonoBehaviour
             message = "Your message has been sent. You may expect to receive a response from the Company within 2 to 4 business days. It is our top priority to provide prompt and effective assistance to our employees whenever needed. After all, you are our greatest assets!";
             draftLabel.text = "Draft";
             GameState.draftMessage = true;
+            GameState.Playtest.Milestone("Medicine requested");
         }
         else if(GameState.infectionPhoto && GameState.evidenceRequestDay < 0 && !drafted)
         {
@@ -63,6 +64,7 @@ public class ContactManager : MonoBehaviour
             message = "Your message has been sent. You may expect to receive a response from the Company within 2 to 4 business days. It is our top priority to provide prompt and effective assistance to our employees whenever needed. After all, you are our greatest assets!";
             draftLabel.text = "Draft";
             GameState.evidenceRequestDay = GameState.days;
+            GameState.Playtest.Milestone("Evidence request sent");
         }
         else
         {
@@ -83,6 +85,7 @@ public class ContactManager : MonoBehaviour
         if(GameState.days == 7 && GameState.draftMessage)
         {
             GameState.checkTerminal = true;
+            GameState.Playtest.Milestone("Medicine reply read");
             return "Thank you for contacting the Trident Excavation human resources department. Your concerns are very important to us. Our professionals have reviewed the relevant records and found no data resembling the reported “orange substance.” Therefore, we assure you that it is nothing to worry about. \n\nAs per your request, one (1) Antimicrobial Medicine is now available for purchase in your credit shop, which will be effective for treating most mild to moderate infections. Trident Excavation is unable to supply more than this, as that would be outside of your operation’s allotted budget. Exceptions may only be made in the case that you provide us with photographic evidence of a major employee health concern. \n\nThank you for your flexibility, and happy mining!";
         }
          if (GameState.evidenceRequestDay >= 0 && GameState.days >= GameState.evidenceRequestDay + 2)

@@ -11,7 +11,7 @@ public class SceneChanger : MonoBehaviour
 
     public static bool ChangeSceneWithFade(string sceneName, System.Action beforeLoad = null)
     {
-        if (IsTransitioning || InventoryButton.IsOpen) return false;
+        if (IsTransitioning || PauseManager.BlocksInput || InventoryButton.IsOpen) return false;
         if (!Application.CanStreamedLevelBeLoaded(sceneName))
         {
             Debug.LogError("Scene is unavailable: " + sceneName);
@@ -69,7 +69,7 @@ public class SceneChanger : MonoBehaviour
     // This function must be public so the UI Button can see it
     public static void ChangeScene(string sceneName)
     {
-        if (InventoryButton.IsOpen || IsTransitioning) return;
+        if (InventoryButton.IsOpen || IsTransitioning || PauseManager.BlocksInput) return;
         Debug.Log("Change scene to " + sceneName);
         SceneManager.LoadScene(sceneName);
     }

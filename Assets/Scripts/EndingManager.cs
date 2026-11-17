@@ -9,6 +9,8 @@ public class EndingManager : MonoBehaviour
     void Start()
     {
         bool recoveredSample = GameState.dayFgfsCollected is >= 0 and <= GameState.LastDay;
+        GameState.Playtest.completed = true;
+        GameState.Playtest.Milestone("Ending reached", recoveredSample ? "Good ending" : "Bad ending");
         good.gameObject.SetActive(recoveredSample);
         bad.gameObject.SetActive(!recoveredSample);
     }

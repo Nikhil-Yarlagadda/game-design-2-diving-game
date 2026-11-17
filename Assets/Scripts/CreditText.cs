@@ -18,5 +18,6 @@ public class CreditText : MonoBehaviour
     {
         Debug.Log("Clicked credit text");
         GameState.credits += 10;
+        GameState.Playtest.CreditBonus(10, GameState.credits);
     }
 }

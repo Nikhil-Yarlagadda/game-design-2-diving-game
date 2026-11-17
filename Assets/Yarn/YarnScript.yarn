@@ -65,9 +65,10 @@ Player: I know, right?
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Cole" true>>
         Cole: This won’t give me a stomachache, right?
     -> No
+        <<medicine_choice "Cole" false>>
 <<endif>>
 ===
 
@@ -82,9 +83,10 @@ Player: I don’t know…
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Cole" true>>
         Cole: This won’t give me a stomachache, right?
     -> No
+        <<medicine_choice "Cole" false>>
 <<endif>>
 ===
 
@@ -103,10 +105,11 @@ Cole: You’re right… I’ll take care of the lab.
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Cole" true>>
         <<cure_Cole>>
         Cole: This won’t give me a stomachache, right?
     -> No
+        <<medicine_choice "Cole" false>>
 <<endif>>
 ===
 
@@ -155,10 +158,11 @@ title: ApprenticeDiver15
         <<if has_item("Antimicrobial Medicine")>>
             Give Antimicrobial Medicine?
             -> Yes (will consume medicine)
-                <<remove_item "Antimicrobial Medicine">>
+                <<medicine_choice "Cole" true>>
                 <<cure_Cole>>
                 Cole: This won’t give me a stomachache, right?
             -> No
+                <<medicine_choice "Cole" false>>
         <<endif>>
     <<endif>>
 <<endif>>
@@ -183,10 +187,11 @@ title: ApprenticeDiver17
         <<if has_item("Antimicrobial Medicine")>>
             Give Antimicrobial Medicine?
             -> Yes (will consume medicine)
-                <<remove_item "Antimicrobial Medicine">>
+                <<medicine_choice "Cole" true>>
                 Cole: Get this thing away from me!
                 Narration: He drops the pill on the floor and crushes it under his heel.
             -> No
+                <<medicine_choice "Cole" false>>
         <<endif>>
         <<if has_item("Camera Module")>>
             Photograph with Camera Module?
@@ -249,10 +254,11 @@ title: ApprenticeDiver19
         <<if has_item("Antimicrobial Medicine")>>
             Give Antimicrobial Medicine?
             -> Yes (will consume medicine)
-                <<remove_item "Antimicrobial Medicine">>
+                <<medicine_choice "Cole" true>>
                 Cole: Get this thing away from me!
                 Narration: He drops the pill on the floor and crushes it under his heel.
             -> No
+                <<medicine_choice "Cole" false>>
         <<endif>>
         <<if has_item("Camera Module")>>
             Photograph with Camera Module?
@@ -411,10 +417,11 @@ Kirsten: Ugh, I wish I could just get out of here. I bet it’s peaceful out on 
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Kirsten" true>>
         <<cure_Kirsten>>
         Kirsten: Oh, thank you.
     -> No
+        <<medicine_choice "Kirsten" false>>
 <<endif>>
 ===
 
@@ -435,10 +442,11 @@ Kirsten: I didn’t think that I’d be getting into something like this when I 
     <<if has_item("Antimicrobial Medicine")>>
         Give Antimicrobial Medicine?
         -> Yes (will consume medicine)
-            <<remove_item "Antimicrobial Medicine">>
+            <<medicine_choice "Kirsten" true>>
             <<cure_Kirsten>>
             Kirsten: Oh, thank you.
         -> No
+            <<medicine_choice "Kirsten" false>>
     <<endif>>
 <<endif>>
 ===
@@ -458,10 +466,11 @@ title: Medic13
     <<if has_item("Antimicrobial Medicine")>>
         Give Antimicrobial Medicine?
         -> Yes (will consume medicine)
-            <<remove_item "Antimicrobial Medicine">>
+            <<medicine_choice "Kirsten" true>>
             Kirsten: No, no, it won’t work…
             Narration: She drops the pill on the floor and crushes it under her heel.
         -> No
+            <<medicine_choice "Kirsten" false>>
     <<endif>>
     <<if has_item("Camera Module")>>
         Photograph with Camera Module?
@@ -497,10 +506,11 @@ title: Medic15
         <<if has_item("Antimicrobial Medicine")>>
             Give Antimicrobial Medicine?
             -> Yes (will consume medicine)
-                <<remove_item "Antimicrobial Medicine">>
+                <<medicine_choice "Kirsten" true>>
                 Kirsten: No, no, it won’t work…
                 Narration: She drops the pill on the floor and crushes it under her heel.
             -> No
+                <<medicine_choice "Kirsten" false>>
         <<endif>>
         <<if has_item("Camera Module")>>
             Photograph with Camera Module?
@@ -702,10 +712,11 @@ Jonah: Maybe one day you’ll hear it too.
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Jonah" true>>
         Jonah: What's– agh… no, I don't want this!
         Narration: He drops the pill on the floor and crushes it under his heel.
     -> No
+        <<medicine_choice "Jonah" false>>
 <<endif>>
 
 <<if has_item("Camera Module")>>
@@ -734,10 +745,11 @@ Jonah: …
 <<if has_item("Antimicrobial Medicine")>>
     Give Antimicrobial Medicine?
     -> Yes (will consume medicine)
-        <<remove_item "Antimicrobial Medicine">>
+        <<medicine_choice "Jonah" true>>
         Jonah: What's– agh… no, I don't want this!
         Narration: He drops the pill on the floor and crushes it under his heel.
     -> No
+        <<medicine_choice "Jonah" false>>
 <<endif>>
 
 <<if has_item("Camera Module")>>

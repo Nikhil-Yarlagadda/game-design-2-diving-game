@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 public class InventoryButton : MonoBehaviour
 {
     private static bool loading = false;
+    internal static bool IsLoading => loading;
 
     public static bool IsOpen
     {

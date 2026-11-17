@@ -13,6 +13,7 @@ public class InputGate : MonoBehaviour
             yield return null;
 
         yield return null;
+        while (PauseManager.BlocksInput) yield return null;
         eventSystemObject.SetActive(true);
     }
 }

@@ -93,6 +93,7 @@ public sealed class GameStateDebugger : MonoBehaviour
             GameState.excursionIncapacitated = false;
             GameState.oreLost = 0;
             GameState.npcsTalks.Clear();
+            GameState.Playtest.RestartFromDebugger(day, GameState.credits);
             CaptureDayStart(scene);
         });
     }
@@ -103,7 +104,11 @@ public sealed class GameStateDebugger : MonoBehaviour
         if (!CanChangeDay()) return false;
         if (CheckpointScene == null) return Reject("No start-of-day checkpoint for the current day.");
         var start = checkpoint;
-        return LoadDay(start.Scene, start.Restore);
+        return LoadDay(start.Scene, () =>
+        {
+            start.Restore();
+            GameState.Playtest.RestartFromDebugger(GameState.days, GameState.credits);
+        });
     }
 
     private bool CanChangeDay()
@@ -138,6 +143,8 @@ public sealed class GameStateDebugger : MonoBehaviour
     {
         if (SceneChanger.IsTransitioning) return;
         GameState.credits = value;
+        GameState.Playtest.debuggerUsed = true;
+        GameState.Playtest.RefreshBalance(value);
         RefreshResults();
         Status = null;
     }
@@ -149,6 +156,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         var ocean = FindAnyObjectByType<OceanInteractions>();
         if (ocean != null) ocean.SetDebugTellurium(value);
         else GameState.tellurium = value;
+        GameState.Playtest.debuggerUsed = true;
         RefreshExcursionInventory();
         RefreshResults();
         Status = null;
@@ -167,6 +175,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         var items = pending ? GameState.itemsBought : GameState.inventory;
         if (count == 0) items.Remove(name);
         else items[name] = count;
+        GameState.Playtest.debuggerUsed = true;
         if (!pending) RefreshExcursionInventory();
         Status = null;
     }
@@ -181,6 +190,7 @@ public sealed class GameStateDebugger : MonoBehaviour
             return;
         }
         ocean.SetDebugCarriedItem(id, count);
+        GameState.Playtest.debuggerUsed = true;
         RefreshExcursionInventory();
         Status = null;
     }
@@ -190,6 +200,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         if (SceneChanger.IsTransitioning) return;
         if (talked) GameState.npcsTalks.Add(id);
         else GameState.npcsTalks.Remove(id);
+        GameState.Playtest.debuggerUsed = true;
         Status = null;
     }
 
@@ -201,6 +212,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         {
             if (GameState.IsCrewAboard(id)) GameState.npcsTalks.Add(id);
         }
+        GameState.Playtest.debuggerUsed = true;
         Status = null;
     }
 
@@ -208,8 +220,12 @@ public sealed class GameStateDebugger : MonoBehaviour
     {
         if (SceneChanger.IsTransitioning) return;
         GameState.deliveryTutorialShown = shown;
+        GameState.Playtest.debuggerUsed = true;
         Status = null;
     }
+
+    /// <summary>Marks direct inspector edits to quest state as debugger activity.</summary>
+    public void MarkQuestEdited() => GameState.Playtest.debuggerUsed = true;
 
     private static void RefreshExcursionInventory()
     {

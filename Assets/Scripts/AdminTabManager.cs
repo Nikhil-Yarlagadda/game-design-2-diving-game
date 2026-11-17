@@ -37,11 +37,13 @@ Since Leviathans are few and far between in the ocean, <i>Mucor amentia</i> has 
         if (!GameState.abyssPhoto)
         {
             GameState.passkeyHintSeen = true;
+            GameState.Playtest.Milestone("Passkey hint viewed");
             description.text = "Encrypted files: Locked\nImage recognition passkey: Failed. Invalid image contents. View passkey hint?\n(Hint):\nMeet the void’s gaze, somewhere on the abyssal plain.";
             return;
         }
 
         GameState.adminUnlocked = true;
+        GameState.Playtest.Milestone("Admin files unlocked");
         description.text = UnlockedFiles;
     }
 }
