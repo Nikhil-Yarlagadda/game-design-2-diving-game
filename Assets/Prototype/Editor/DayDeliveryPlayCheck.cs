@@ -58,6 +58,33 @@ namespace DivingPrototype
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 if (begin) await BeginDive(ocean);
             };
+            Func<Task> sleepAndContinue = async () =>
+            {
+                int day = GameState.days;
+                int bank = GameState.credits;
+                WorldInteractions.NewDay();
+                await WaitForIdle();
+                check(SceneManager.GetActiveScene().name == "Result" && GameState.days == day &&
+                    GameState.credits == bank, "Bed opens Results before advancing the day or settling credits");
+                int samples = GameState.tellurium;
+                check(day == 1 ? samples == 6 : samples is >= 3 and <= 6,
+                    "Cole mines six samples on day one and three to six samples on later days");
+                int total = bank + samples * 10 - 50;
+                var results = UnityEngine.Object.FindObjectsByType<ResultsText>();
+                check(results.Single(row => row.text == 1).GetComponent<TMP_Text>().text ==
+                    $"Cole mined {samples} tellurium samples today = {samples * 10} Credits" &&
+                    results.Single(row => row.text == 2).GetComponent<TMP_Text>().text == $"Total credits: {total}" &&
+                    results.Single(row => row.text == 3).GetComponent<TMP_Text>().text == "Daily expenses: -50 Credits",
+                    "Interior Results displays Cole's earnings, expenses and the new bank balance");
+                var continueButton = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>()
+                    .Single(button => button.onClick.GetPersistentTarget(0) is ResultsText);
+                continueButton.onClick.Invoke();
+                continueButton.onClick.Invoke();
+                await WaitForIdle();
+                check(SceneManager.GetActiveScene().name == "Ocean Interactables" &&
+                    GameState.days == day + 1 && GameState.credits == total && GameState.tellurium == 0,
+                    "Continuing from interior Results settles credits once and starts the next dive");
+            };
             Action<Vector2> jump=point=> {
                 ocean.transform.position=point;
                 var body=ocean.GetComponent<Rigidbody2D>(); body.position=point; body.linearVelocity=Vector2.zero;
@@ -69,8 +96,7 @@ namespace DivingPrototype
                 Application.runInBackground=true;
                 GameState.reset();
                 check(GameState.days==1 && GameState.credits==0,"New game begins with 0 credits on interior day one");
-                WorldInteractions.NewDay();
-                await WaitForIdle();
+                await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 check(GameState.days==2 && ocean.GetComponent<OceanTutorial>().Mode==OceanTutorial.TutorialMode.Mining,"First bed departure starts day-two mining tutorial");
                 check(ocean.DeliveredItemCount==0 && ocean.targets.All(t=>t.kind!=OceanTarget.TargetKind.Item),"No free test pickups without purchases");
@@ -106,7 +132,7 @@ namespace DivingPrototype
                 check(SceneManager.GetActiveScene().name=="Result" && GameState.days==2,"Entering Results does not advance the day early");
                 UnityEngine.Object.FindAnyObjectByType<ResultsText>().onLeave();
                 await WaitForIdle();
-                check(GameState.days==3 && GameState.credits==-50,"Leaving Results starts interior day three and settles credits");
+                check(GameState.days==3 && GameState.credits==-40,"Leaving excursion Results starts interior day three and settles credits");
                 await SceneManager.LoadSceneAsync("Shop");
                 await Task.Delay(100);
                 var buy=UnityEngine.Object.FindAnyObjectByType<Shop>();
@@ -132,8 +158,7 @@ namespace DivingPrototype
                 check(ItemCatalog.RemainingStock(machineDefinition) == 3 && ItemCatalog.RemainingStock(ItemCatalog.Find(ItemCatalog.Medicine)) == 0,
                     "Daily stock counts accepted purchases and medicine is unavailable before day seven");
                 GameState.credits = paidCredits;
-                WorldInteractions.NewDay();
-                await WaitForIdle();
+                await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 await BeginDive(ocean);
                 var restoredSpot=ocean.targets.First(t=>t.PersistentId==knownId);
@@ -209,7 +234,7 @@ namespace DivingPrototype
                 // Fund later orders explicitly; this check does not simulate mining income.
                 GameState.credits=100;
                 GameState.itemsBought[GameState.MiningMachine]=2;
-                WorldInteractions.NewDay(); await WaitForIdle();
+                await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 await BeginDive(ocean);
                 check(ocean.targets.First(t=>t.PersistentId==knownId).DisplayedTier==3,"Refreshed tier is retained on another excursion");
@@ -223,7 +248,7 @@ namespace DivingPrototype
                 check(manualExpired && SceneManager.GetActiveScene().name=="Result","Manual submarine return expires uncollected deliveries");
                 UnityEngine.Object.FindAnyObjectByType<ResultsText>().onLeave();
                 await WaitForIdle();
-                WorldInteractions.NewDay(); await WaitForIdle();
+                await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 check(GameState.days==8 && ocean.DeliveredItemCount==0 && !ocean.GetComponent<OceanTutorial>().IsVisible,"Expired orders do not respawn on the next excursion");
                 GameState.itemsBought[GameState.MiningMachine]=1;

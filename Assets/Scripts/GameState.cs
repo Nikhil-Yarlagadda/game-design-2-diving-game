@@ -22,6 +22,7 @@ public static class GameState
     public static int days;
     public static int credits;
     public static int tellurium;
+    internal static bool interiorDayResults;
     public static HashSet<string> npcsTalks;
     private static readonly Dictionary<string, float> crewConversationReadyTimes = new();
     public static Dictionary<string, int> itemsBought;
@@ -84,6 +85,7 @@ public static class GameState
         credits = 0;
         deliveryTutorialShown = false;
         tellurium = 0;
+        interiorDayResults = false;
         npcsTalks = new HashSet<string>();
         crewConversationReadyTimes.Clear();
         itemsBought = new Dictionary<string, int>();

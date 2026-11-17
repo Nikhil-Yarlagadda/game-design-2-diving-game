@@ -3,16 +3,16 @@ using Yarn.Unity;
 
 public class WorldInteractions : MonoBehaviour
 {
+    /// <summary>Opens the sleeping day's results with Cole's earnings ready to settle.</summary>
     [YarnCommand("NewDay")]
     public static void NewDay()
     {
-        SceneChanger.ChangeSceneWithFade("Ocean Interactables", () =>
+        SceneChanger.ChangeSceneWithFade("Result", () =>
         {
-            GameState.days++;
-            GameState.npcsTalks.Clear();
-#if UNITY_EDITOR
-            GameStateDebugger.CaptureDayStart("Ocean Interactables");
-#endif
+            GameState.interiorDayResults = true;
+            GameState.tellurium = GameState.days == 1 ? 6 : Random.Range(3, 7);
+            GameState.oreLost = 0;
+            GameState.excursionIncapacitated = false;
         });
     }
 
