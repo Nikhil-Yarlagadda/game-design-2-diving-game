@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Playtest Stats</title>
+  <meta name="description" content="View a diving game playtest report from an exported JSON file.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script src="./viewer.js?v=2" type="module"></script>
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <div>
+        <h1>Playtest Stats</h1>
+        <p>Review excursions, earnings, and story choices from a playtest.</p>
+      </div>
+      <label class="file-button">Open JSON report
+        <input id="file" type="file" accept=".json,application/json" aria-describedby="privacy">
+      </label>
+    </header>
+    <section class="workspace" id="workspace" aria-label="Report viewer">
+      <nav role="tablist" aria-label="Statistics views">
+        <button role="tab" id="summary" aria-controls="report" aria-selected="true" disabled>Summary</button>
+        <button role="tab" id="days" aria-controls="report" aria-selected="false" tabindex="-1" disabled>Day Log</button>
+        <button role="tab" id="quest" aria-controls="report" aria-selected="false" tabindex="-1" disabled>Quest &amp; Choices</button>
+      </nav>
+      <section id="report" role="tabpanel" aria-labelledby="summary" tabindex="0">
+        <div class="empty">
+          <h2>Open a playtest report</h2>
+          <p>Choose a JSON file saved with <strong>Export Report</strong> in the game, or drop it here.</p>
+        </div>
+      </section>
+    </section>
+    <footer>
+      <p id="status" role="status" aria-live="polite"></p>
+      <p id="privacy">Reports are read locally in your browser.</p>
+    </footer>
+  </main>
+</body>
+</html>
