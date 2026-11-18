@@ -37,8 +37,9 @@ nav button:enabled:hover, summary:hover { background: #1d3440; }
 .metric dt, .detail, .day-meta, .muted { color: var(--muted); }
 .metric dd { margin: .24rem 0 0; font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .detail { line-height: 1.55; margin-top: .55rem; overflow-wrap: anywhere; }
-.bars { display: grid; gap: .48rem; margin-top: 1rem; }
-.bar-row { display: grid; grid-template-columns: 5rem 1fr 5ch; align-items: center; gap: .6rem; font-variant-numeric: tabular-nums; }
+.chart-heading { margin-top: 1rem; }
+.bars { display: grid; gap: .48rem; }
+.bar-row { display: grid; grid-template-columns: minmax(0, min(56%, 13rem)) minmax(0, 1fr) auto; align-items: center; gap: .6rem; font-variant-numeric: tabular-nums; }
 .bar-row meter { width: 100%; height: .7rem; appearance: none; border: none; background: #203944; border-radius: 1rem; overflow: hidden; }
 .bar-row meter::-webkit-meter-bar { background: #203944; border: 0; }
 .bar-row meter::-webkit-meter-optimum-value { background: var(--accent); }

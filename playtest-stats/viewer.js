@@ -9,6 +9,13 @@ const oreFields = [
   ["Produced", "produced"], ["Retrieved", "retrieved"], ["Salvaged", "salvaged"],
   ["Lost", "lost"], ["Credited", "credited"],
 ];
+const oreSummaryLabels = {
+  produced: "Mined by machines",
+  retrieved: "Collected from machines",
+  salvaged: "Recovered from wrecks",
+  lost: "Lost on incapacitation",
+  credited: "Paid out as credits",
+};
 let report;
 let selected = 0;
 const openDays = new Set();
@@ -102,7 +109,9 @@ function showSummary() {
   const counts = outcomes.map(outcome => [outcome, dives.filter(dive => dive.outcome === outcome).length]);
   if (interrupted) counts.push(["Interrupted", interrupted]);
   metrics(excursions, counts);
-  const totals = oreFields.map(([label, key]) => [label, dives.reduce((sum, dive) => sum + (dive[key] ?? 0), 0)]);
+  excursions.append(element("h3", "Tellurium samples", "chart-heading"));
+  const totals = Object.entries(oreSummaryLabels)
+    .map(([key, label]) => [label, dives.reduce((sum, dive) => sum + (dive[key] ?? 0), 0)]);
   const max = Math.max(1, ...totals.map(([, total]) => total));
   const bars = element("div", undefined, "bars");
   for (const [label, total] of totals) {
@@ -127,14 +136,17 @@ function showSummary() {
 }
 
 function attemptDetails(parent, dive, index) {
-  const attempt = section(parent, `Attempt ${index + 1} · ${dive.outcome}`, "h3");
   const seconds = Math.max(0, Math.floor(dive.activeSeconds ?? 0));
   const duration = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  const attempt = section(parent, `Attempt ${index + 1} · ${dive.outcome} (${duration})`, "h3");
   const loadout = [
-    dive.tank, `${dive.machinesPacked ?? 0} machines`, `${dive.stimulantsPacked ?? 0} stimulants`,
-    `Camera ${dive.camera ? "yes" : "no"}`, `Flippers ${dive.flippers ? "yes" : "no"}`, `${duration} active`,
+    dive.tank,
+    dive.machinesPacked > 0 && `${dive.machinesPacked} ${dive.machinesPacked === 1 ? "machine" : "machines"}`,
+    dive.stimulantsPacked > 0 && `${dive.stimulantsPacked} ${dive.stimulantsPacked === 1 ? "stimulant" : "stimulants"}`,
+    dive.camera && "Camera",
+    dive.flippers && "Flippers",
   ].filter(Boolean);
-  attempt.append(element("p", loadout.join(" · "), "detail"));
+  if (loadout.length) attempt.append(element("p", loadout.join(" · "), "detail"));
   const counts = [
     [...oreFields.slice(0, 3), ["Carried", dive.carriedNow === undefined ? "carriedAtReturn" : "carriedNow"], ...oreFields.slice(3)],
     [["Scans", "scans"], ["New spots", "spotsRevealed"], ["Machines deployed", "machinesDeployed"],
@@ -149,11 +161,11 @@ function showDays() {
   panel.append(element("h2", "Day Log"));
   if (!report.days.length) panel.append(element("p", "No days recorded yet.", "detail"));
   report.days.forEach((day, index) => {
-    const current = index === report.days.length - 1 && !report.completed;
-    const state = day.settled ? "Settled" : current ? "Current day" : "Unfinished";
+    const outcome = day.attempts.at(-1)?.outcome;
+    const finalOutcome = outcome === "Returned" || outcome === "Incapacitated" ? `${outcome} · ` : "";
     const details = element("details", undefined, "day");
     const summary = element("summary", `Day ${day.number}`);
-    summary.append(element("span", `${state} · ${number.format(day.balance)} credits`, "day-meta"));
+    summary.append(element("span", `${finalOutcome}${number.format(day.balance)} credits`, "day-meta"));
     const body = element("div", undefined, "day-body");
     body.append(element("p", `Opening balance ${number.format(day.openingBalance)} · ${day.settled ? "Closing" : "Recorded"} balance ${number.format(day.balance)}`, "detail"));
     if (day.transactions.length) {
