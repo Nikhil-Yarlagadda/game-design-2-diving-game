@@ -153,7 +153,7 @@ namespace DivingPrototype
             if (machine != null) machine.SetActive(false);
             SaveMiningState();
         }
-        private Color TierColor => DisplayedTier == 5 ? new Color(.85f,.5f,1) : DisplayedTier == 4 ? new Color(1,.65f,.25f)
+        public Color TierColor => DisplayedTier == 5 ? new Color(.85f,.5f,1) : DisplayedTier == 4 ? new Color(1,.65f,.25f)
             : DisplayedTier == 3 ? new Color(.3f,.8f,1) : DisplayedTier == 2 ? new Color(.4f,1,.6f)
             : DisplayedTier == 1 ? new Color(.85f,.85f,.6f) : Color.gray;
         private void RevealRenderer(SpriteRenderer renderer, Color color)

@@ -35,7 +35,7 @@ public class InventorySlotUI : MonoBehaviour, IPointerEnterHandler
         button.interactable = true;
         icon.sprite = sprite;
         icon.enabled = sprite != null;
-        nameText.text = sprite == null ? itemName : "";
+        nameText.text = sprite == null ? ItemCatalog.Find(itemName)?.Name ?? itemName : "";
         countText.text = count > 1 ? count.ToString() : "";
     }
 

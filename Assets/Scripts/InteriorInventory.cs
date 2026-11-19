@@ -16,7 +16,7 @@ public class InteriorInventory : MonoBehaviour
         foreach (var item in GameState.inventory)
         {
             if (item.Value <= 0) continue;
-            sb.AppendLine(item.Key + " x" + item.Value);
+            sb.AppendLine((ItemCatalog.Find(item.Key)?.Name ?? item.Key) + " x" + item.Value);
         }
 
         /*sb.AppendLine("items bought:");

@@ -23,7 +23,7 @@ internal sealed class PlaytestReport
         public int machinesPacked, stimulantsPacked;
         public bool camera, flippers;
         public float activeSeconds;
-        public int produced, retrieved, salvaged, carriedAtReturn, carriedNow, lost, credited;
+        public int produced, retrieved, salvaged, carriedAtReturn, carriedNow, deposited, lost, credited;
         public int scans, spotsRevealed, machinesDeployed, machinesAbandoned;
         public int deliveriesCollected, deliveriesMissed;
     }

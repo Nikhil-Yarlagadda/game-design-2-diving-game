@@ -10,7 +10,12 @@ public class WorldInteractions : MonoBehaviour
         SceneChanger.ChangeSceneWithFade("Result", () =>
         {
             GameState.interiorDayResults = true;
-            GameState.tellurium = GameState.days == 1 ? 6 : Random.Range(3, 7);
+            GameState.tellurium = GameState.days switch
+            {
+                1 => 10,
+                15 or 17 or 19 => 0,
+                _ => Random.Range(5, 11)
+            };
             GameState.oreLost = 0;
             GameState.excursionIncapacitated = false;
         });
@@ -88,6 +93,9 @@ public class WorldInteractions : MonoBehaviour
     {
         return GameState.dayOfKirstenCured < 0;
     }
+
+    [YarnFunction("kirsten_aboard")]
+    public static bool KirstenAboard() => GameState.IsCrewAboard("Medic");
 
     /// <summary>Records Cole’s first cure for the dialogue.</summary>
     [YarnCommand("cure_Cole")]

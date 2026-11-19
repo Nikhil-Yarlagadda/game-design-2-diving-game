@@ -32,6 +32,13 @@ namespace DivingPrototype
         public bool InsideSubmarine { get; private set; }
         public bool IsTransitioning => transitioning;
         public bool ReturnConfirmationOpen { get; private set; }
+        public bool DepositOpen { get; private set; }
+        public bool SafetyOfferOpen { get; private set; }
+        public const int SafetyMachineCount = 3;
+        public int SafetyOrderPrice => SafetyMachineCount * ItemCatalog.Find(ItemCatalog.Machine).Price;
+        public int SafetyOrderBalance => Mathf.Max(-100, GameState.credits - SafetyOrderPrice);
+        public string SafetyOfferError { get; private set; }
+        public bool ProspectMarkersEnabled { get; private set; }
         public int DeployedMachineCount
         {
             get { int count = 0; foreach (var target in targets) if (target != null && target.HasMachine) count++; return count; }
@@ -41,12 +48,14 @@ namespace DivingPrototype
         public HydroxTank Hydrox => hydrox != null ? hydrox : (hydrox = GetComponent<HydroxTank>());
         public int ItemsCollected { get; private set; }
         public int Tellurium => CarriedCount(ItemCatalog.Ore);
+        public int DepositedTellurium => ItemCatalog.Count(deposited, ItemCatalog.Ore);
         public IReadOnlyDictionary<string, int> CarriedItems => carried;
         public GameState.DiveLoadout Loadout { get; private set; }
         public bool LoadoutOpen { get; private set; } = true;
         public bool Incapacitated => breathlessSeconds >= GraceSeconds;
         public float BreathingTimeLeft => Mathf.Max(0f, GraceSeconds - breathlessSeconds);
         public float StimulantTimeLeft => Mathf.Max(0f, stimulantEnds - Time.time);
+        public int WeightCapacity => ItemCatalog.Find(Loadout.Tank).WeightCapacity;
         public int CarriedWeight => LoadoutOpen ? LoadoutWeight : ItemCatalog.Find(Loadout.Tank).Weight
             + carried.Sum(pair => ItemCatalog.Find(pair.Key).Weight * pair.Value);
         public int LoadoutWeight => ItemCatalog.Find(Loadout.Tank).Weight + Loadout.Machines * ItemCatalog.Find(ItemCatalog.Machine).Weight
@@ -70,6 +79,7 @@ namespace DivingPrototype
         private const float GraceSeconds = 15f, StimulantSeconds = 20f;
         private float breathlessSeconds, incapacitatedSeconds, stimulantEnds;
         private readonly Dictionary<string, int> carried = new();
+        private readonly Dictionary<string, int> deposited = new();
         private int inventorySlots = 48;
         private float timeScaleBeforeReturn;
         private int resumeInputFrame = -1;
@@ -106,6 +116,8 @@ namespace DivingPrototype
             swimmer.SetMovementLocked(true);
             BuildSpawnArea();
             SpawnDeliveries();
+            SafetyOfferOpen = ItemCatalog.Count(GameState.inventory, ItemCatalog.Machine) == 0
+                && !deliveries.Any(item => item.isActiveAndEnabled && item.itemName == ItemCatalog.Machine);
             foreach (var target in targets)
                 if (target != null) target.OreProduced += OnOreProduced;
         }
@@ -135,7 +147,7 @@ namespace DivingPrototype
         {
             if (LoadoutOpen || transitioning || InsideSubmarine) return;
             StoreCarriedItems();
-            GameState.tellurium = Tellurium;
+            GameState.tellurium = Tellurium + DepositedTellurium;
         }
 #endif
 
@@ -160,7 +172,7 @@ namespace DivingPrototype
 
         public bool BeginDive()
         {
-            if (!LoadoutOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            if (!LoadoutOpen || SafetyOfferOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             SetLoadout(Loadout);
             if (!LoadoutFits) return false;
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
@@ -174,6 +186,7 @@ namespace DivingPrototype
             Hydrox.Equip(ItemCatalog.Find(Loadout.Tank).TankSeconds);
             LoadoutOpen = false;
             GameState.Playtest.BeginDive(Loadout);
+            GetComponent<OceanTutorial>()?.BeginExcursion();
             RecordCarriedOre();
             swimmer.SetMovementLocked(false);
             UpdateSpeed();
@@ -198,10 +211,10 @@ namespace DivingPrototype
 
         private void UpdateSpeed()
         {
-            float weight = CarriedWeight / 100f;
+            float weight = (float)CarriedWeight / WeightCapacity;
             float speed = weight < .5f ? 1f : weight <= 1f ? 1.25f - .5f * weight : 1.75f - weight;
             bool flippersCarried = Loadout.Flippers && CarriedCount(ItemCatalog.Flippers) > 0;
-            swimmer.EquipmentSpeed = Mathf.Max(0f, speed + .5f * StimulantTimeLeft / StimulantSeconds + (flippersCarried ? .3f : 0f));
+            swimmer.EquipmentSpeed = Mathf.Max(0f, speed + StimulantTimeLeft / StimulantSeconds + (flippersCarried ? .3f : 0f));
             if (flashlight != null) flashlight.EquippedConeBonus = EquippedCameraCarried ? 10f : 0f;
             swimmer.BreathingSpeed = BreathingTimeLeft / GraceSeconds;
         }
@@ -218,14 +231,11 @@ namespace DivingPrototype
         private void SpawnDeliveries()
         {
             if (GameState.itemsBought.Values.All(count => count <= 0)) return;
-            OceanTarget submarine = System.Array.Find(targets, t => t != null && t.kind == OceanTarget.TargetKind.Submarine);
-            if (deliveryPrefab == null || deliveryPrefab.kind != OceanTarget.TargetKind.Item || submarine == null)
+            if (!TryGetDeliveryCenter(out Vector2 center))
             {
                 Debug.LogError("Purchased deliveries need an item prefab and a submarine. Orders remain pending.", this);
                 return;
             }
-            Vector2 center = submarine.transform.position;
-            var all = new List<OceanTarget>(targets);
             foreach (string itemName in new List<string>(GameState.itemsBought.Keys))
             {
                 var definition = ItemCatalog.Find(itemName);
@@ -238,30 +248,72 @@ namespace DivingPrototype
                         Debug.LogWarning("No safe delivery position. Remaining orders will be delivered on a later excursion.", this);
                         return;
                     }
-                    var item = Instantiate(deliveryPrefab, point, Quaternion.identity, oceanMap.transform);
-                    item.itemName = definition.Id;
-                    item.displayName = definition.Name;
-                    item.name = "Purchased " + itemName + " " + (DeliveredItemCount + 1);
-                    item.gameObject.SetActive(true);
-                    deliveries.Add(item);
-                    all.Add(item);
-                    targets = all.ToArray();
-                    DeliveredItemCount++;
-                    RemainingDeliveryCount++;
+                    SpawnDelivery(definition, point);
                     GameState.itemsBought[itemName]--;
                 }
             }
         }
 
-        private bool TryFindDeliveryPosition(Vector2 center, out Vector2 point)
+        private bool TryGetDeliveryCenter(out Vector2 center)
         {
+            var submarine = System.Array.Find(targets, target => target != null && target.kind == OceanTarget.TargetKind.Submarine);
+            center = submarine != null ? (Vector2)submarine.transform.position : Vector2.zero;
+            return deliveryPrefab != null && deliveryPrefab.kind == OceanTarget.TargetKind.Item && submarine != null && oceanMap != null;
+        }
+
+        private void SpawnDelivery(ItemCatalog.Definition definition, Vector2 point)
+        {
+            var item = Instantiate(deliveryPrefab, point, Quaternion.identity, oceanMap.transform);
+            item.itemName = definition.Id;
+            item.displayName = definition.Name;
+            item.name = "Purchased " + definition.Id + " " + (DeliveredItemCount + 1);
+            item.gameObject.SetActive(true);
+            deliveries.Add(item);
+            System.Array.Resize(ref targets, targets.Length + 1);
+            targets[targets.Length - 1] = item;
+            DeliveredItemCount++;
+            RemainingDeliveryCount++;
+        }
+
+        public bool ResolveSafetyOffer(bool purchase)
+        {
+            if (!SafetyOfferOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            if (purchase)
+            {
+                var positions = new List<Vector2>(SafetyMachineCount);
+                if (TryGetDeliveryCenter(out Vector2 center))
+                {
+                    for (int i = 0; i < SafetyMachineCount && TryFindDeliveryPosition(center, out Vector2 point, positions); i++)
+                        positions.Add(point);
+                }
+                if (positions.Count != SafetyMachineCount)
+                {
+                    SafetyOfferError = "No safe delivery space. Your credits have not changed.";
+                    return false;
+                }
+                var machine = ItemCatalog.Find(ItemCatalog.Machine);
+                foreach (var point in positions) SpawnDelivery(machine, point);
+                int balance = SafetyOrderBalance;
+                GameState.Playtest.Purchase(machine.Id, GameState.credits - balance, balance);
+                GameState.credits = balance;
+                // A tutorial retry respawns paid deliveries without charging again.
+                if (tutorialStartOrders != null) ItemCatalog.ChangeCount(tutorialStartOrders, machine.Id, SafetyMachineCount);
+            }
+            SafetyOfferOpen = false;
+            return true;
+        }
+
+        private bool TryFindDeliveryPosition(Vector2 center, out Vector2 point, List<Vector2> reserved = null)
+        {
+            bool Clear(Vector2 candidate) => CanSpawn(candidate, null) && (reserved == null
+                || reserved.All(position => (position - candidate).sqrMagnitude >= TargetClearance * TargetClearance));
             for (int attempt = 0; attempt < 300; attempt++)
             {
                 point = center + Random.insideUnitCircle * deliveryRadius;
-                if (CanSpawn(point, null)) return true;
+                if (Clear(point)) return true;
             }
             foreach (var cell in spawnCells)
-                if ((cell - center).sqrMagnitude <= deliveryRadius * deliveryRadius && CanSpawn(cell, null))
+                if ((cell - center).sqrMagnitude <= deliveryRadius * deliveryRadius && Clear(cell))
                 { point = cell; return true; }
             point = default;
             return false;
@@ -356,6 +408,8 @@ namespace DivingPrototype
             UpdateSpeed();
             RefreshClosest();
             var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+                ProspectMarkersEnabled = !ProspectMarkersEnabled;
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame) UseStimulant();
             if (Hydrox.IsDepleted)
             {
@@ -560,11 +614,6 @@ namespace DivingPrototype
             if (!CanSwim || sceneUnavailable || IsProspecting) return false;
             RefreshClosest();
             if (Closest?.kind != OceanTarget.TargetKind.Submarine) return false;
-            if (TutorialBlocksReturn)
-            {
-                Notify("Complete the tutorial before returning to the submarine.");
-                return false;
-            }
             if (!Application.CanStreamedLevelBeLoaded(resultsScene))
             {
                 sceneUnavailable = true;
@@ -582,6 +631,7 @@ namespace DivingPrototype
         public void CancelReturn()
         {
             if (!ReturnConfirmationOpen) return;
+            DepositOpen = false;
             ReturnConfirmationOpen = false;
             Time.timeScale = timeScaleBeforeReturn;
             swimmer.SetMovementLocked(false);
@@ -591,7 +641,7 @@ namespace DivingPrototype
 
         public bool ConfirmReturn()
         {
-            if (!ReturnConfirmationOpen) return false;
+            if (!ReturnConfirmationOpen || DepositOpen || TutorialBlocksReturn || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             CancelReturn();
             return EndExcursion(false);
         }
@@ -648,7 +698,7 @@ namespace DivingPrototype
             ExcursionEnded?.Invoke();
             InsideSubmarine = true;
             GameState.excursionIncapacitated = incapacitated;
-            GameState.tellurium = Tellurium - GameState.oreLost;
+            GameState.tellurium = Tellurium - GameState.oreLost + DepositedTellurium;
             GameState.Playtest.FinishDive(incapacitated ? "Incapacitated" : "Returned",
                 Tellurium, GameState.oreLost, abandoned, missed);
             return true;
@@ -665,6 +715,9 @@ namespace DivingPrototype
                 if (pair.Key != ItemCatalog.Ore && pair.Key != ItemCatalog.Machine && pair.Key != ItemCatalog.Stimulant
                     && pair.Key != ItemCatalog.Flippers && pair.Key != ItemCatalog.Camera)
                     ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
+            foreach (var pair in deposited)
+                if (pair.Key != ItemCatalog.Ore && pair.Key != ItemCatalog.Machine && pair.Key != ItemCatalog.Stimulant)
+                    ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
             if (CarriedCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
                 GameState.dayFgfsCollected = GameState.days;
             if (CarriedCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
@@ -673,12 +726,35 @@ namespace DivingPrototype
 
         /// <summary>Applies the net change from the quantity packed to the quantity still carried.</summary>
         private void StoreCarriedItem(string id, int packed) =>
-            ItemCatalog.ChangeCount(GameState.inventory, id, CarriedCount(id) - packed);
+            ItemCatalog.ChangeCount(GameState.inventory, id, CarriedCount(id) + ItemCatalog.Count(deposited, id) - packed);
 
         /// <summary>Captures the live ore count after the excursion bag changes.</summary>
         private void RecordCarriedOre()
         {
             if (GameState.Playtest.ActiveDive is { } attempt) attempt.carriedNow = Tellurium;
+        }
+
+        public bool BeginDeposit()
+        {
+            if (!ReturnConfirmationOpen || DepositOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            DepositOpen = true;
+            return true;
+        }
+
+        public bool CanDeposit(ItemCatalog.Definition item) => item != null && CarriedCount(item.Id) > 0
+            && (item.Droppable || item.TankSeconds > 0);
+
+        public bool DepositItem(string itemName, int count)
+        {
+            if (!DepositOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            var item = ItemCatalog.Find(itemName);
+            if (!CanDeposit(item) || count < 1 || count > CarriedCount(item.Id)) return false;
+            ItemCatalog.ChangeCount(carried, item.Id, -count);
+            ItemCatalog.ChangeCount(deposited, item.Id, count);
+            RecordCarriedOre();
+            if (GameState.Playtest.ActiveDive is { } attempt) attempt.deposited = DepositedTellurium;
+            UpdateSpeed();
+            return true;
         }
 
         public bool DropItem(string itemName, int count = 1)

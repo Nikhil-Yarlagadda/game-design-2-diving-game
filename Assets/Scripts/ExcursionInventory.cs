@@ -21,7 +21,7 @@ public class ExcursionInventory : MonoBehaviour
     public List<ItemInfo> itemInfos;
 
     private OceanInteractions ocean;
-    private TMP_Text details, dropLabel, tankHeader;
+    private TMP_Text details, dropLabel, tankHeader, transferButtonLabel;
     private RectTransform dropControls;
     private UnityEngine.UI.Button less, more;
     private string dropItem;
@@ -50,21 +50,27 @@ public class ExcursionInventory : MonoBehaviour
     {
         var hud = FindAnyObjectByType<OceanHud>();
         if (hud == null) return;
-        var header = hud.Panel("Equipped Hydrox", new Vector2(0, 671), new Vector2(850, 23));
+        var header = hud.Panel("Equipped Diving Gear", new Vector2(0, 671), new Vector2(850, 23));
         header.SetParent(panel.transform, false);
         tankHeader = hud.PanelText(header, 18);
         tankHeader.rectTransform.offsetMin = new Vector2(16, 0);
         tankHeader.rectTransform.offsetMax = new Vector2(-16, 0);
-        var info = hud.Panel("Inventory Item Details", new Vector2(0, 55), new Vector2(850, 57));
+        var info = hud.Panel("Inventory Item Details", new Vector2(0, 56), new Vector2(850, 64));
         info.SetParent(panel.transform, false);
         details = hud.PanelText(info, 19);
+        details.rectTransform.offsetMin = new Vector2(10, 1);
+        details.rectTransform.offsetMax = new Vector2(-10, -1);
+        details.enableAutoSizing = true;
+        details.fontSizeMin = 14;
+        details.fontSizeMax = 19;
         dropControls = hud.Panel("Drop Quantity", new Vector2(0, 8), new Vector2(850, 47));
         dropControls.SetParent(panel.transform, false);
         dropLabel = hud.PanelText(dropControls, 19);
         dropLabel.rectTransform.offsetMax = new Vector2(-450, -10);
         less = hud.Button(dropControls, "−", new Vector2(0, 3), new Vector2(46, 41), () => { dropCount--; RefreshDrop(); });
         more = hud.Button(dropControls, "+", new Vector2(54, 3), new Vector2(46, 41), () => { dropCount++; RefreshDrop(); });
-        hud.Button(dropControls, "Drop", new Vector2(143, 3), new Vector2(108, 41), ConfirmDrop);
+        transferButtonLabel = hud.Button(dropControls, "Drop", new Vector2(143, 3), new Vector2(108, 41), ConfirmDrop)
+            .GetComponentInChildren<TMP_Text>();
         hud.Button(dropControls, "Cancel", new Vector2(268, 3), new Vector2(112, 41), CancelDrop);
         CancelDrop();
     }
@@ -80,7 +86,7 @@ public class ExcursionInventory : MonoBehaviour
     {
         ShowItem(slot);
         var item = ItemCatalog.Find(slot.ItemName);
-        if (item == null || !item.Droppable || dropControls == null)
+        if (dropControls == null || (ocean.DepositOpen ? !ocean.CanDeposit(item) : item?.Droppable != true))
         {
             CancelDrop();
             return;
@@ -95,14 +101,15 @@ public class ExcursionInventory : MonoBehaviour
     private void RefreshDrop()
     {
         dropCount = Mathf.Clamp(dropCount, 1, dropLimit);
-        dropLabel.text = $"Drop {dropCount} / {dropLimit}";
+        dropLabel.text = $"{(ocean.DepositOpen ? "Deposit" : "Drop")} {dropCount} / {dropLimit}";
         less.interactable = dropCount > 1;
         more.interactable = dropCount < dropLimit;
     }
 
     private void ConfirmDrop()
     {
-        if (ocean.DropItem(dropItem, dropCount)) CancelDrop();
+        bool transferred = ocean.DepositOpen ? ocean.DepositItem(dropItem, dropCount) : ocean.DropItem(dropItem, dropCount);
+        if (transferred) CancelDrop();
         else if (details != null) details.text = ocean.Message;
         Refresh();
     }
@@ -123,19 +130,36 @@ public class ExcursionInventory : MonoBehaviour
     {
         if (ocean == null || ocean.LoadoutOpen || ocean.Incapacitated || ocean.IsTransitioning || ocean.ReturnConfirmationOpen
             || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
+        OpenPanel();
+    }
+
+    public void OpenDeposit()
+    {
+        if (ocean != null && ocean.BeginDeposit()) OpenPanel();
+    }
+
+    private void OpenPanel()
+    {
         panel.SetActive(true);
         panel.transform.SetAsLastSibling();
-        if (tankHeader != null) tankHeader.text = ocean.Loadout.Tank;
-        if (details != null) details.text = "Hover over an item for details.";
+        if (tankHeader != null) tankHeader.text = ocean.DepositOpen
+            ? "Deposit items on the submarine  •  TAB to continue exploring"
+            : ItemCatalog.Find(ocean.Loadout.Tank).Name;
+        if (transferButtonLabel != null) transferButtonLabel.text = ocean.DepositOpen ? "Deposit" : "Drop";
+        if (details != null) details.text = ocean.DepositOpen
+            ? "Deposited items cannot be retrieved during this excursion."
+            : "Hover over an item for details.";
         Refresh();
         Time.timeScale = 0f;
     }
 
     public void Close()
     {
+        if (!panel.activeSelf || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
         CancelDrop();
         panel.SetActive(false);
-        Time.timeScale = 1f;
+        if (ocean.DepositOpen) ocean.CancelReturn();
+        else Time.timeScale = 1f;
     }
 
     public void Toggle()

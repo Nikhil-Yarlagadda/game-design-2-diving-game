@@ -149,7 +149,7 @@ public sealed class PlaytestStatsScreen : MonoBehaviour
         Section("Credits");
         Entry($"{transactions.Where(item => item.kind == "Excursion mining income").Sum(item => item.amount)} from excursions   •   " +
             $"{transactions.Where(item => item.kind == "Cole's mining income").Sum(item => item.amount)} from Cole");
-        Entry($"{-transactions.Where(item => item.kind == "Purchase").Sum(item => item.amount)} spent at the shop   •   " +
+        Entry($"{transactions.Where(item => item.kind == "Purchase").Sum(item => item.amount):+#;-#;0} net credits from purchases   •   " +
             $"{-transactions.Where(item => item.kind == "Daily expenses").Sum(item => item.amount)} in daily expenses");
         int bonus = transactions.Where(item => item.kind == "Credit bonus").Sum(item => item.amount);
         if (bonus > 0) Entry($"{bonus} bonus credits");
@@ -192,7 +192,7 @@ public sealed class PlaytestStatsScreen : MonoBehaviour
                     $"{dive.stimulantsPacked} stimulants   •   Camera {(dive.camera ? "yes" : "no")}   •   " +
                     $"Flippers {(dive.flippers ? "yes" : "no")}   •   {TimeSpan.FromSeconds(dive.activeSeconds):mm\\:ss} active");
                 Entry($"{dive.produced} produced   •   {dive.retrieved} retrieved   •   {dive.salvaged} salvaged   •   " +
-                    $"{dive.carriedNow} carried   •   {dive.lost} lost   •   {dive.credited} credited");
+                    $"{dive.carriedNow} carried   •   {dive.deposited} deposited   •   {dive.lost} lost   •   {dive.credited} credited");
                 Entry($"{dive.scans} scans   •   {dive.spotsRevealed} new spots   •   {dive.machinesDeployed} machines deployed   •   " +
                     $"{dive.machinesAbandoned} abandoned   •   {dive.deliveriesCollected} packages collected   •   {dive.deliveriesMissed} missed");
             }
