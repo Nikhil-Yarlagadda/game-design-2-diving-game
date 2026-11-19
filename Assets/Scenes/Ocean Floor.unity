@@ -5326,7 +5326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc04124610c433a4b8c60ed9aea5dd47, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.SwimmerController
-  maxSpeed: 2.5
+  maxSpeed: 2.75
   acceleration: 1.5
   deceleration: 2.5
   kelpZones: []

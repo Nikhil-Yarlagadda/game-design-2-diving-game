@@ -39,7 +39,6 @@ namespace DivingPrototype
             ocean.DeliveryCollected += OnDeliveryCollected;
             ocean.ExcursionEnded += EndExcursion;
         }
-        private void Start() => BeginExcursion();
         private void OnDisable()
         {
             ocean.ScanCompleted -= OnScan;
