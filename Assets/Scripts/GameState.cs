@@ -18,6 +18,7 @@ public static class GameState
 
     public static Dictionary<string, MiningSpotState> miningSpots;
     public const string MiningMachine = ItemCatalog.Machine;
+    public const int MinimumCredits = -100;
     public static bool deliveryTutorialShown;
     public static int days;
     public static int credits;

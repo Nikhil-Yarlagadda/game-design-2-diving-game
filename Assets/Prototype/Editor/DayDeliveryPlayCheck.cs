@@ -117,14 +117,15 @@ namespace DivingPrototype
                     check(GameState.days == day && GameState.credits == bank && GameState.tellurium == samples,
                         "Viewing stats preserves pending interior-day settlement");
                 }
-                check(day == 1 ? samples == 6 : samples is >= 3 and <= 6,
-                    "Cole mines six samples on day one and three to six samples on later days");
-                int total = bank + samples * 10 - 50;
+                check(day == 1 ? samples == 10 : samples is >= 5 and <= 10,
+                    "Cole mines ten samples on day one and five to ten samples on these later days");
+                int expense = Mathf.Clamp(bank + samples * 10 + 100, 0, 50);
+                int total = bank + samples * 10 - expense;
                 var results = UnityEngine.Object.FindObjectsByType<ResultsText>();
                 check(results.Single(row => row.text == 1).GetComponent<TMP_Text>().text ==
                     $"Cole mined {samples} tellurium samples today = {samples * 10} Credits" &&
                     results.Single(row => row.text == 2).GetComponent<TMP_Text>().text == $"Total credits: {total}" &&
-                    results.Single(row => row.text == 3).GetComponent<TMP_Text>().text == "Daily expenses: -50 Credits",
+                    results.Single(row => row.text == 3).GetComponent<TMP_Text>().text == $"Daily expenses: {-expense} Credits",
                     "Interior Results displays Cole's earnings, expenses and the new bank balance");
                 var continueButton = UnityEngine.Object.FindObjectsByType<UnityEngine.UI.Button>()
                     .Single(button => button.onClick.GetPersistentTarget(0) is ResultsText);
@@ -148,13 +149,14 @@ namespace DivingPrototype
                 check(GameState.days==1 && GameState.credits==0,"New game begins with 0 credits on interior day one");
                 await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
-                check(GameState.days==2 && ocean.GetComponent<OceanTutorial>().Mode==OceanTutorial.TutorialMode.Mining,"First bed departure starts day-two mining tutorial");
+                check(GameState.days==2,"First bed departure loads the day-two excursion");
                 check(ocean.DeliveredItemCount==0 && ocean.targets.All(t=>t.kind!=OceanTarget.TargetKind.Item),"No free test pickups without purchases");
                 float full = ocean.Hydrox.CurrentCapacity;
                 await Task.Delay(200);
                 check(ocean.LoadoutOpen && ocean.Hydrox.CurrentCapacity == full && ocean.Loadout.Machines == 4
                     && ocean.Loadout.Tank == ItemCatalog.LightTank, "First loadout starts with four machines and does not consume gas before confirming");
                 await BeginDive(ocean);
+                check(ocean.GetComponent<OceanTutorial>().Mode == OceanTutorial.TutorialMode.Mining, "Beginning the dive starts the day-two mining tutorial");
                 var knownSpot=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot && t.level==5);
                 string knownId=knownSpot.PersistentId;
                 string hiddenId=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot && t!=knownSpot).PersistentId;
@@ -182,7 +184,7 @@ namespace DivingPrototype
                 check(SceneManager.GetActiveScene().name=="Result" && GameState.days==2,"Entering Results does not advance the day early");
                 UnityEngine.Object.FindAnyObjectByType<ResultsText>().onLeave();
                 await WaitForIdle();
-                check(GameState.days==3 && GameState.credits==-40,"Leaving excursion Results starts interior day three and settles credits");
+                check(GameState.days==3 && GameState.credits==0,"Leaving excursion Results starts interior day three and settles credits");
                 await SceneManager.LoadSceneAsync("Shop");
                 await Task.Delay(100);
                 var buy=UnityEngine.Object.FindAnyObjectByType<Shop>();
@@ -270,9 +272,22 @@ namespace DivingPrototype
                 // Isolate duplicate collection from legitimate interaction with the submarine.
                 items[1].transform.position=new Vector2(0,-5);
                 jump(items[1].transform.position); ocean.Interact();
-                check(ocean.RemainingDeliveryCount==0 && tutorial.Mode==OceanTutorial.TutorialMode.Depletion && tutorial.Text==OceanTutorial.DepletionMessage,"Final collection switches to day-four depletion guidance");
+                check(ocean.RemainingDeliveryCount == 0 && tutorial.Mode == OceanTutorial.TutorialMode.Markers && tutorial.Text.Contains("SPACE"),
+                    "Final collection starts day-four marker guidance");
                 tutorial.Advance(30);
-                check(!tutorial.IsVisible,"Day-four depletion guidance dismisses after thirty seconds");
+                tutorial.Advance(30);
+                check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Marker and depletion timeouts lead to inventory guidance");
+                var inventory = UnityEngine.Object.FindAnyObjectByType<ExcursionInventory>();
+                inventory.Open();
+                tutorial.Advance(30);
+                check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "The inventory timer waits until the open panel is closed");
+                inventory.Close();
+                tutorial.Advance(9.99f);
+                check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Deposit guidance waits ten seconds after closing inventory");
+                tutorial.Advance(.02f);
+                check(tutorial.Mode == OceanTutorial.TutorialMode.Deposit && tutorial.Text.Contains("cannot be re-equipped"), "Closing inventory leads to deposit guidance");
+                tutorial.Advance(30);
+                check(!tutorial.IsVisible, "Day-four guidance ends thirty seconds after the deposit message");
                 ocean.Interact();
                 check(ocean.availableMachines==machines+2 && ocean.ItemsCollected==2 && collectionEvents==2,"Duplicate clicks cannot grant extra packages or events");
                 jump(center);
@@ -420,6 +435,19 @@ namespace DivingPrototype
                 check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && ocean.ConfirmReturn(),"Less than 15% Hydrox permits ending an unfinished tutorial excursion");
                 await WaitForIdle();
                 check(SceneManager.GetActiveScene().name=="Result","Low-gas return reaches Results");
+                foreach (var (bank, samples, expense, balance) in new[] { (-70, 0, -30, -100), (-100, 0, 0, -100), (-100, 7, -50, -80) })
+                {
+                    GameState.credits = bank;
+                    GameState.tellurium = samples;
+                    await SceneManager.LoadSceneAsync("Result");
+                    var rows = UnityEngine.Object.FindObjectsByType<ResultsText>();
+                    check(rows.Single(row => row.text == 3).GetComponent<TMP_Text>().text == $"Daily Expenses: {expense} Credits"
+                        && rows.Single(row => row.text == 2).GetComponent<TMP_Text>().text == $"Total credits: {balance}",
+                        $"Results shows the capped expense and balance for {bank} credits and {samples} samples");
+                    rows[0].onLeave();
+                    await WaitForIdle();
+                    check(GameState.credits == balance, "Continuing commits the balance displayed in Results");
+                }
                 GameState.reset();
                 check(GameState.credits==0 && GameState.days==1 && !GameState.deliveryTutorialShown && GameState.miningSpots.Count==0,"New game resets credits, tutorial history and mining discoveries");
                 await loadOcean(false);
