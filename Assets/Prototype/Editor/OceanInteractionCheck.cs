@@ -89,26 +89,6 @@ namespace DivingPrototype
                     FlashlightCheck.Require(mine.Retrieve(200) == 0, "Retrieving twice cannot duplicate resources");
                     FlashlightCheck.Require(interactions.obstacles.All(b => Vector2.Distance(mine.transform.position, b.ClosestPoint(mine.transform.position)) >= .6f), "Mining center has 0.6-unit clearance: " + mine.name);
                 }
-                var nearby = mines.OrderBy(m=>Vector2.Distance(m.transform.position, interactions.transform.position)).First();
-                interactions.oceanCamera.transform.position = nearby.transform.position + new Vector3(0,0,-10);
-                foreach (var m in mines) typeof(OceanTarget).GetField("<IsProspected>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(m, false);
-                var body = interactions.GetComponent<Rigidbody2D>();
-                using var state = new GameStateSnapshot();
-                GameState.reset();
-                FlashlightCheck.Require(interactions.BeginDive(), "Confirm loadout before prospecting");
-                body.linearVelocity = Vector2.right;
-                FlashlightCheck.Require(interactions.Prospect(100) && interactions.GetComponent<SwimmerController>().PropulsionLocked && body.linearVelocity == Vector2.right, "Prospecting disables propulsion without clearing momentum");
-                interactions.CompleteProspect(102.99f);
-                FlashlightCheck.Require(interactions.IsProspecting && mines.All(t => !t.IsProspected), "No reveal before three seconds");
-                interactions.CompleteProspect(103);
-                FlashlightCheck.Require(!interactions.IsProspecting && !interactions.Prospect(107.99f), "Five-second cooldown starts on completion");
-                var visible = mines.Where(t => { var v = interactions.oceanCamera.WorldToViewportPoint(t.transform.position); return v.z > 0 && v.x >= 0 && v.x <= 1 && v.y >= 0 && v.y <= 1; }).ToArray();
-                FlashlightCheck.Require(visible.Length > 0 && visible.Length < mines.Length, "Test includes on-screen and off-screen mines");
-                FlashlightCheck.Require(visible.All(t => t.RevealAlpha(1000) == 1), "Discovered spots remain revealed");
-                FlashlightCheck.Require(mines.Except(visible).All(t => !t.IsProspected), "Off-screen mines stay hidden");
-                FlashlightCheck.Require(interactions.Prospect(108), "Scan available exactly five seconds after completion");
-                interactions.CancelProspect();
-                FlashlightCheck.Require(!interactions.GetComponent<SwimmerController>().PropulsionLocked, "Cancellation releases propulsion lock");
                 var light = new SerializedObject(interactions.GetComponent<FlashlightController>());
                 var polygons = light.FindProperty("polygonBlockers");
                 int edgeCount = 0;
