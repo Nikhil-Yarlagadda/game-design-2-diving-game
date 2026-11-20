@@ -19,6 +19,7 @@ namespace DivingPrototype
         [Min(.1f)] public float interactionRange = 1.8f;
         [Min(0f)] public float prospectCooldown = 5f;
         [Min(.1f)] public float prospectDuration = 3f;
+        [SerializeField] private LineRenderer prospectRing;
         public int availableMachines => CarriedCount(ItemCatalog.Machine);
         public OceanTarget deliveryPrefab;
         public GameObject panel;
@@ -70,6 +71,12 @@ namespace DivingPrototype
         public event System.Action MachinePlaced, PositiveRetrieval, ExcursionEnded;
         public event System.Action<OceanTarget> OreProduced;
         private float scanStarted;
+        private const float ProspectSweepDuration = .7f;
+        private readonly List<(OceanTarget target, float distance)> pendingScanHits = new();
+        private MaterialPropertyBlock prospectRingProperties;
+        private static readonly int RingColor = Shader.PropertyToID("_Color");
+        private float sweepStarted, sweepRange;
+        private int sweepHits;
         private float messageUntil, nextProspect;
         private bool transitioning, sceneUnavailable;
         private HydroxTank hydrox;
@@ -384,6 +391,7 @@ namespace DivingPrototype
             if (panel != null && panel.activeSelf) { CancelProspect(); return; }
             if (Time.time > messageUntil) Message = "";
             if (transitioning || LoadoutOpen || InsideSubmarine) return;
+            if (prospectRing.enabled) AdvanceProspectSweep(Time.time);
             if (GameState.Playtest.ActiveDive is { } attempt)
                 attempt.activeSeconds += Time.deltaTime;
             var mouse = Mouse.current;
@@ -456,7 +464,7 @@ namespace DivingPrototype
 
         public bool Prospect(float now)
         {
-            if (now < nextProspect || !CanActInOcean) return false;
+            if (now < nextProspect || prospectRing.enabled || !CanActInOcean) return false;
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
             IsProspecting = true;
             scanStarted = now;
@@ -475,32 +483,73 @@ namespace DivingPrototype
             if (!IsProspecting || now - scanStarted < prospectDuration) return;
             CancelProspect();
             nextProspect = now + prospectCooldown;
-            int revealed = 0;
-            int newlyRevealed = 0;
+            if (GameState.Playtest.ActiveDive is { } attempt) attempt.scans++;
+            BeginProspectSweep(now);
+        }
+
+        /// <summary>Launches a sweep from the diver and captures the mining spots in view at launch.</summary>
+        private void BeginProspectSweep(float now)
+        {
+            Vector3 center = transform.position;
+            prospectRing.transform.position = center;
+            Vector3 viewportCenter = oceanCamera.WorldToViewportPoint(center);
+            Vector3 farCorner = oceanCamera.ViewportToWorldPoint(new Vector3(
+                viewportCenter.x < .5f ? 1f : 0f, viewportCenter.y < .5f ? 1f : 0f, viewportCenter.z));
+            sweepRange = Vector2.Distance(center, farCorner);
+            sweepStarted = now;
+            sweepHits = 0;
+            pendingScanHits.Clear();
             foreach (var target in targets)
             {
                 if (target == null || !target.isActiveAndEnabled || target.kind != OceanTarget.TargetKind.MiningSpot) continue;
                 Vector3 viewport = oceanCamera.WorldToViewportPoint(target.transform.position);
-                if (viewport.z > 0f && viewport.x >= 0f && viewport.x <= 1f && viewport.y >= 0f && viewport.y <= 1f)
-                {
-                    if (!target.IsProspected) newlyRevealed++;
-                    target.Reveal(now);
-                    revealed++;
-                }
+                if (viewport.z <= 0f || viewport.x < 0f || viewport.x > 1f || viewport.y < 0f || viewport.y > 1f) continue;
+                float distance = Vector2.Distance(center, target.transform.position);
+                pendingScanHits.Add((target, distance));
+                sweepRange = Mathf.Max(sweepRange, distance);
             }
-            if (GameState.Playtest.ActiveDive is { } attempt)
+            prospectRing.enabled = true;
+            AdvanceProspectSweep(now);
+        }
+
+        /// <summary>Draws the wavefront and reveals each spot when the ring reaches its center.</summary>
+        private void AdvanceProspectSweep(float now)
+        {
+            float progress = Mathf.Clamp01((now - sweepStarted) / ProspectSweepDuration);
+            float radius = sweepRange * progress;
+            prospectRing.transform.localScale = new Vector3(radius, radius, 1f);
+            prospectRingProperties ??= new MaterialPropertyBlock();
+            prospectRingProperties.SetColor(RingColor, new Color(1f, 1f, 1f, Mathf.Lerp(1f, .25f, progress)));
+            prospectRing.SetPropertyBlock(prospectRingProperties);
+
+            for (int i = pendingScanHits.Count - 1; i >= 0; i--)
             {
-                attempt.scans++;
-                attempt.spotsRevealed += newlyRevealed;
+                var (target, distance) = pendingScanHits[i];
+                if (distance > radius) continue;
+                pendingScanHits.RemoveAt(i);
+                if (target == null || !target.isActiveAndEnabled) continue;
+                if (!target.IsProspected && GameState.Playtest.ActiveDive is { } attempt) attempt.spotsRevealed++;
+                target.Reveal(now);
+                sweepHits++;
             }
-            ScanCompleted?.Invoke(revealed);
-            RefreshClosest();
+
+            if (progress < 1f) return;
+            StopProspectSweep();
+            ScanCompleted?.Invoke(sweepHits);
+        }
+
+        /// <summary>Discards any pending hits and hides the ring when the sweep or excursion ends.</summary>
+        private void StopProspectSweep()
+        {
+            pendingScanHits.Clear();
+            if (prospectRing != null) prospectRing.enabled = false;
         }
 
         private void OnOreProduced(OceanTarget target) => OreProduced?.Invoke(target);
         private void OnDisable()
         {
             CancelProspect();
+            StopProspectSweep();
             if (ReturnConfirmationOpen) CancelReturn();
         }
         private void OnDestroy()
@@ -827,6 +876,7 @@ namespace DivingPrototype
         private void StopOceanControls()
         {
             CancelProspect();
+            StopProspectSweep();
             body.linearVelocity = Vector2.zero;
             swimmer.enabled = false;
         }

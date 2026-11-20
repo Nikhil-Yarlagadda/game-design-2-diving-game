@@ -24,10 +24,6 @@ namespace DivingPrototype
         private Material bubbleMaterial, moteMaterial, waterMaterial;
         private MeshRenderer waterOverlay;
         private Mesh waterMesh;
-        private LineRenderer scanRing;
-        private Material scanRingMaterial;
-        private float scanRingStarted, scanRingRadius;
-        private const float ScanRingSeconds = .7f;
         private readonly ParticleSystem.Particle[] moteBuffer = new ParticleSystem.Particle[MoteLimit];
         private float trailAccumulator, breathTimer;
         private bool oceanActive;
@@ -50,11 +46,7 @@ namespace DivingPrototype
             oceanActive = ocean == null || !ocean.InsideSubmarine;
             trailAccumulator = 0f;
             breathTimer = 1f;
-            if (ocean != null)
-            {
-                ocean.ExcursionEnded += EndOcean;
-                ocean.ScanCompleted += ShowScanRing;
-            }
+            if (ocean != null) ocean.ExcursionEnded += EndOcean;
             if (oceanActive) SeedSuspended();
             else EndOcean();
         }
@@ -80,49 +72,11 @@ namespace DivingPrototype
 
         private void LateUpdate()
         {
-            UpdateScanRing();
             if (waterOverlay == null || flashlight.AimCamera == null) return;
             waterOverlay.enabled = oceanActive && flashlight.isActiveAndEnabled;
             var camera = flashlight.AimCamera;
             waterOverlay.transform.position = new Vector3(camera.transform.position.x, camera.transform.position.y, transform.position.z);
             waterOverlay.transform.localScale = new Vector3(camera.orthographicSize * camera.aspect * 2.01f, camera.orthographicSize * 2.01f, 1f);
-        }
-
-        private void ShowScanRing(int _)
-        {
-            if (scanRing == null)
-            {
-                var shader = Shader.Find("Sprites/Default");
-                if (shader == null) return;
-                var ring = new GameObject("Prospector Scan Ring", typeof(LineRenderer)) { hideFlags = HideFlags.DontSave };
-                scanRing = ring.GetComponent<LineRenderer>();
-                scanRingMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
-                scanRing.sharedMaterial = scanRingMaterial;
-                scanRing.useWorldSpace = false;
-                scanRing.loop = true;
-                scanRing.positionCount = 64;
-                scanRing.widthMultiplier = .055f;
-                scanRing.sortingOrder = 31;
-                for (int i = 0; i < scanRing.positionCount; i++)
-                {
-                    float angle = i * 2f * Mathf.PI / scanRing.positionCount;
-                    scanRing.SetPosition(i, new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0));
-                }
-            }
-            scanRing.transform.position = transform.position;
-            scanRingStarted = Time.time;
-            scanRingRadius = flashlight.AimCamera != null ? flashlight.AimCamera.orthographicSize : 5f;
-            scanRing.enabled = true;
-            UpdateScanRing();
-        }
-
-        private void UpdateScanRing()
-        {
-            if (scanRing == null || !scanRing.enabled) return;
-            float progress = Mathf.Clamp01((Time.time - scanRingStarted) / ScanRingSeconds);
-            scanRing.enabled = progress < 1f;
-            scanRing.transform.localScale = Vector3.one * Mathf.Lerp(.45f, scanRingRadius, progress);
-            scanRing.startColor = scanRing.endColor = new Color(.35f, 1f, .5f, .9f * (1f - progress));
         }
 
         private Material NewMaterial(bool bubble)
@@ -264,7 +218,6 @@ namespace DivingPrototype
         private void EndOcean()
         {
             oceanActive = false;
-            if (scanRing != null) scanRing.enabled = false;
             if (waterOverlay != null) waterOverlay.enabled = false;
             if (bubbles != null) bubbles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (suspended != null) suspended.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -272,14 +225,8 @@ namespace DivingPrototype
 
         private void OnDisable()
         {
-            if (ocean != null)
-            {
-                ocean.ExcursionEnded -= EndOcean;
-                ocean.ScanCompleted -= ShowScanRing;
-            }
+            if (ocean != null) ocean.ExcursionEnded -= EndOcean;
             EndOcean();
-            if (scanRing != null) Destroy(scanRing.gameObject);
-            if (scanRingMaterial != null) Destroy(scanRingMaterial);
             ReleaseMaterial(bubbleMaterial);
             ReleaseMaterial(moteMaterial);
             ReleaseMaterial(waterMaterial);
