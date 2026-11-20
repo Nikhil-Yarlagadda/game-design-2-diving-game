@@ -5,9 +5,11 @@ public class ResultsText : MonoBehaviour
 {
     private TextMeshProUGUI label;
     public int text;
-    private int Expense => GameState.excursionIncapacitated ? 100 : 50;
+    private int Expense => Mathf.Clamp(CreditsBeforeExpenses - GameState.MinimumCredits, 0,
+        GameState.excursionIncapacitated ? 100 : 50);
     private int SampleCredits => GameState.tellurium * 10;
-    private int TotalCredits => GameState.credits + SampleCredits - Expense;
+    private int CreditsBeforeExpenses => GameState.credits + SampleCredits;
+    private int TotalCredits => CreditsBeforeExpenses - Expense;
 
     void Awake()
     {
@@ -25,10 +27,10 @@ public class ResultsText : MonoBehaviour
             label.text = $"Total credits: {TotalCredits}";
         if (text == 3)
             label.text = GameState.interiorDayResults
-                ? $"Daily expenses: -{Expense} Credits"
+                ? $"Daily expenses: {-Expense} Credits"
                 : GameState.excursionIncapacitated
-                ? $"Incapacitated • {GameState.oreLost} samples lost\nDaily Expenses: -{Expense} Credits"
-                : $"Daily Expenses: -{Expense} Credits";
+                ? $"Incapacitated • {GameState.oreLost} samples lost\nDaily Expenses: {-Expense} Credits"
+                : $"Daily Expenses: {-Expense} Credits";
     }
 
     /// <summary>Settles the displayed results and advances to the next day or the ending.</summary>
@@ -39,8 +41,9 @@ public class ResultsText : MonoBehaviour
             GameState.days + 1 >= GameState.LastDay ? "Ending" : "Interior";
         SceneChanger.ChangeSceneWithFade(next, () =>
         {
+            int expense = Expense;
             GameState.credits = TotalCredits;
-            GameState.Playtest.Settle(interiorDay, GameState.tellurium, SampleCredits, Expense, GameState.credits);
+            GameState.Playtest.Settle(interiorDay, GameState.tellurium, SampleCredits, expense, GameState.credits);
             GameState.tellurium = 0;
             GameState.oreLost = 0;
             GameState.excursionIncapacitated = false;

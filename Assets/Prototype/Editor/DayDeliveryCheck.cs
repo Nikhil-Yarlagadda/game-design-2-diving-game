@@ -65,9 +65,15 @@ namespace DivingPrototype
                     check(tutorial.Stage==(day==2?1:0),"No numbered tutorial on later days");
                     if(day==4)
                     {
-                        check(tutorial.Mode==OceanTutorial.TutorialMode.Depletion && tutorial.Text==OceanTutorial.DepletionMessage,"Day four explains depletion without requiring a purchase");
-                        tutorial.Advance(29.99f); check(tutorial.IsVisible,"Depletion guidance provides thirty seconds to read");
-                        tutorial.Advance(.02f); check(!tutorial.IsVisible,"Depletion guidance dismisses after reading");
+                        check(tutorial.Mode == OceanTutorial.TutorialMode.Markers && tutorial.Text.Contains("SPACE"), "Day four starts with marker guidance without requiring a purchase");
+                        tutorial.Advance(29.99f);
+                        check(tutorial.Mode == OceanTutorial.TutorialMode.Markers, "Marker guidance allows thirty seconds for the toggle");
+                        tutorial.Advance(.02f);
+                        check(tutorial.Mode == OceanTutorial.TutorialMode.Depletion && tutorial.Text == OceanTutorial.DepletionMessage, "Marker guidance can time out into depletion guidance");
+                        tutorial.Advance(30);
+                        check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory && tutorial.Text.Contains("TAB"), "Depletion guidance advances to inventory after thirty seconds");
+                        tutorial.Advance(60);
+                        check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Inventory guidance waits for an inventory visit");
                     }
                 }
                 GameState.days=4;
@@ -76,7 +82,7 @@ namespace DivingPrototype
                 typeof(OceanInteractions).GetMethod("SpawnDeliveries",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(ocean,null);
                 check(GameState.itemsBought[GameState.MiningMachine]==2 && ocean.DeliveredItemCount==0,"Blocked delivery area preserves unspawned purchases");
                 tutorial.BeginExcursion();
-                check(tutorial.Mode==OceanTutorial.TutorialMode.Depletion && !GameState.deliveryTutorialShown,"Blocked orders do not consume delivery guidance eligibility or hide day-four depletion guidance");
+                check(tutorial.Mode==OceanTutorial.TutorialMode.Markers && !GameState.deliveryTutorialShown,"Blocked orders preserve delivery guidance eligibility and allow day-four marker guidance");
                 GameState.deliveryTutorialShown=true; GameState.credits=0;
                 GameState.reset();
                 check(GameState.credits==0 && !GameState.deliveryTutorialShown && GameState.itemsBought[GameState.MiningMachine]==0,"New game restores credits and resets delivery history");

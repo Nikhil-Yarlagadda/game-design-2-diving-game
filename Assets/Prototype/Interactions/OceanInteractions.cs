@@ -36,7 +36,7 @@ namespace DivingPrototype
         public bool SafetyOfferOpen { get; private set; }
         public const int SafetyMachineCount = 3;
         public int SafetyOrderPrice => SafetyMachineCount * ItemCatalog.Find(ItemCatalog.Machine).Price;
-        public int SafetyOrderBalance => Mathf.Max(-100, GameState.credits - SafetyOrderPrice);
+        public int SafetyOrderBalance => Mathf.Max(GameState.MinimumCredits, GameState.credits - SafetyOrderPrice);
         public string SafetyOfferError { get; private set; }
         public bool ProspectMarkersEnabled { get; private set; }
         public int DeployedMachineCount

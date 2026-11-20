@@ -5,20 +5,33 @@ namespace DivingPrototype
     [RequireComponent(typeof(OceanInteractions))]
     public sealed class OceanTutorial : MonoBehaviour
     {
-        public enum TutorialMode { None, Mining, Delivery, Depletion }
+        public enum TutorialMode { None, Mining, Delivery, Depletion, Markers, Inventory, Deposit }
         public TutorialMode Mode { get; private set; }
-        public bool IsVisible => Mode == TutorialMode.Delivery || Mode == TutorialMode.Depletion || (Mode == TutorialMode.Mining && Stage >= 1 && Stage <= Messages.Length);
+        public bool IsVisible => Text.Length > 0;
         public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations.\n<b>Collect your items today, or else they will be swept away by the currents.</b>";
         public const string DepletionMessage = "Mining machines will slowly deplete their mining spots over the course of several days. You must re-prospect a spot to see if it has been depleted yet.\n<b>Prospect your most frequently used mining spots once in a while, or you may be mining less tellurium than you think.</b>";
+        private const string MarkersMessage = "Press SPACE to toggle markers that will guide you to all the mining spots you’ve prospected. Press SPACE again to toggle them off.";
+        private const string InventoryMessage = "Carrying many items will slow you down, but weight capacity upgrades are available for purchase.\n\nAccess your inventory with TAB. From there, you can drop certain items on the ground. <b>You can only retrieve items on the same day you dropped them. They will be washed away by the current if you leave them out overnight.</b>";
+        private const string DepositMessage = "You can also deposit items and tellurium at the submarine whenever you want to. Deposited items will enter the submarine’s storage <b>and cannot be re-equipped until the dive is over</b>.";
+        private const float ReadingSeconds = 30f, AfterInventorySeconds = 10f;
         public int Stage { get; private set; }
         public bool IsMiningComplete => Mode == TutorialMode.Mining && Stage > Messages.Length;
         public bool HighlightHydrox => Mode == TutorialMode.Mining && Stage == 6;
         public float VisibleSeconds { get; private set; }
-        private bool discovered, placed, produced, retrieved, replaced;
+        private bool discovered, placed, produced, retrieved, placedAgain;
+        private bool markersWereEnabled, inventoryOpened;
         private OceanInteractions ocean;
         private Vector2 startPosition;
-        public string Text => Mode == TutorialMode.Delivery ? DeliveryMessage : Mode == TutorialMode.Depletion ? DepletionMessage
-            : IsVisible ? Messages[Stage - 1] : "";
+        public string Text => Mode switch
+        {
+            TutorialMode.Mining when Stage >= 1 && Stage <= Messages.Length => Messages[Stage - 1],
+            TutorialMode.Delivery => DeliveryMessage,
+            TutorialMode.Markers => MarkersMessage,
+            TutorialMode.Depletion => DepletionMessage,
+            TutorialMode.Inventory => InventoryMessage,
+            TutorialMode.Deposit => DepositMessage,
+            _ => ""
+        };
         private static readonly string[] Messages = {
             "Swim with WASD. Move your flashlight using the mouse.",
             "Hold E to use your prospecting tool.",
@@ -51,7 +64,8 @@ namespace DivingPrototype
         public void BeginExcursion()
         {
             if (ocean == null) ocean = GetComponent<OceanInteractions>();
-            discovered = placed = produced = retrieved = replaced = false;
+            discovered = placed = produced = retrieved = placedAgain = false;
+            inventoryOpened = false;
             Stage = 0;
             Mode = TutorialMode.None;
             VisibleSeconds = 0;
@@ -66,17 +80,31 @@ namespace DivingPrototype
                 Mode = TutorialMode.Delivery;
                 GameState.deliveryTutorialShown = true;
             }
-            else if (GameState.days == 4) Mode = TutorialMode.Depletion;
+            else if (GameState.days == 4) BeginDayFour();
         }
         public void EndExcursion() { Mode = TutorialMode.None; Stage = 0; VisibleSeconds = 0; }
         public void OnDeliveryCollected(int remaining)
         {
             if (Mode != TutorialMode.Delivery || remaining != 0) return;
-            if (GameState.days == 4) { Mode = TutorialMode.Depletion; VisibleSeconds = 0; }
+            if (GameState.days == 4) BeginDayFour();
             else EndExcursion();
         }
+
+        /// <summary>Starts day-four guidance with the current marker setting as its baseline.</summary>
+        private void BeginDayFour()
+        {
+            Mode = TutorialMode.Markers;
+            VisibleSeconds = 0;
+            markersWereEnabled = ocean.ProspectMarkersEnabled;
+        }
+
         public void OnScan(int count) { if (Stage > 0 && count > 0) discovered = true; }
-        public void OnPlaced() { if (Stage <= 0) return; placed = true; if (retrieved) replaced = true; }
+        public void OnPlaced()
+        {
+            if (Stage <= 0) return;
+            if (placed && (retrieved || Stage >= 6)) placedAgain = true;
+            placed = true;
+        }
         public void OnProduced(OceanTarget target) { if (Stage > 0) produced = true; }
         public void OnRetrieved() { if (Stage > 0) retrieved = true; }
         private void Update()
@@ -90,19 +118,57 @@ namespace DivingPrototype
         }
         public void Advance(float seconds)
         {
-            if (seconds < 0) return;
-            if (Mode == TutorialMode.Depletion)
+            if (seconds < 0 || !IsVisible || Mode == TutorialMode.Delivery) return;
+            if (ocean.panel != null && ocean.panel.activeSelf)
             {
-                VisibleSeconds += seconds;
-                if (VisibleSeconds >= 30f) EndExcursion();
+                if (Mode == TutorialMode.Inventory)
+                {
+                    inventoryOpened = true;
+                    VisibleSeconds = 0;
+                }
                 return;
             }
-            if (Mode != TutorialMode.Mining || Stage < 1 || Stage > Messages.Length) return;
+
             VisibleSeconds += seconds;
+            if (Mode != TutorialMode.Mining)
+            {
+                AdvanceDayFour();
+                return;
+            }
+
             bool next = Stage == 1 ? Vector2.Distance(startPosition, transform.position) >= 1f
-                : Stage == 2 ? discovered : Stage == 3 ? placed : Stage == 4 ? produced : Stage == 5 ? retrieved
-                : Stage == 6 ? replaced : VisibleSeconds >= 30f;
+                : Stage == 2 ? discovered : Stage == 3 ? placed : Stage == 4 ? produced
+                : Stage == 5 ? retrieved || VisibleSeconds >= ReadingSeconds
+                : Stage == 6 ? placedAgain || VisibleSeconds >= ReadingSeconds : VisibleSeconds >= ReadingSeconds;
             if (next) { Stage++; VisibleSeconds = 0; }
+        }
+
+        /// <summary>Advances day-four guidance using elapsed reading time and the actual marker and inventory states.</summary>
+        private void AdvanceDayFour()
+        {
+            TutorialMode next = Mode;
+            switch (Mode)
+            {
+                case TutorialMode.Markers:
+                    bool markersEnabled = ocean.ProspectMarkersEnabled;
+                    if ((markersWereEnabled && !markersEnabled) || VisibleSeconds >= ReadingSeconds)
+                        next = TutorialMode.Depletion;
+                    markersWereEnabled = markersEnabled;
+                    break;
+                case TutorialMode.Depletion when VisibleSeconds >= ReadingSeconds:
+                    next = TutorialMode.Inventory;
+                    break;
+                case TutorialMode.Inventory when inventoryOpened && VisibleSeconds >= AfterInventorySeconds:
+                    next = TutorialMode.Deposit;
+                    break;
+                case TutorialMode.Deposit when VisibleSeconds >= ReadingSeconds:
+                    next = TutorialMode.None;
+                    break;
+            }
+
+            if (next == Mode) return;
+            Mode = next;
+            VisibleSeconds = 0;
         }
     }
 }
