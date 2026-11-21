@@ -53,6 +53,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
 
     public void OnClicked()
     {
+        Debug.Log("Terminal hit");
         if(GameState.days > 1)
             SceneChanger.ChangeScene("Terminal");
         else
