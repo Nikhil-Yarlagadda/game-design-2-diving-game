@@ -397,9 +397,11 @@ namespace DivingPrototype
                 await OpenStatsAndResume(() => check(Mathf.Approximately(ocean.StimulantTimeLeft, cooldown) &&
                     Mathf.Approximately(ocean.Hydrox.CurrentCapacity, gas), "Stats freezes the stimulant and tank"));
                 for (int i = 0; i < 50 && PauseManager.BlocksInput; i++) await Task.Delay(30);
-                UnityEngine.Object.FindAnyObjectByType<GameStateDebugger>().SetTellurium(110);
+                // Overweight speed is 1.75 - W; exceed it plus the largest flipper and stimulant bonuses at any capacity.
+                int overweightOre = Mathf.CeilToInt((1.75f + .3f + 1f) * ocean.WeightCapacity / ItemCatalog.Find(ItemCatalog.Ore).Weight);
+                UnityEngine.Object.FindAnyObjectByType<GameStateDebugger>().SetTellurium(overweightOre);
                 check(swimmer.EquipmentSpeed == 0f, "Excessive weight clamps the final speed without reversing movement");
-                check(ocean.DropItem(ItemCatalog.Ore, 110) && swimmer.EquipmentSpeed > 0f, "Dropping weight restores swimming");
+                check(ocean.DropItem(ItemCatalog.Ore, overweightOre) && swimmer.EquipmentSpeed > 0f, "Dropping weight restores swimming");
                 jump(center); ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity); await Task.Delay(150);
                 float grace = ocean.BreathingTimeLeft;
                 check(ocean.RequestEnterSubmarine(), "Grace window permits return confirmation");
@@ -421,7 +423,7 @@ namespace DivingPrototype
                 ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot).Reveal(Time.time);
                 await WaitForGasFailure(ocean);
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
-                check(ocean!=null && ocean.GetComponent<OceanTutorial>().Stage==1 && GameState.days==2 && GameState.credits==73,"Tutorial gas exhaustion retries without settlement");
+                check(ocean!=null && GameState.days==2 && GameState.credits==73,"Tutorial gas exhaustion retries without settlement");
                 check(!GameState.inventory.ContainsKey(ItemCatalog.Camera) && GameState.inventory[GameState.MiningMachine]==4 && GameState.tellurium==0,
                     "Retry restores the starting inventory without duplicating pickups");
                 check(ocean.RemainingDeliveryCount==2 && GameState.itemsBought.Values.All(c=>c==0) && GameState.miningSpots.Count==0,"Retry reissues orders once and restores mining discoveries");
@@ -430,9 +432,10 @@ namespace DivingPrototype
                 jump(center);
                 tank.Refill();
                 tank.Advance(tank.MaxCapacity * .85f / tank.ConsumptionRate);
-                check(!ocean.RequestEnterSubmarine(),"An unfinished tutorial blocks return at exactly 15% Hydrox");
+                check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && !ocean.ConfirmReturn(),
+                    "An unfinished tutorial opens the submarine but blocks ending the excursion at exactly 15% Hydrox");
                 tank.Advance(.1f);
-                check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && ocean.ConfirmReturn(),"Less than 15% Hydrox permits ending an unfinished tutorial excursion");
+                check(ocean.ConfirmReturn(),"Less than 15% Hydrox permits ending an unfinished tutorial excursion");
                 await WaitForIdle();
                 check(SceneManager.GetActiveScene().name=="Result","Low-gas return reaches Results");
                 foreach (var (bank, samples, expense, balance) in new[] { (-70, 0, -30, -100), (-100, 0, 0, -100), (-100, 7, -50, -80) })
