@@ -6,6 +6,7 @@
     <title>Unity Web Player | My project</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <meta name="game-source-revision" content="c7c99c317d3354c43bdd0dd8369bbe3f76aca63e">
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -56,14 +57,14 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "Build";
+      var buildUrl = "Build/c7c99c3";
       var loaderUrl = buildUrl + "/Buildoutput.loader.js";
       var config = {
         arguments: [],
         dataUrl: buildUrl + "/Buildoutput.data",
         frameworkUrl: buildUrl + "/Buildoutput.framework.js",
         codeUrl: buildUrl + "/Buildoutput.wasm",
-        streamingAssetsUrl: "StreamingAssets",
+        streamingAssetsUrl: "StreamingAssets/c7c99c3",
 
         // If you have a custom web site structure, or want to place multiple Unity build instances on the same page,
         // you can pass fullscreenElementID: "my-unity-fullscreen-container-id", in this configuration field to
