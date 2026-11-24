@@ -7,7 +7,7 @@ namespace DivingPrototype
     public sealed class SwimmerController : MonoBehaviour
     {
         [SerializeField, Min(0f)] private float maxSpeed = 2.75f;
-        [SerializeField, Min(0f)] private float acceleration = 1.5f;
+        [SerializeField, Min(0f)] private float acceleration = 1.8f;
         [SerializeField, Min(0f)] private float deceleration = 2.5f;
 
         private Rigidbody2D body;
@@ -21,6 +21,7 @@ namespace DivingPrototype
             if (locked) body.linearVelocity = Vector2.zero;
         }
         [SerializeField] private PolygonCollider2D[] kelpZones = new PolygonCollider2D[0];
+        internal System.Collections.Generic.IReadOnlyList<PolygonCollider2D> KelpZones => kelpZones;
         public float SpeedMultiplier { get; private set; } = 1f;
         public float EquipmentSpeed { get; set; } = 1f;
         public float BreathingSpeed { get; set; } = 1f;

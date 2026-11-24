@@ -19,13 +19,13 @@ namespace DivingPrototype
         private RectTransform playerDirection;
         private TMP_Text submarineDistance;
         private OceanTutorial tutorial;
-        private TMP_Text tutorialText, scanText;
-        private RectTransform tutorialPanel, scanPanel, scanFill;
+        private TMP_Text tutorialText, tutorialPromptText, scanText;
+        private RectTransform tutorialPanel, tutorialOverlay, scanPanel, scanFill;
         private UnityEngine.UI.Outline hydroxHighlight;
         private RectTransform returnOverlay;
         private TMP_Text returnWarning;
         private UnityEngine.UI.Button endExcursionButton;
-        private RectTransform safetyOverlay, prospectOverlay;
+        private RectTransform safetyOverlay, gearReminderOverlay, prospectOverlay;
         private TMP_Text safetyText;
         private readonly List<(OceanTarget target, RectTransform root, UnityEngine.UI.Image arrow, TMP_Text label)> prospectMarkers = new();
         private readonly HashSet<Vector2Int> occupiedMarkerCells = new();
@@ -108,6 +108,61 @@ namespace DivingPrototype
             safetyText.rectTransform.offsetMax = new Vector2(-28, -14);
             Button(dialog, "Yes", new Vector2(-85, 20), new Vector2(145, 45), () => interactions.ResolveSafetyOffer(true));
             Button(dialog, "No", new Vector2(85, 20), new Vector2(145, 45), () => interactions.ResolveSafetyOffer(false));
+        }
+
+        /// <summary>Builds the choice shown before loadout when a previous dive recovered purchases.</summary>
+        private void BuildGearReminder()
+        {
+            if (!interactions.GearReminderOpen) return;
+            var dialog = BuildCenteredModal("Newly purchased gear", new Vector2(590, 370), .75f, out gearReminderOverlay);
+            var gearReminderText = PanelText(dialog, 22);
+            gearReminderText.enableAutoSizing = true;
+            gearReminderText.fontSizeMin = 16;
+            gearReminderText.fontSizeMax = 22;
+            gearReminderText.rectTransform.offsetMin = new Vector2(28, 76);
+            gearReminderText.rectTransform.offsetMax = new Vector2(-28, -24);
+            var names = new System.Text.StringBuilder("Newly purchased gear:\n");
+            foreach (var pair in GameState.pendingGearReminder)
+            {
+                var item = ItemCatalog.Find(pair.Key);
+                string name = pair.Value == 1 ? item.Name : item.Name + "s";
+                names.AppendLine($"• {pair.Value} {name}");
+            }
+            gearReminderText.text = names.AppendLine().AppendLine("Equip all?")
+                .Append("You can adjust your loadout on the next screen.").ToString();
+            Button(dialog, "Yes", new Vector2(-85, 20), new Vector2(145, 45), () => interactions.ResolveGearReminder(true));
+            Button(dialog, "No", new Vector2(85, 20), new Vector2(145, 45), () => interactions.ResolveGearReminder(false));
+        }
+
+        /// <summary>Builds the blocking tutorial prompt shown over the visible excursion HUD.</summary>
+        private void BuildTutorialPrompt()
+        {
+            if (tutorial == null) return;
+            var dialog = BuildCenteredModal("Excursion Paused", new Vector2(650, 300), .38f, out tutorialOverlay);
+            var title = PanelText(dialog, 26);
+            title.rectTransform.offsetMin = new Vector2(24, 238);
+            title.rectTransform.offsetMax = new Vector2(-24, -20);
+            title.alignment = TextAlignmentOptions.Center;
+            title.text = "EXCURSION PAUSED";
+            tutorialPromptText = PanelText(dialog, 21);
+            tutorialPromptText.rectTransform.offsetMin = new Vector2(30, 73);
+            tutorialPromptText.rectTransform.offsetMax = new Vector2(-30, -66);
+            tutorialPromptText.alignment = TextAlignmentOptions.Center;
+            Button(dialog, "OK", new Vector2(0, 18), new Vector2(145, 45), tutorial.Acknowledge);
+        }
+
+        /// <summary>Creates a centered dialog and a backdrop that captures input across the viewport.</summary>
+        private RectTransform BuildCenteredModal(string title, Vector2 size, float backdropOpacity, out RectTransform overlay)
+        {
+            overlay = Overlay(title);
+            var shade = overlay.GetComponent<UnityEngine.UI.Image>();
+            shade.color = new Color(0, 0, 0, backdropOpacity);
+            shade.raycastTarget = true;
+            var dialog = Panel("Dialog", Vector2.zero, size);
+            dialog.SetParent(overlay, false);
+            dialog.anchorMin = dialog.anchorMax = dialog.pivot = new Vector2(.5f, .5f);
+            overlay.gameObject.SetActive(false);
+            return dialog;
         }
 
         private void BuildLoadout()
@@ -316,7 +371,9 @@ namespace DivingPrototype
             BuildProspectMarkers();
             BuildReturnConfirmation();
             BuildLoadout();
+            BuildGearReminder();
             BuildSafetyOffer();
+            BuildTutorialPrompt();
         }
 
         private void AddMinimapMarkers()
@@ -485,7 +542,9 @@ namespace DivingPrototype
                     + $"Your new total credits will be {interactions.SafetyOrderBalance}."
                     + (interactions.SafetyOfferError == null ? "" : "\n" + interactions.SafetyOfferError);
             }
-            bool showLoadout = interactions.LoadoutOpen && !showSafety;
+            bool showGearReminder = interactions.GearReminderOpen && !showSafety;
+            if (gearReminderOverlay != null) gearReminderOverlay.gameObject.SetActive(showGearReminder);
+            bool showLoadout = interactions.LoadoutOpen && !showSafety && !showGearReminder;
             loadoutOverlay.gameObject.SetActive(showLoadout);
             if (showLoadout)
             {
@@ -509,9 +568,16 @@ namespace DivingPrototype
             tankLabel.text = ItemCatalog.Find(interactions.Loadout.Tank).Name;
             bool inside = interactions.InsideSubmarine;
             bool inventoryOpen = interactions.panel != null && interactions.panel.activeSelf;
-            tutorialPanel.gameObject.SetActive(!inside && !inventoryOpen && !interactions.LoadoutOpen && !lowGas
-                && tutorial != null && tutorial.IsVisible);
-            if (tutorial != null) tutorialText.text = tutorial.Text;
+            bool showTutorial = !inside && !inventoryOpen && !interactions.LoadoutOpen && !lowGas
+                && tutorial != null && tutorial.IsVisible;
+            bool showTutorialPrompt = showTutorial && tutorial.AwaitingAcknowledgement;
+            tutorialPanel.gameObject.SetActive(showTutorial && !showTutorialPrompt);
+            if (tutorial != null)
+            {
+                tutorialText.text = tutorial.Text;
+                tutorialOverlay.gameObject.SetActive(showTutorialPrompt);
+                if (showTutorialPrompt) tutorialPromptText.text = tutorial.Text;
+            }
             hydroxHighlight.enabled = tutorialPanel.gameObject.activeSelf && tutorial.HighlightHydrox;
             scanPanel.gameObject.SetActive(!inside && interactions.IsProspecting);
             scanFill.anchorMax = new Vector2(interactions.ScanProgress, 1);

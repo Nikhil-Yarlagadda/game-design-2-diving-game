@@ -33,6 +33,7 @@ public static class GameState
     public static int shopDay;
     public static bool medicineDelivered;
     public static DiveLoadout lastLoadout;
+    public static Dictionary<string, int> pendingGearReminder;
     public static bool excursionIncapacitated;
     public static int oreLost;
     
@@ -95,12 +96,14 @@ public static class GameState
         itemsBought = new Dictionary<string, int>();
         itemsBought[MiningMachine] = 0;
         inventory = new Dictionary<string, int>();
-        inventory[MiningMachine] = 4;
+        const int startingMachines = 3;
+        inventory[MiningMachine] = startingMachines;
         inventory[ItemCatalog.LightTank] = 1;
         dailyPurchases = new Dictionary<string, int>();
         shopDay = 0;
         medicineDelivered = false;
-        lastLoadout = new DiveLoadout { Tank = ItemCatalog.LightTank, Machines = 4 };
+        lastLoadout = new DiveLoadout { Tank = ItemCatalog.LightTank, Machines = startingMachines };
+        pendingGearReminder = new Dictionary<string, int>();
         excursionIncapacitated = false;
         oreLost = 0;
         checkTerminal = false;

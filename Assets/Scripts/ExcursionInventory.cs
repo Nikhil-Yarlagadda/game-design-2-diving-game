@@ -23,7 +23,7 @@ public class ExcursionInventory : MonoBehaviour
     private OceanInteractions ocean;
     private TMP_Text details, dropLabel, tankHeader, transferButtonLabel;
     private RectTransform dropControls;
-    private UnityEngine.UI.Button less, more;
+    private UnityEngine.UI.Button less, more, max;
     private string dropItem;
     private int dropCount, dropLimit;
     private readonly List<InventorySlotUI> slots = new();
@@ -66,9 +66,11 @@ public class ExcursionInventory : MonoBehaviour
         dropControls = hud.Panel("Drop Quantity", new Vector2(0, 8), new Vector2(850, 47));
         dropControls.SetParent(panel.transform, false);
         dropLabel = hud.PanelText(dropControls, 19);
-        dropLabel.rectTransform.offsetMax = new Vector2(-450, -10);
-        less = hud.Button(dropControls, "−", new Vector2(0, 3), new Vector2(46, 41), () => { dropCount--; RefreshDrop(); });
-        more = hud.Button(dropControls, "+", new Vector2(54, 3), new Vector2(46, 41), () => { dropCount++; RefreshDrop(); });
+        dropLabel.rectTransform.offsetMax = new Vector2(-500, -10);
+        less = hud.Button(dropControls, "−", new Vector2(-66, 3), new Vector2(46, 41), () => { dropCount--; RefreshDrop(); });
+        more = hud.Button(dropControls, "+", new Vector2(-12, 3), new Vector2(46, 41), () => { dropCount++; RefreshDrop(); });
+        max = hud.Button(dropControls, "Max", new Vector2(50, 3), new Vector2(64, 41),
+            () => { dropCount = dropLimit; RefreshDrop(); });
         transferButtonLabel = hud.Button(dropControls, "Drop", new Vector2(143, 3), new Vector2(108, 41), ConfirmDrop)
             .GetComponentInChildren<TMP_Text>();
         hud.Button(dropControls, "Cancel", new Vector2(268, 3), new Vector2(112, 41), CancelDrop);
@@ -86,13 +88,15 @@ public class ExcursionInventory : MonoBehaviour
     {
         ShowItem(slot);
         var item = ItemCatalog.Find(slot.ItemName);
-        if (dropControls == null || (ocean.DepositOpen ? !ocean.CanDeposit(item) : item?.Droppable != true))
+        int limit = ocean.DepositOpen ? ocean.DepositableCount(item)
+            : item?.Droppable == true ? ocean.CarriedCount(item.Id) : 0;
+        if (dropControls == null || limit == 0)
         {
             CancelDrop();
             return;
         }
         dropItem = item.Id;
-        dropLimit = ocean.CarriedCount(item.Id);
+        dropLimit = limit;
         dropCount = 1;
         dropControls.gameObject.SetActive(true);
         RefreshDrop();
@@ -103,7 +107,7 @@ public class ExcursionInventory : MonoBehaviour
         dropCount = Mathf.Clamp(dropCount, 1, dropLimit);
         dropLabel.text = $"{(ocean.DepositOpen ? "Deposit" : "Drop")} {dropCount} / {dropLimit}";
         less.interactable = dropCount > 1;
-        more.interactable = dropCount < dropLimit;
+        more.interactable = max.interactable = dropCount < dropLimit;
     }
 
     private void ConfirmDrop()
@@ -129,6 +133,7 @@ public class ExcursionInventory : MonoBehaviour
     public void Open()
     {
         if (ocean == null || ocean.LoadoutOpen || ocean.Incapacitated || ocean.IsTransitioning || ocean.ReturnConfirmationOpen
+            || ocean.TutorialBlocksInput
             || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
         OpenPanel();
     }

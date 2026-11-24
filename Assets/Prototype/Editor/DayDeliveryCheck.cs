@@ -21,6 +21,7 @@ namespace DivingPrototype
         private readonly int shopDay = GameState.shopDay, oreLost = GameState.oreLost;
         private readonly bool medicineDelivered = GameState.medicineDelivered, incapacitated = GameState.excursionIncapacitated;
         private readonly GameState.DiveLoadout loadout = GameState.lastLoadout;
+        private readonly Dictionary<string, int> gearReminder = GameState.pendingGearReminder;
         public void Dispose()
         {
             GameState.miningSpots = miningSpots;
@@ -34,6 +35,7 @@ namespace DivingPrototype
             GameState.medicineDelivered = medicineDelivered;
             GameState.excursionIncapacitated = incapacitated;
             GameState.lastLoadout = loadout;
+            GameState.pendingGearReminder = gearReminder;
         }
     }
 
@@ -66,13 +68,13 @@ namespace DivingPrototype
                     if(day==4)
                     {
                         check(tutorial.Mode == OceanTutorial.TutorialMode.Markers && tutorial.Text.Contains("SPACE"), "Day four starts with marker guidance without requiring a purchase");
-                        tutorial.Advance(29.99f);
+                        tutorial.Acknowledge(); tutorial.Advance(29.99f);
                         check(tutorial.Mode == OceanTutorial.TutorialMode.Markers, "Marker guidance allows thirty seconds for the toggle");
                         tutorial.Advance(.02f);
                         check(tutorial.Mode == OceanTutorial.TutorialMode.Depletion && tutorial.Text == OceanTutorial.DepletionMessage, "Marker guidance can time out into depletion guidance");
-                        tutorial.Advance(30);
+                        tutorial.Acknowledge(); tutorial.Advance(30);
                         check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory && tutorial.Text.Contains("TAB"), "Depletion guidance advances to inventory after thirty seconds");
-                        tutorial.Advance(60);
+                        tutorial.Acknowledge(); tutorial.Advance(60);
                         check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Inventory guidance waits for an inventory visit");
                     }
                 }

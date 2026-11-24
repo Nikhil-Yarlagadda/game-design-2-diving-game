@@ -1,10 +1,13 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 public class TerminalHandler : MonoBehaviour, IClickable
 {
     public TextMeshProUGUI description;
     public Button admin;
+    [SerializeField] private GameObject environmentScreen;
+    [SerializeField] private Button environmentMenuEntry, environmentBack;
 
     public GameObject popup;            // InboxPopup
     public TextMeshProUGUI popupText;   // PopupText
@@ -14,6 +17,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        if (admin == null) return;
 
         if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
         {
@@ -38,6 +42,20 @@ public class TerminalHandler : MonoBehaviour, IClickable
             description.text = "Admin Access";
             admin.interactable = true;
         }
+    }
+
+    /// <summary>Opens the fixed environmental reference and focuses its only control.</summary>
+    public void OpenEnvironmentData()
+    {
+        environmentScreen.SetActive(true);
+        EventSystem.current?.SetSelectedGameObject(environmentBack.gameObject);
+    }
+
+    /// <summary>Returns from the reference screen to its terminal menu entry.</summary>
+    public void CloseEnvironmentData()
+    {
+        environmentScreen.SetActive(false);
+        EventSystem.current?.SetSelectedGameObject(environmentMenuEntry.gameObject);
     }
 
     public void ClosePopup()

@@ -4,7 +4,8 @@ namespace DivingPrototype
 {
     public sealed class HydroxTank : MonoBehaviour
     {
-        [SerializeField, Min(.01f)] private float maxCapacity = 180f;
+        private const float DefaultCapacity = 240f;
+        [SerializeField, Min(.01f)] private float maxCapacity = DefaultCapacity;
         [SerializeField, Min(.01f)] private float consumptionRate = 1f;
 
         public float MaxCapacity => maxCapacity;
@@ -23,7 +24,7 @@ namespace DivingPrototype
 
         private void ValidateSettings()
         {
-            maxCapacity = float.IsNaN(maxCapacity) || float.IsInfinity(maxCapacity) ? 180f : Mathf.Max(.01f, maxCapacity);
+            maxCapacity = float.IsNaN(maxCapacity) || float.IsInfinity(maxCapacity) ? DefaultCapacity : Mathf.Max(.01f, maxCapacity);
             consumptionRate = float.IsNaN(consumptionRate) || float.IsInfinity(consumptionRate) ? 1f : Mathf.Max(.01f, consumptionRate);
         }
 

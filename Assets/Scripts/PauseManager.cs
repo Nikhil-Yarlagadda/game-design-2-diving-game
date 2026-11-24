@@ -32,6 +32,13 @@ public class PauseManager : MonoBehaviour
         Time.timeScale = 1f;
     }
 
+    /// <summary>Restores a gameplay modal's prior time scale beneath any open pause menu.</summary>
+    internal static void RestoreGameplayTimeScale(float scale)
+    {
+        if (isPaused) previousTimeScale = scale;
+        else Time.timeScale = scale;
+    }
+
     /// <summary>Configures the pause scene to render over the retained game.</summary>
     private void Awake()
     {

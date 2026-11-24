@@ -251,6 +251,7 @@ public sealed class GameStateDebugger : MonoBehaviour
         private readonly int shopDay = GameState.shopDay;
         private readonly Dictionary<string, int> dailyPurchases = new(GameState.dailyPurchases);
         private readonly GameState.DiveLoadout lastLoadout = GameState.lastLoadout;
+        private readonly Dictionary<string, int> gearReminder = new(GameState.pendingGearReminder);
         private readonly bool incapacitated = GameState.excursionIncapacitated;
         private readonly bool checkTerminal = GameState.checkTerminal;
         private readonly bool draftMessage = GameState.draftMessage;
@@ -282,6 +283,7 @@ public sealed class GameStateDebugger : MonoBehaviour
             GameState.shopDay = shopDay;
             GameState.dailyPurchases = new(dailyPurchases);
             GameState.lastLoadout = lastLoadout;
+            GameState.pendingGearReminder = new(gearReminder);
             GameState.excursionIncapacitated = incapacitated;
             GameState.oreLost = oreLost;
             GameState.checkTerminal = checkTerminal;

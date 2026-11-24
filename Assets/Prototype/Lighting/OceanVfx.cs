@@ -3,7 +3,7 @@ using UnityEngine;
 namespace DivingPrototype
 {
     [DefaultExecutionOrder(110)]
-    [RequireComponent(typeof(FlashlightController), typeof(Rigidbody2D))]
+    [RequireComponent(typeof(FlashlightController), typeof(Rigidbody2D), typeof(SwimmerController))]
     public sealed class OceanVfx : MonoBehaviour
     {
         [SerializeField] private Shader particleShader;
@@ -11,6 +11,8 @@ namespace DivingPrototype
         [SerializeField, Range(0f, 8f)] private float trailRate = 7f;
         [SerializeField, Min(.1f)] private float breathingInterval = 2.5f;
         [SerializeField, Range(0, 160)] private int suspendedCount = 120;
+        [SerializeField, Range(0f, 1f), Tooltip("Opacity of the passable kelp sprites.")]
+        private float kelpOpacity = .35f;
         public const int BubbleLimit = 96;
         public const int MoteLimit = 160;
         public ParticleSystem Bubbles => bubbles;
@@ -37,6 +39,13 @@ namespace DivingPrototype
             if (artwork != null && artwork.sprite != null)
                 diverHalfLength = Mathf.Max(.2f, artwork.sprite.bounds.extents.y * Mathf.Abs(transform.lossyScale.y));
             ocean = GetComponent<OceanInteractions>();
+            foreach (var kelp in GetComponent<SwimmerController>().KelpZones)
+            {
+                if (kelp == null || !kelp.TryGetComponent<SpriteRenderer>(out var renderer)) continue;
+                var color = renderer.color;
+                color.a = kelpOpacity;
+                renderer.color = color;
+            }
             if (particleShader == null) { enabled = false; return; }
             bubbleMaterial = NewMaterial(true);
             moteMaterial = NewMaterial(false);
