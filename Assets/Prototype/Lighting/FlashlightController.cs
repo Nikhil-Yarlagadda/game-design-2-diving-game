@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -74,8 +75,8 @@ namespace DivingPrototype
 
         private void OnEnable()
         {
-            if (spriteMaterial == null || map == null || aimCamera == null || !ValidateBlockers()) return;
             swimmer = GetComponent<SwimmerController>();
+            if (spriteMaterial == null || map == null || aimCamera == null || !ValidateBlockers()) return;
             instance = new Material(spriteMaterial) { name = "Ocean Flashlight (Instance)", hideFlags = HideFlags.HideAndDontSave };
             RegisterLightingMaterial(instance);
             var mapSprites = map.GetComponentsInChildren<SpriteRenderer>(true);
@@ -153,10 +154,28 @@ namespace DivingPrototype
                         viewMax = Vector2.Max(viewMax, corner);
                     }
             var rayBounds = Rect.MinMaxRect(viewMin.x - .01f, viewMin.y - .01f, viewMax.x + .01f, viewMax.y + .01f);
-            int edgeCount = 0;
-            for (int p = 0; p < polygonBlockers.Length; p++)
+            int solidEdgeCount = AppendPolygonEdges(polygonBlockers, rayBounds, boundedView, 0);
+            int edgeCount = AppendPolygonEdges(swimmer.KelpZones, rayBounds, boundedView, solidEdgeCount);
+            // Never place the terminal fade inside the camera rectangle, even after a zoom change.
+            float viewReach = new Vector2(Mathf.Max(Mathf.Abs(viewMin.x - transform.position.x), Mathf.Abs(viewMax.x - transform.position.x)),
+                Mathf.Max(Mathf.Abs(viewMin.y - transform.position.y), Mathf.Abs(viewMax.y - transform.position.y))).magnitude;
+            foreach (var material in lightingMaterials) UploadLighting(material, count, edgeCount, edgeCount - solidEdgeCount, viewReach);
+            if (aimCamera != null)
             {
-                var polygon = polygonBlockers[p];
+                Color background = originalBackground;
+                background.r *= ambientBrightness;
+                background.g *= ambientBrightness;
+                background.b *= ambientBrightness;
+                aimCamera.backgroundColor = background;
+            }
+        }
+
+        /// <summary>Appends visible polygon edges at the given index and returns the next free index.</summary>
+        private int AppendPolygonEdges(IReadOnlyList<PolygonCollider2D> polygons, Rect rayBounds, bool boundedView, int edgeCount)
+        {
+            for (int p = 0; p < polygons.Count && edgeCount < MaxEdges; p++)
+            {
+                var polygon = polygons[p];
                 if (polygon == null || !polygon.isActiveAndEnabled) continue;
                 for (int part = 0; part < polygon.pathCount; part++)
                 {
@@ -172,21 +191,10 @@ namespace DivingPrototype
                     }
                 }
             }
-            // Never place the terminal fade inside the camera rectangle, even after a zoom change.
-            float viewReach = new Vector2(Mathf.Max(Mathf.Abs(viewMin.x - transform.position.x), Mathf.Abs(viewMax.x - transform.position.x)),
-                Mathf.Max(Mathf.Abs(viewMin.y - transform.position.y), Mathf.Abs(viewMax.y - transform.position.y))).magnitude;
-            foreach (var material in lightingMaterials) UploadLighting(material, count, edgeCount, viewReach);
-            if (aimCamera != null)
-            {
-                Color background = originalBackground;
-                background.r *= ambientBrightness;
-                background.g *= ambientBrightness;
-                background.b *= ambientBrightness;
-                aimCamera.backgroundColor = background;
-            }
+            return edgeCount;
         }
 
-        private void UploadLighting(Material material, int count, int edgeCount, float viewReach)
+        private void UploadLighting(Material material, int count, int edgeCount, int kelpEdgeCount, float viewReach)
         {
             material.SetVector(OriginId, transform.position);
             material.SetVector(DirectionId, new Vector4(direction.x, direction.y, 0f, 0f));
@@ -213,6 +221,7 @@ namespace DivingPrototype
             material.SetVectorArray(BoxesXId, rowsX);
             material.SetVectorArray(BoxesYId, rowsY);
             material.SetInt("_EdgeCount", edgeCount);
+            material.SetInt("_KelpEdgeCount", kelpEdgeCount);
             material.SetVectorArray("_PolygonEdges", edges);
             material.SetFloatArray("_EdgeOwners", edgeOwners);
         }
@@ -244,6 +253,9 @@ namespace DivingPrototype
             int edgeCount = 0;
             foreach (var polygon in polygonBlockers)
                 if (polygon != null) edgeCount += polygon.GetTotalPointCount();
+            if (swimmer != null)
+                foreach (var kelp in swimmer.KelpZones)
+                    if (kelp != null) edgeCount += kelp.GetTotalPointCount();
             if (edgeCount > MaxEdges)
             {
                 Debug.LogError("Flashlight supports at most 256 polygon edges.", this);

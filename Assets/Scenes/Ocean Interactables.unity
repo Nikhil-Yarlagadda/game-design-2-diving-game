@@ -9412,13 +9412,6 @@ MonoBehaviour:
   - {fileID: 1431732161}
   - {fileID: 668324314}
   polygonBlockers:
-  - {fileID: 352834226}
-  - {fileID: 1029861721}
-  - {fileID: 246385627}
-  - {fileID: 2133440812}
-  - {fileID: 746625455}
-  - {fileID: 818968033}
-  - {fileID: 1484963908}
   - {fileID: 2015443681}
   - {fileID: 2005176269}
   - {fileID: 1257952977}
@@ -9440,14 +9433,6 @@ MonoBehaviour:
   - {fileID: 1796367291}
   - {fileID: 39447517}
   - {fileID: 4237363}
-  - {fileID: 1063914082}
-  - {fileID: 2016555526}
-  - {fileID: 1448777773}
-  - {fileID: 445952037}
-  - {fileID: 106445045}
-  - {fileID: 410437127}
-  - {fileID: 84484454}
-  - {fileID: 271831992}
 --- !u!114 &570103287
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15083,7 +15068,7 @@ MonoBehaviour:
   trailRate: 7
   breathingInterval: 2.5
   suspendedCount: 120
-  kelpOpacity: 0.35
+  kelpOpacity: 0.5
 --- !u!114 &990000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
