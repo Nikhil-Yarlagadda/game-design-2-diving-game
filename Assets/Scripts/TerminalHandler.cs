@@ -14,12 +14,19 @@ public class TerminalHandler : MonoBehaviour, IClickable
     public Button popupButton;          // the Button on InboxPopup
 
 
+    private static bool HasCrewPhotoToUpload => !GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0;
+    private static bool HasEyePhotoToUpload => !GameState.abyssPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.EyePhoto) > 0;
+
+    internal static bool HasPendingAction => HasCrewPhotoToUpload || HasEyePhotoToUpload
+        || ContactManager.CanRequestMedicine || ContactManager.HasUnreadMedicineReply || ContactManager.CanRequestAid
+        || (GameState.infectionPhoto && (GameState.abyssPhoto ? !GameState.adminUnlocked : !GameState.passkeyHintSeen));
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         if (admin == null) return;
 
-        if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
+        if (HasCrewPhotoToUpload)
         {
             popupButton.onClick.AddListener(ClosePopup);
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Administrator Access available.";
@@ -28,7 +35,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
             GameState.Playtest.Milestone("Infected crewmate photo uploaded");
         }
 
-        if(!GameState.abyssPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.EyePhoto) > 0)
+        if (HasEyePhotoToUpload)
         {
             popupButton.onClick.AddListener(ClosePopup);
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Eye photograph available in Administrator Access";

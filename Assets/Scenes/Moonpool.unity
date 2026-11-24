@@ -1851,6 +1851,7 @@ MonoBehaviour:
   dialogueRunner: {fileID: 2100005004}
   lineAdvancer: {fileID: 2100005005}
   roomDialogueCanvas: {fileID: 2100005001}
+  inventoryButtonStyle: {fileID: 751714147}
 --- !u!114 &2100005008
 MonoBehaviour:
   m_ObjectHideFlags: 0

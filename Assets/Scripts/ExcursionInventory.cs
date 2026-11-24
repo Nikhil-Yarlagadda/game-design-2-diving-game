@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using DivingPrototype;
 using TMPro;
 
@@ -22,7 +23,8 @@ public class ExcursionInventory : MonoBehaviour
 
     private OceanInteractions ocean;
     private TMP_Text details, dropLabel, tankHeader, transferButtonLabel;
-    private RectTransform dropControls;
+    private RectTransform dropControls, helpPanel;
+    private ScrollRect helpScroll;
     private UnityEngine.UI.Button less, more, max;
     private string dropItem;
     private int dropCount, dropLimit;
@@ -75,7 +77,107 @@ public class ExcursionInventory : MonoBehaviour
             .GetComponentInChildren<TMP_Text>();
         hud.Button(dropControls, "Cancel", new Vector2(268, 3), new Vector2(112, 41), CancelDrop);
         CancelDrop();
+        BuildHelp(hud);
     }
+
+    /// <summary>Builds a scrollable tutorial reference inside the paused inventory.</summary>
+    private void BuildHelp(OceanHud hud)
+    {
+        var helpButton = (RectTransform)hud.Button((RectTransform)panel.transform, "Help", Vector2.zero,
+            new Vector2(82, 34), OpenHelp).transform;
+        helpButton.anchorMin = helpButton.anchorMax = helpButton.pivot = Vector2.one;
+        helpButton.anchoredPosition = new Vector2(-22, -23);
+
+        helpPanel = hud.Panel("Excursion Help", Vector2.zero, Vector2.zero);
+        helpPanel.SetParent(panel.transform, false);
+        helpPanel.anchorMin = Vector2.zero;
+        helpPanel.anchorMax = Vector2.one;
+        helpPanel.offsetMin = helpPanel.offsetMax = Vector2.zero;
+        var background = helpPanel.GetComponent<Image>();
+        background.color = new Color(.015f, .04f, .07f);
+        background.raycastTarget = true;
+
+        var title = hud.PanelText(helpPanel, 28);
+        title.text = "Excursion Help";
+        title.rectTransform.anchorMin = new Vector2(0, 1);
+        title.rectTransform.offsetMin = new Vector2(30, -68);
+        title.rectTransform.offsetMax = new Vector2(-30, -14);
+
+        var back = (RectTransform)hud.Button(helpPanel, "Back", Vector2.zero, new Vector2(110, 42), CloseHelp).transform;
+        back.anchorMin = back.anchorMax = back.pivot = Vector2.one;
+        back.anchoredPosition = new Vector2(-28, -22);
+
+        var viewport = hud.Panel("Tutorial viewport", Vector2.zero, Vector2.zero);
+        viewport.SetParent(helpPanel, false);
+        viewport.anchorMin = Vector2.zero;
+        viewport.anchorMax = Vector2.one;
+        viewport.offsetMin = new Vector2(32, 25);
+        viewport.offsetMax = new Vector2(-54, -77);
+        var viewportImage = viewport.GetComponent<Image>();
+        viewportImage.color = new Color(.04f, .09f, .13f);
+        viewportImage.raycastTarget = true;
+        viewport.gameObject.AddComponent<RectMask2D>();
+
+        var text = hud.PanelText(viewport, 19);
+        text.text = OceanTutorial.ReferenceText;
+        text.alignment = TextAlignmentOptions.TopLeft;
+        var content = text.rectTransform;
+        content.anchorMin = new Vector2(0, 1);
+        content.anchorMax = Vector2.one;
+        content.pivot = new Vector2(.5f, 1);
+        content.offsetMin = new Vector2(16, 0);
+        content.offsetMax = new Vector2(-16, -12);
+        var fitter = text.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        helpScroll = helpPanel.gameObject.AddComponent<ScrollRect>();
+        helpScroll.viewport = viewport;
+        helpScroll.content = content;
+        helpScroll.horizontal = false;
+        helpScroll.movementType = ScrollRect.MovementType.Clamped;
+        helpScroll.scrollSensitivity = 36;
+        helpScroll.verticalScrollbar = BuildHelpScrollbar(hud);
+        helpPanel.gameObject.SetActive(false);
+    }
+
+    /// <summary>Creates a visible, draggable scroll control beside the tutorial text.</summary>
+    private Scrollbar BuildHelpScrollbar(OceanHud hud)
+    {
+        var track = hud.Panel("Tutorial scrollbar", Vector2.zero, Vector2.zero);
+        track.SetParent(helpPanel, false);
+        track.anchorMin = new Vector2(1, 0);
+        track.anchorMax = Vector2.one;
+        track.offsetMin = new Vector2(-45, 25);
+        track.offsetMax = new Vector2(-33, -77);
+        track.GetComponent<Image>().raycastTarget = true;
+        var handle = hud.Panel("Scroll handle", Vector2.zero, Vector2.zero);
+        handle.SetParent(track, false);
+        handle.anchorMin = Vector2.zero;
+        handle.anchorMax = Vector2.one;
+        handle.offsetMin = handle.offsetMax = Vector2.zero;
+        var handleImage = handle.GetComponent<Image>();
+        handleImage.color = new Color(.34f, .63f, .71f);
+        handleImage.raycastTarget = true;
+        var bar = track.gameObject.AddComponent<Scrollbar>();
+        bar.direction = Scrollbar.Direction.BottomToTop;
+        bar.handleRect = handle;
+        bar.targetGraphic = handleImage;
+        return bar;
+    }
+
+    /// <summary>Opens the help page at the beginning without releasing the inventory pause.</summary>
+    private void OpenHelp()
+    {
+        if (PauseManager.BlocksInput) return;
+        helpPanel.SetAsLastSibling();
+        helpPanel.gameObject.SetActive(true);
+        Canvas.ForceUpdateCanvases();
+        helpScroll.StopMovement();
+        helpScroll.verticalNormalizedPosition = 1;
+    }
+
+    /// <summary>Returns to the inventory without changing simulation time.</summary>
+    private void CloseHelp() => helpPanel.gameObject.SetActive(false);
 
     private void ShowItem(InventorySlotUI slot)
     {
@@ -162,6 +264,7 @@ public class ExcursionInventory : MonoBehaviour
     {
         if (!panel.activeSelf || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
         CancelDrop();
+        if (helpPanel != null) CloseHelp();
         panel.SetActive(false);
         if (ocean.DepositOpen) ocean.CancelReturn();
         else Time.timeScale = 1f;
@@ -170,7 +273,8 @@ public class ExcursionInventory : MonoBehaviour
     public void Toggle()
     {
         if (PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
-        if (panel.activeSelf) Close();
+        if (helpPanel != null && helpPanel.gameObject.activeInHierarchy) CloseHelp();
+        else if (panel.activeSelf) Close();
         else Open();
     }
 
