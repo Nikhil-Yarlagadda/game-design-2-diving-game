@@ -46,6 +46,10 @@ namespace DivingPrototype
             "Mining machines cannot be left out overnight, or else they will permanently break.\n<b>Always retrieve all your mining machines before ending the excursion.</b>",
             "Prospected mining spots will stay visible forever, even on future excursions. If you find yourself waiting around for your machines, try exploring and prospecting further out to get ahead for next time.\nKeep an eye on your breathing gas, and return to the submarine whenever you’re ready to end the excursion.\n<b>Work hard. The Company is watching.</b>"
         };
+        /// <summary>Lists the live tutorial copy in reading order for the excursion inventory.</summary>
+        internal static string ReferenceText => string.Join("\n\n", Messages) + "\n\n"
+            + string.Join("\n\n", DeliveryMessage, MarkersMessage, DepletionMessage, InventoryMessage, DepositMessage);
+
         private void Awake() => ocean = GetComponent<OceanInteractions>();
         private void OnEnable()
         {

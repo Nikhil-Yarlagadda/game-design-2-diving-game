@@ -61,6 +61,30 @@ public static class GameState
         _ => false
     };
 
+    /// <summary>Returns the room of a crew member currently available to talk, or null while they are away.</summary>
+    internal static string GetAvailableCrewRoom(string id)
+    {
+        if (!IsCrewAboard(id)) return null;
+        return id switch
+        {
+            "Apprentice Diver" when days < 15 && !HasSpokenToOtherCrew() => null,
+            "Apprentice Diver" => days switch
+            {
+                15 or 19 => "Mineral Lab",
+                17 => "Storage Closet",
+                _ => "Moonpool"
+            },
+            "Medic" => days switch
+            {
+                5 or 13 or 17 => "Mineral Lab",
+                3 or 7 or 11 or 19 => "Shared Space",
+                _ => "Storage Closet"
+            },
+            "Mineral Processor" => days is 3 or 5 or 7 ? "Storage Closet" : "Mineral Lab",
+            _ => null
+        };
+    }
+
     /// <summary>Returns whether the foreman has spoken with each crew member still aboard.</summary>
     public static bool HasSpokenToLivingCrew() =>
         HasSpokenToOtherCrew() && npcsTalks.Contains("Apprentice Diver");

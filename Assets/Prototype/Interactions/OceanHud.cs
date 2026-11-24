@@ -335,10 +335,13 @@ namespace DivingPrototype
             weightLabel.alignment = TextAlignmentOptions.Center;
             weightLabel.outlineWidth = .2f;
             weightLabel.rectTransform.offsetMin = weightLabel.rectTransform.offsetMax = Vector2.zero;
+            BuildHydroxDividers();
             tankLabel = PanelText(hydroxRoot, 15);
-            tankLabel.alignment = TextAlignmentOptions.Center;
             tankLabel.outlineWidth = .2f;
-            tankLabel.rectTransform.offsetMin = tankLabel.rectTransform.offsetMax = Vector2.zero;
+            tankLabel.rectTransform.anchorMin = new Vector2(1, 0);
+            tankLabel.rectTransform.anchorMax = Vector2.one;
+            tankLabel.rectTransform.offsetMin = new Vector2(8, 0);
+            tankLabel.rectTransform.offsetMax = new Vector2(228, 0);
             tutorial = interactions.GetComponent<OceanTutorial>();
             tutorialPanel = Panel("Excursion Tutorial", new Vector2(0, 115), new Vector2(700, 160));
             tutorialText = PanelText(tutorialPanel, 19);
@@ -374,6 +377,23 @@ namespace DivingPrototype
             BuildGearReminder();
             BuildSafetyOffer();
             BuildTutorialPrompt();
+        }
+
+        /// <summary>Marks one-third and two-thirds of the hydrox gauge independently of the remaining fill.</summary>
+        private void BuildHydroxDividers()
+        {
+            for (int third = 1; third <= 2; third++)
+            {
+                float fraction = third / 3f;
+                var divider = Panel("Hydrox divider", Vector2.zero, Vector2.zero);
+                divider.SetParent(hydroxRoot, false);
+                divider.anchorMin = new Vector2(fraction, 0);
+                divider.anchorMax = new Vector2(fraction, 1);
+                divider.offsetMin = new Vector2(-1, 2);
+                divider.offsetMax = new Vector2(1, -2);
+                var line = divider.GetComponent<UnityEngine.UI.Image>();
+                line.color = new Color(.22f, .39f, .47f);
+            }
         }
 
         private void AddMinimapMarkers()

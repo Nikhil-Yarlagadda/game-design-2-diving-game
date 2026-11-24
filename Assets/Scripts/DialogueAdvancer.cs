@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -10,12 +11,15 @@ public class DialogueAdvancer : MonoBehaviour
     public DialogueRunner dialogueRunner;
     public LineAdvancer lineAdvancer;
     [SerializeField] private Canvas roomDialogueCanvas;
+    [SerializeField] private Button inventoryButtonStyle;
 
     private GraphicRaycaster roomDialogueRaycaster;
     private readonly List<RaycastResult> pointerHits = new();
-    private int dialogueStartFrame = -1;
+    private int dialogueStartFrame = -1, dialogueEndFrame = -1;
+    private Button crewSkip;
 
-    public bool BlocksRoomInput => roomDialogueCanvas != null && roomDialogueCanvas.isActiveAndEnabled;
+    public bool BlocksRoomInput => roomDialogueCanvas != null
+        && (roomDialogueCanvas.isActiveAndEnabled || Time.frameCount == dialogueEndFrame);
 
     /// <summary>Sets up a modal canvas over the room while Yarn is presenting dialogue.</summary>
     private void Awake()
@@ -34,7 +38,45 @@ public class DialogueAdvancer : MonoBehaviour
 
         roomDialogueRaycaster = roomDialogueCanvas.GetComponent<GraphicRaycaster>();
         SetRoomDialogueVisible(false);
-        dialogueRunner.onDialogueComplete.AddListener(() => SetRoomDialogueVisible(false));
+        dialogueRunner.onDialogueComplete.AddListener(OnDialogueCompleted);
+        if (inventoryButtonStyle != null) BuildCrewSkip();
+    }
+
+    /// <summary>Builds a top-right dialogue button using the room inventory button's visual styling.</summary>
+    private void BuildCrewSkip()
+    {
+        crewSkip = Instantiate(inventoryButtonStyle, roomDialogueCanvas.transform, false);
+        crewSkip.name = "Skip conversation";
+        Destroy(crewSkip.GetComponent<InventoryButton>());
+        crewSkip.onClick = new Button.ButtonClickedEvent();
+        crewSkip.onClick.AddListener(SkipConversation);
+        crewSkip.GetComponentInChildren<TMP_Text>().text = "Skip";
+        var rect = (RectTransform)crewSkip.transform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
+        rect.anchoredPosition = new Vector2(-25, -25);
+        crewSkip.gameObject.SetActive(false);
+    }
+
+    /// <summary>Shows Skip for a running crewmate conversation that was already visited today.</summary>
+    internal void ShowCrewSkip()
+    {
+        if (crewSkip != null && dialogueRunner.IsDialogueRunning) crewSkip.gameObject.SetActive(true);
+    }
+
+    /// <summary>Cancels the current conversation through Yarn without selecting an option.</summary>
+    private async void SkipConversation()
+    {
+        if (!crewSkip.gameObject.activeSelf || !dialogueRunner.IsDialogueRunning || PauseManager.BlocksInput) return;
+        crewSkip.gameObject.SetActive(false);
+        await dialogueRunner.Stop();
+    }
+
+    /// <summary>Closes the modal and consumes any click on the frame that ended the dialogue.</summary>
+    private void OnDialogueCompleted()
+    {
+        dialogueEndFrame = Time.frameCount;
+        if (crewSkip != null) crewSkip.gameObject.SetActive(false);
+        SetRoomDialogueVisible(false);
     }
 
     /// <summary>Opens the room dialogue without forwarding the click that started it to Yarn.</summary>

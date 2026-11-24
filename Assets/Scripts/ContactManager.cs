@@ -16,6 +16,10 @@ public class ContactManager : MonoBehaviour
     private string message = "";
     private bool drafted = false;
 
+    internal static bool CanRequestMedicine => GameState.days == 5 && !GameState.draftMessage && GameState.npcsTalks.Contains("Medic");
+    internal static bool HasUnreadMedicineReply => GameState.days == 7 && GameState.draftMessage && !GameState.checkTerminal;
+    internal static bool CanRequestAid => GameState.infectionPhoto && GameState.evidenceRequestDay < 0;
+
     void Awake()
     {
         message = "";
@@ -23,7 +27,7 @@ public class ContactManager : MonoBehaviour
 
         draftLabel = draft.GetComponentInChildren<TextMeshProUGUI>();
 
-        if (GameState.days == 7 && !GameState.checkTerminal)
+        if (HasUnreadMedicineReply)
         {
             if (ColorUtility.TryParseHtmlString("#D41D1D", out Color red))
                 inbox.image.color = red;
@@ -40,26 +44,26 @@ public class ContactManager : MonoBehaviour
 
     public void OnClicked()
     {
-        if (GameState.days == 5 && !GameState.draftMessage && !drafted && GameState.npcsTalks.Contains("Medic"))
+        if (CanRequestMedicine && !drafted)
         {
             message = "This is the foreman of the HZ-3280. Our medic found an unidentifiable orange substance in the mineral lab air filter and suspects that it might be a sign of some health risk present on the vessel. Therefore, we request a shipment of antimicrobial medicine, as well as any information that the Company might have regarding what this substance might be.";
             draftLabel.text = "Send";
             drafted = true;
         }
-        else if (GameState.days == 5 && !GameState.draftMessage && drafted)
+        else if (CanRequestMedicine && drafted)
         {
             message = "Your message has been sent. You may expect to receive a response from the Company within 2 to 4 business days. It is our top priority to provide prompt and effective assistance to our employees whenever needed. After all, you are our greatest assets!";
             draftLabel.text = "Draft";
             GameState.draftMessage = true;
             GameState.Playtest.Milestone("Medicine requested");
         }
-        else if(GameState.infectionPhoto && GameState.evidenceRequestDay < 0 && !drafted)
+        else if (CanRequestAid && !drafted)
         {
             message = "SOS. The HZ-3280 requests urgent aid and a second shipment of medicine; a member of our crew is dangerously ill and speaking irrationally. We do not have the resources to treat them, nor do we understand what this disease is.\n <<Image Attachment>>";
             draftLabel.text = "Send";
             drafted = true;
         }
-        else if (GameState.infectionPhoto && GameState.evidenceRequestDay < 0 && drafted)
+        else if (CanRequestAid && drafted)
         {
             message = "Your message has been sent. You may expect to receive a response from the Company within 2 to 4 business days. It is our top priority to provide prompt and effective assistance to our employees whenever needed. After all, you are our greatest assets!";
             draftLabel.text = "Draft";
