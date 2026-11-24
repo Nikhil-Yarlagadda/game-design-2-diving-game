@@ -11,8 +11,8 @@ namespace DivingPrototype
         [SerializeField, Range(0f, 8f)] private float trailRate = 7f;
         [SerializeField, Min(.1f)] private float breathingInterval = 2.5f;
         [SerializeField, Range(0, 160)] private int suspendedCount = 120;
-        [SerializeField, Range(0f, 1f), Tooltip("Opacity of the passable kelp sprites.")]
-        private float kelpOpacity = .35f;
+        [SerializeField, Range(0f, 1f), Tooltip("Opacity of the kelp texture throughout the dive.")]
+        private float kelpOpacity = .5f;
         public const int BubbleLimit = 96;
         public const int MoteLimit = 160;
         public ParticleSystem Bubbles => bubbles;

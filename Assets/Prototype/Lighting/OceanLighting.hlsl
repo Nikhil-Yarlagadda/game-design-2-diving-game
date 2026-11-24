@@ -13,7 +13,7 @@ CBUFFER_START(UnityPerMaterial)
     float _WaterStrength, _RefractionTexels, _WaterSpeed, _OceanTime, _BubbleStyle;
     int _BlockerCount;
     float4 _BlockerRowsX[32], _BlockerRowsY[32];
-    int _EdgeCount;
+    int _EdgeCount, _KelpEdgeCount;
     float4 _PolygonEdges[256];
     float _EdgeOwners[256];
 CBUFFER_END
@@ -69,7 +69,8 @@ bool OceanSlab(float start, float step, inout float enter, inout float exit)
     return enter <= exit;
 }
 
-bool OceanBlocked(float2 endpoint)
+// Opaque geometry is packed first. The first kelp crossing halves the forward light.
+float OceanTransmission(float2 endpoint)
 {
     float2 ray = endpoint - _FlashlightOrigin.xy;
     [loop] for (int i = 0; i < min(_BlockerCount, 32); i++)
@@ -81,11 +82,12 @@ bool OceanBlocked(float2 endpoint)
         float2 step = float2(dot(rowX.xy, ray), dot(rowY.xy, ray));
         float enter = 0.0, exit = 1.0;
         if (OceanSlab(start.x, step.x, enter, exit) && OceanSlab(start.y, step.y, enter, exit)
-            && exit > 0.00001 && enter < 1.0) return true;
+            && exit > 0.00001 && enter < 1.0) return 0.0;
     }
     [loop] for (int e = 0; e < min(_EdgeCount, 256); e++)
     {
-        if ((int)_EdgeOwners[e] == (int)_SelfBlocker) continue;
+        bool isKelp = e >= _EdgeCount - _KelpEdgeCount;
+        if (!isKelp && (int)_EdgeOwners[e] == (int)_SelfBlocker) continue;
         float2 a = _PolygonEdges[e].xy;
         float2 edge = _PolygonEdges[e].zw - a;
         float2 offset = a - _FlashlightOrigin.xy;
@@ -93,9 +95,9 @@ bool OceanBlocked(float2 endpoint)
         if (abs(divisor) < 0.000001) continue;
         float t = (offset.x * edge.y - offset.y * edge.x) / divisor;
         float u = (offset.x * ray.y - offset.y * ray.x) / divisor;
-        if (t > 0.00001 && t < 0.99999 && u >= 0.0 && u <= 1.0) return true;
+        if (t > 0.00001 && t < 0.99999 && u >= 0.0 && u <= 1.0) return isKelp ? 0.5 : 0.0;
     }
-    return false;
+    return 1.0;
 }
 
 float OceanIllumination(float2 worldPosition)
@@ -103,8 +105,7 @@ float OceanIllumination(float2 worldPosition)
     float2 displacement = worldPosition - _FlashlightOrigin.xy;
     float circle = OceanCircle(length(displacement));
     float forward = OceanForwardLight(displacement);
-    // No blocker work is needed when the always-lit halo already dominates.
-    if (forward > circle && OceanBlocked(worldPosition)) forward = 0.0;
+    if (forward > 0.0) forward *= OceanTransmission(worldPosition);
     return 1.0 - (1.0 - circle) * (1.0 - forward);
 }
 #endif

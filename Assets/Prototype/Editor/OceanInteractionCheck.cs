@@ -89,13 +89,18 @@ namespace DivingPrototype
                     FlashlightCheck.Require(mine.Retrieve(200) == 0, "Retrieving twice cannot duplicate resources");
                     FlashlightCheck.Require(interactions.obstacles.All(b => Vector2.Distance(mine.transform.position, b.ClosestPoint(mine.transform.position)) >= .6f), "Mining center has 0.6-unit clearance: " + mine.name);
                 }
+                var swimmer = interactions.GetComponent<SwimmerController>();
                 var light = new SerializedObject(interactions.GetComponent<FlashlightController>());
                 var polygons = light.FindProperty("polygonBlockers");
-                int edgeCount = 0;
+                var kelpZones = new SerializedObject(swimmer).FindProperty("kelpZones");
+                var kelp = Enumerable.Range(0, kelpZones.arraySize)
+                    .Select(i => (PolygonCollider2D)kelpZones.GetArrayElementAtIndex(i).objectReferenceValue)
+                    .ToArray();
+                int edgeCount = kelp.Sum(zone => zone.GetTotalPointCount());
                 for (int i = 0; i < polygons.arraySize; i++)
                 {
                     var p = (PolygonCollider2D)polygons.GetArrayElementAtIndex(i).objectReferenceValue;
-                    FlashlightCheck.Require(!p.name.StartsWith("Chasm"), "Chasms transmit flashlight");
+                    FlashlightCheck.Require(!p.name.StartsWith("Chasm") && !kelp.Contains(p), "Chasms and kelp stay out of the solid shadow list");
                     edgeCount += p.GetTotalPointCount();
                 }
                 FlashlightCheck.Require(edgeCount <= 256 && edgeCount > 0, "Polygon shader capacity");
