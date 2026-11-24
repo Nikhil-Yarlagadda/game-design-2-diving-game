@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-/// <summary>Displays and exports the current run while the game is paused.</summary>
+/// <summary>Displays and exports the current run from the pause menu or ending.</summary>
 public sealed class PlaytestStatsScreen : MonoBehaviour
 {
     private static readonly Color Background = new(.04f, .09f, .13f);
@@ -26,7 +26,7 @@ public sealed class PlaytestStatsScreen : MonoBehaviour
 #endif
     private int view;
 
-    /// <summary>Builds the overlay using the pause menu's EventSystem.</summary>
+    /// <summary>Builds the overlay using the source screen's EventSystem.</summary>
     private void Awake()
     {
         var canvas = Rect(transform, "Stats Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));

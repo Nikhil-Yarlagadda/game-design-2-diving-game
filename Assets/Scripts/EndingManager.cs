@@ -15,8 +15,6 @@ public class EndingManager : MonoBehaviour
         bad.gameObject.SetActive(!recoveredSample);
     }
 
-    public void onClicked()
-    {
-        SceneChanger.ChangeScene("Title Screen");
-    }
+    /// <summary>Shows the completed run's statistics over the ending.</summary>
+    public void ViewStatistics() => PauseManager.OpenStats();
 }

@@ -11,10 +11,11 @@ public class PauseManager : MonoBehaviour
 {
     private const string MenuScene = "Pause Screen";
     private const string StatsScene = "Playtest Stats";
+    private const string EndingScene = "Ending";
 
     public static bool isPaused { get; private set; }
     public static bool BlocksInput => isPaused || Time.frameCount == inputFrame;
-    private static SuspendedUi gameplayUi, menuUi;
+    private static SuspendedUi gameplayUi, statsSourceUi;
     private static AsyncOperation sceneOperation;
     private static float previousTimeScale = 1f;
     private static int inputFrame = -1;
@@ -22,9 +23,9 @@ public class PauseManager : MonoBehaviour
     /// <summary>Restores UI and clears pause state when a new game starts.</summary>
     public static void ResetState()
     {
-        menuUi?.Restore();
+        statsSourceUi?.Restore();
         gameplayUi?.Restore();
-        menuUi = gameplayUi = null;
+        statsSourceUi = gameplayUi = null;
         sceneOperation = null;
         previousTimeScale = 1f;
         inputFrame = -1;
@@ -64,17 +65,20 @@ public class PauseManager : MonoBehaviour
         if (isPaused)
         {
             if (gameObject.scene.name != MenuScene) return;
-            if (menuUi != null) CloseStats();
+            if (statsSourceUi != null) CloseStats();
             else Resume();
         }
         else if (gameObject.scene == SceneManager.GetActiveScene() && gameObject.scene.name != MenuScene)
-            Pause();
+        {
+            if (statsSourceUi != null) CloseStats();
+            else Pause();
+        }
     }
 
     /// <summary>Pauses the current game without unloading its scene or modals.</summary>
     public static void Pause()
     {
-        if (isPaused || sceneOperation != null || SceneChanger.IsTransitioning ||
+        if (isPaused || statsSourceUi != null || sceneOperation != null || SceneChanger.IsTransitioning ||
             InventoryButton.IsLoading || !CanLoad(MenuScene)) return;
         inputFrame = Time.frameCount;
         previousTimeScale = Time.timeScale;
@@ -88,34 +92,36 @@ public class PauseManager : MonoBehaviour
         else sceneOperation.completed += _ => sceneOperation = null;
     }
 
-    /// <summary>Opens the stats overlay using the pause menu's input system.</summary>
+    /// <summary>Opens the stats overlay using the pause menu or ending screen's input system.</summary>
     public static void OpenStats()
     {
-        if (!isPaused || sceneOperation != null || menuUi != null || !CanLoad(StatsScene)) return;
+        if (sceneOperation != null || statsSourceUi != null || SceneChanger.IsTransitioning) return;
+        Scene source = isPaused ? SceneManager.GetSceneByName(MenuScene) : SceneManager.GetActiveScene();
+        if (!source.isLoaded || (!isPaused && source.name != EndingScene) || !CanLoad(StatsScene)) return;
         inputFrame = Time.frameCount;
-        menuUi = new SuspendedUi();
+        statsSourceUi = new SuspendedUi();
         EventSystem.current?.SetSelectedGameObject(null);
-        menuUi.Suspend(SceneManager.GetSceneByName(MenuScene), hideCanvases: true);
+        statsSourceUi.Suspend(source, hideCanvases: true);
         sceneOperation = SceneManager.LoadSceneAsync(StatsScene, LoadSceneMode.Additive);
-        if (sceneOperation == null) RestoreMenu();
+        if (sceneOperation == null) RestoreStatsSource();
         else sceneOperation.completed += _ => sceneOperation = null;
     }
 
-    /// <summary>Closes stats and leaves the game paused.</summary>
+    /// <summary>Closes stats and returns to the screen that opened it.</summary>
     public static void CloseStats()
     {
-        if (sceneOperation != null || menuUi == null) return;
+        if (sceneOperation != null || statsSourceUi == null) return;
         inputFrame = Time.frameCount;
         EventSystem.current?.SetSelectedGameObject(null);
         sceneOperation = SceneManager.UnloadSceneAsync(StatsScene);
-        if (sceneOperation == null) RestoreMenu();
-        else sceneOperation.completed += _ => RestoreMenu();
+        if (sceneOperation == null) RestoreStatsSource();
+        else sceneOperation.completed += _ => RestoreStatsSource();
     }
 
     /// <summary>Unloads the pause menu and resumes the retained scene.</summary>
     public static void Resume()
     {
-        if (!isPaused || sceneOperation != null || menuUi != null) return;
+        if (!isPaused || sceneOperation != null || statsSourceUi != null) return;
         inputFrame = Time.frameCount;
         sceneOperation = SceneManager.UnloadSceneAsync(MenuScene);
         if (sceneOperation == null) RestoreGameplay();
@@ -130,11 +136,11 @@ public class PauseManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>Restores the pause menu after the stats overlay closes.</summary>
-    private static void RestoreMenu()
+    /// <summary>Restores the source screen after the stats overlay closes.</summary>
+    private static void RestoreStatsSource()
     {
-        menuUi.Restore();
-        menuUi = null;
+        statsSourceUi.Restore();
+        statsSourceUi = null;
         sceneOperation = null;
         inputFrame = Time.frameCount;
     }
