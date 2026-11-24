@@ -9461,7 +9461,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.SwimmerController
   maxSpeed: 2.75
-  acceleration: 1.5
+  acceleration: 1.8
   deceleration: 2.5
   kelpZones:
   - {fileID: 352834226}
@@ -9624,7 +9624,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3e42caf63654fc2ac5d8cecf6725c02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.HydroxTank
-  maxCapacity: 180
+  maxCapacity: 240
   consumptionRate: 1
 --- !u!114 &570103292
 MonoBehaviour:
@@ -15083,6 +15083,7 @@ MonoBehaviour:
   trailRate: 7
   breathingInterval: 2.5
   suspendedCount: 120
+  kelpOpacity: 0.35
 --- !u!114 &990000002
 MonoBehaviour:
   m_ObjectHideFlags: 0

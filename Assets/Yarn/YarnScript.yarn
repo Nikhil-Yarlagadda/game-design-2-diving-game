@@ -95,7 +95,7 @@ title: ApprenticeDiver13
 Player: Have you seen Jonah?
 Cole: Yeah…
 Player: Where!?
-Cole: Outside… and far…
+Cole: Out on the seafloor… Way southwest of here, past that huge chasm…
 Player: You mean he swam away? How can that be possible?
 Cole: It was messed up, dude… these crazy mushrooms growing out of him… he was stuck in the ground like a plant, standing up straight like the mushrooms were holding him up…
 Cole: And how did he get so far away!? You can’t just swim around down here without being covered head to toe in tanks and equipment. What the hell is going on!?
@@ -193,7 +193,7 @@ title: ApprenticeDiver17
             -> No
                 <<medicine_choice "Cole" false>>
         <<endif>>
-        <<if has_item("Camera Module")>>
+        <<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
             Photograph with Camera Module?
             -> Yes
                 <<add_item "Photograph of Infected Crewmate">>
@@ -260,7 +260,7 @@ title: ApprenticeDiver19
             -> No
                 <<medicine_choice "Cole" false>>
         <<endif>>
-        <<if has_item("Camera Module")>>
+        <<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
             Photograph with Camera Module?
             -> Yes
                 <<add_item "Photograph of Infected Crewmate">>
@@ -476,7 +476,7 @@ title: Medic13
         -> No
             <<medicine_choice "Kirsten" false>>
     <<endif>>
-    <<if has_item("Camera Module")>>
+    <<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
         Photograph with Camera Module?
         -> Yes
             <<add_item "Photograph of Infected Crewmate">>
@@ -516,7 +516,7 @@ title: Medic15
             -> No
                 <<medicine_choice "Kirsten" false>>
         <<endif>>
-        <<if has_item("Camera Module")>>
+        <<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
             Photograph with Camera Module?
             -> Yes
                 <<add_item "Photograph of Infected Crewmate">>
@@ -723,7 +723,7 @@ Jonah: Maybe one day you’ll hear it too.
         <<medicine_choice "Jonah" false>>
 <<endif>>
 
-<<if has_item("Camera Module")>>
+<<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
     Photograph with Camera Module?
     -> Yes
         <<add_item "Photograph of Infected Crewmate">>
@@ -756,7 +756,7 @@ Jonah: …
         <<medicine_choice "Jonah" false>>
 <<endif>>
 
-<<if has_item("Camera Module")>>
+<<if has_item("Camera Module") and not has_item("Photograph of Infected Crewmate")>>
     Photograph with Camera Module?
     -> Yes
         <<add_item "Photograph of Infected Crewmate">>

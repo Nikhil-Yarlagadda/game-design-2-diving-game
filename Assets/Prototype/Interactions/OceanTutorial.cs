@@ -8,6 +8,8 @@ namespace DivingPrototype
         public enum TutorialMode { None, Mining, Delivery, Depletion, Markers, Inventory, Deposit }
         public TutorialMode Mode { get; private set; }
         public bool IsVisible => Text.Length > 0;
+        public bool AwaitingAcknowledgement { get; private set; }
+        internal bool BlocksGameplayInput => AwaitingAcknowledgement || Time.frameCount <= acknowledgedFrame;
         public const string DeliveryMessage = "The Company has dropped your purchased items into the waters surrounding the submarine. Your radar will point to their locations.\n<b>Collect your items today, or else they will be swept away by the currents.</b>";
         public const string DepletionMessage = "Mining machines will slowly deplete their mining spots over the course of several days. You must re-prospect a spot to see if it has been depleted yet.\n<b>Prospect your most frequently used mining spots once in a while, or you may be mining less tellurium than you think.</b>";
         private const string MarkersMessage = "Press SPACE to toggle markers that will guide you to all the mining spots you’ve prospected. Press SPACE again to toggle them off.";
@@ -22,6 +24,8 @@ namespace DivingPrototype
         private bool markersWereEnabled, inventoryOpened;
         private OceanInteractions ocean;
         private Vector2 startPosition;
+        private float? timeScaleBeforePrompt;
+        private int acknowledgedFrame = -1;
         public string Text => Mode switch
         {
             TutorialMode.Mining when Stage >= 1 && Stage <= Messages.Length => Messages[Stage - 1],
@@ -60,15 +64,14 @@ namespace DivingPrototype
             ocean.PositiveRetrieval -= OnRetrieved;
             ocean.DeliveryCollected -= OnDeliveryCollected;
             ocean.ExcursionEnded -= EndExcursion;
+            EndExcursion();
         }
         public void BeginExcursion()
         {
             if (ocean == null) ocean = GetComponent<OceanInteractions>();
+            EndExcursion();
             discovered = placed = produced = retrieved = placedAgain = false;
             inventoryOpened = false;
-            Stage = 0;
-            Mode = TutorialMode.None;
-            VisibleSeconds = 0;
             startPosition = transform.position;
             if (GameState.days == 2)
             {
@@ -81,12 +84,54 @@ namespace DivingPrototype
                 GameState.deliveryTutorialShown = true;
             }
             else if (GameState.days == 4) BeginDayFour();
+            PauseForNewBlock();
         }
-        public void EndExcursion() { Mode = TutorialMode.None; Stage = 0; VisibleSeconds = 0; }
+
+        /// <summary>Clears tutorial progress and releases any pause owned by the current block.</summary>
+        public void EndExcursion()
+        {
+            Mode = TutorialMode.None;
+            Stage = 0;
+            VisibleSeconds = 0;
+            AwaitingAcknowledgement = false;
+            acknowledgedFrame = -1;
+            ReleasePromptPause();
+        }
+
+        /// <summary>Confirms the visible block and consumes the input for the rest of the frame.</summary>
+        public void Acknowledge()
+        {
+            if (!AwaitingAcknowledgement || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
+            AwaitingAcknowledgement = false;
+            acknowledgedFrame = Time.frameCount;
+            ReleasePromptPause();
+        }
+
+        /// <summary>Pauses simulation while the player reads a newly visible tutorial block.</summary>
+        private void PauseForNewBlock()
+        {
+            if (!IsVisible) return;
+            AwaitingAcknowledgement = true;
+            if (!Application.isPlaying) return;
+            timeScaleBeforePrompt = Time.timeScale;
+            Time.timeScale = 0f;
+        }
+
+        /// <summary>Restores the simulation scale, including when the Escape menu is above the prompt.</summary>
+        private void ReleasePromptPause()
+        {
+            if (timeScaleBeforePrompt is not float previousScale) return;
+            timeScaleBeforePrompt = null;
+            PauseManager.RestoreGameplayTimeScale(previousScale);
+        }
         public void OnDeliveryCollected(int remaining)
         {
             if (Mode != TutorialMode.Delivery || remaining != 0) return;
-            if (GameState.days == 4) BeginDayFour();
+            if (GameState.days == 4)
+            {
+                BeginDayFour();
+                PauseForNewBlock();
+            }
             else EndExcursion();
         }
 
@@ -109,7 +154,9 @@ namespace DivingPrototype
         public void OnRetrieved() { if (Stage > 0) retrieved = true; }
         private void Update()
         {
-            if (!IsVisible || ocean.LoadoutOpen || ocean.InsideSubmarine || ocean.IsTransitioning || ocean.Hydrox.IsDepleted) return;
+            if (!IsVisible || BlocksGameplayInput || PauseManager.BlocksInput || SceneChanger.IsTransitioning
+                || ocean.LoadoutOpen || ocean.InsideSubmarine || ocean.IsTransitioning || ocean.ReturnConfirmationOpen
+                || ocean.Hydrox.IsDepleted) return;
             if (Mode == TutorialMode.Mining)
                 // A machine deployed on an earlier excursion can already contain ore.
                 foreach (var target in ocean.targets)
@@ -118,7 +165,7 @@ namespace DivingPrototype
         }
         public void Advance(float seconds)
         {
-            if (seconds < 0 || !IsVisible || Mode == TutorialMode.Delivery) return;
+            if (seconds < 0 || !IsVisible || AwaitingAcknowledgement || Mode == TutorialMode.Delivery) return;
             if (ocean.panel != null && ocean.panel.activeSelf)
             {
                 if (Mode == TutorialMode.Inventory)
@@ -136,11 +183,16 @@ namespace DivingPrototype
                 return;
             }
 
-            bool next = Stage == 1 ? Vector2.Distance(startPosition, transform.position) >= 1f
+            bool next = Stage == 1 ? Vector2.Distance(startPosition, transform.position) >= 3f
                 : Stage == 2 ? discovered : Stage == 3 ? placed : Stage == 4 ? produced
                 : Stage == 5 ? retrieved || VisibleSeconds >= ReadingSeconds
                 : Stage == 6 ? placedAgain || VisibleSeconds >= ReadingSeconds : VisibleSeconds >= ReadingSeconds;
-            if (next) { Stage++; VisibleSeconds = 0; }
+            if (next)
+            {
+                Stage++;
+                VisibleSeconds = 0;
+                PauseForNewBlock();
+            }
         }
 
         /// <summary>Advances day-four guidance using elapsed reading time and the actual marker and inventory states.</summary>
@@ -169,6 +221,7 @@ namespace DivingPrototype
             if (next == Mode) return;
             Mode = next;
             VisibleSeconds = 0;
+            PauseForNewBlock();
         }
     }
 }

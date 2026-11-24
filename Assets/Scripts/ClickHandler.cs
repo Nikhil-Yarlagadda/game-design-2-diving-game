@@ -27,13 +27,19 @@ public class ClickHandler : MonoBehaviour
         if (PauseManager.BlocksInput || InventoryButton.IsOpen || SceneChanger.IsTransitioning || Mouse.current == null ||
             (roomDialogue != null && roomDialogue.BlocksRoomInput)) return;
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-        Vector2 mouseWorldPos = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+        var camera = Camera.main;
+        if (!camera.pixelRect.Contains(mouseScreenPos))
+        {
+            SetHoveredRoom(null);
+            return;
+        }
+        Vector2 mouseWorldPos = camera.ScreenToWorldPoint(mouseScreenPos);
 
         UpdateHover(mouseWorldPos);
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
-            if (IsOverUiControl(mouseScreenPos)) return;
+            if (IsOverUiControl(mouseScreenPos, pointerHits)) return;
 
             Debug.Log("Click at world pos: " + mouseWorldPos);
 
@@ -58,7 +64,7 @@ public class ClickHandler : MonoBehaviour
     }
 
     /// <summary>Checks whether the UI target at the current screen position owns the mouse press.</summary>
-    private bool IsOverUiControl(Vector2 screenPosition)
+    internal static bool IsOverUiControl(Vector2 screenPosition, List<RaycastResult> pointerHits)
     {
         EventSystem eventSystem = EventSystem.current;
         if (eventSystem == null) return false;
@@ -77,17 +83,16 @@ public class ClickHandler : MonoBehaviour
 
     void UpdateHover(Vector2 mouseWorldPos)
     {
-        Room newHover = null;
-
         RaycastHit2D hit = Physics2D.Raycast(mouseWorldPos, Vector2.zero, Mathf.Infinity, roomLayer);
-        if (hit.collider != null)
-            newHover = hit.collider.GetComponentInParent<Room>();
+        SetHoveredRoom(hit.collider != null ? hit.collider.GetComponentInParent<Room>() : null);
+    }
 
-        if (newHover != hoveredRoom)
-        {
-            if (hoveredRoom != null) hoveredRoom.SetHovered(false);
-            if (newHover != null) newHover.SetHovered(true);
-            hoveredRoom = newHover;
-        }
+    /// <summary>Transfers the highlight from the previous room to the current room, if any.</summary>
+    private void SetHoveredRoom(Room room)
+    {
+        if (room == hoveredRoom) return;
+        if (hoveredRoom != null) hoveredRoom.SetHovered(false);
+        if (room != null) room.SetHovered(true);
+        hoveredRoom = room;
     }
 }

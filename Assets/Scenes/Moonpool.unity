@@ -1139,6 +1139,7 @@ GameObject:
   - component: {fileID: 969622936}
   - component: {fileID: 969622937}
   - component: {fileID: 969622938}
+  - component: {fileID: 6583106012238742011}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1786,8 +1787,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    - target: {fileID: 2958262985454349548, guid: 52571f68872914e24837210513edea1d, type: 3}
+      propertyPath: eventHandlers.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 8877867826578261527, guid: 52571f68872914e24837210513edea1d, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 2958262986393358530, guid: 52571f68872914e24837210513edea1d, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7262066351540048079, guid: 52571f68872914e24837210513edea1d, type: 3}
@@ -1861,6 +1868,21 @@ MonoBehaviour:
   nextLineKeyCode: 27
   hurryUpOptionsKeyCode: 32
   cancelDialogueKeyCode: 0
+--- !u!114 &6583106012238742011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969622932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 830f7a0be2fa4cc6a73aed044a2d19a3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::InteriorView
+  widthScaledCanvases:
+  - {fileID: 574710980}
+  - {fileID: 879351794}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

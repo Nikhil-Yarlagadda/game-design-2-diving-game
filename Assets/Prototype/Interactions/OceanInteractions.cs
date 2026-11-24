@@ -35,6 +35,8 @@ namespace DivingPrototype
         public bool ReturnConfirmationOpen { get; private set; }
         public bool DepositOpen { get; private set; }
         public bool SafetyOfferOpen { get; private set; }
+        public bool GearReminderOpen => LoadoutOpen && GameState.pendingGearReminder.Count > 0;
+        internal bool TutorialBlocksInput => tutorial != null && tutorial.BlocksGameplayInput;
         public const int SafetyMachineCount = 3;
         public int SafetyOrderPrice => SafetyMachineCount * ItemCatalog.Find(ItemCatalog.Machine).Price;
         public int SafetyOrderBalance => Mathf.Max(GameState.MinimumCredits, GameState.credits - SafetyOrderPrice);
@@ -81,16 +83,18 @@ namespace DivingPrototype
         private bool transitioning, sceneUnavailable;
         private HydroxTank hydrox;
         private bool CanSwim => Time.timeScale > 0f && !PauseManager.BlocksInput && !SceneChanger.IsTransitioning
-            && !InsideSubmarine && !transitioning && !ReturnConfirmationOpen && !LoadoutOpen && !Incapacitated;
+            && !InsideSubmarine && !transitioning && !ReturnConfirmationOpen && !LoadoutOpen && !Incapacitated && !TutorialBlocksInput;
         private bool CanActInOcean => CanSwim && !Hydrox.IsDepleted && !IsProspecting;
         private const float GraceSeconds = 15f, StimulantSeconds = 20f;
         private float breathlessSeconds, incapacitatedSeconds, stimulantEnds;
         private readonly Dictionary<string, int> carried = new();
         private readonly Dictionary<string, int> deposited = new();
+        private readonly Dictionary<string, int> collectedPurchasedGear = new();
         private int inventorySlots = 48;
         private float timeScaleBeforeReturn;
         private int resumeInputFrame = -1;
         private SwimmerController swimmer;
+        private OceanTutorial tutorial;
         private FlashlightController flashlight;
         private bool EquippedCameraCarried => Loadout.Camera && CarriedCount(ItemCatalog.Camera) > 0;
         private Rigidbody2D body;
@@ -114,6 +118,7 @@ namespace DivingPrototype
                 tutorialStartOrders = new Dictionary<string, int>(GameState.itemsBought);
             }
             swimmer = GetComponent<SwimmerController>();
+            tutorial = GetComponent<OceanTutorial>();
             body = GetComponent<Rigidbody2D>();
             flashlight = GetComponent<FlashlightController>();
             var inventory = FindAnyObjectByType<ExcursionInventory>();
@@ -177,9 +182,31 @@ namespace DivingPrototype
         public bool LoadoutFits => Slots(ItemCatalog.Machine, Loadout.Machines)
             + Slots(ItemCatalog.Stimulant, Loadout.Stimulants) + (Loadout.Flippers ? 1 : 0) + (Loadout.Camera ? 1 : 0) <= inventorySlots;
 
+        /// <summary>Dismisses the pending gear reminder and optionally packs the items it lists.</summary>
+        public void ResolveGearReminder(bool equip)
+        {
+            if (!GearReminderOpen || SafetyOfferOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return;
+            if (equip)
+            {
+                var pick = Loadout;
+                if (GameState.pendingGearReminder.ContainsKey(ItemCatalog.Machine))
+                    pick.Machines = ItemCatalog.Count(GameState.inventory, ItemCatalog.Machine);
+                if (GameState.pendingGearReminder.ContainsKey(ItemCatalog.Stimulant))
+                    pick.Stimulants = ItemCatalog.Count(GameState.inventory, ItemCatalog.Stimulant);
+                pick.Flippers |= GameState.pendingGearReminder.ContainsKey(ItemCatalog.Flippers);
+                pick.Camera |= GameState.pendingGearReminder.ContainsKey(ItemCatalog.Camera);
+                var newestTank = GameState.pendingGearReminder.Keys.Select(ItemCatalog.Find)
+                    .Where(item => item.TankSeconds > 0 && ItemCatalog.Count(GameState.inventory, item.Id) > 0)
+                    .OrderByDescending(item => item.TankSeconds).FirstOrDefault();
+                if (newestTank != null) pick.Tank = newestTank.Id;
+                SetLoadout(pick);
+            }
+            GameState.pendingGearReminder.Clear();
+        }
+
         public bool BeginDive()
         {
-            if (!LoadoutOpen || SafetyOfferOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            if (!LoadoutOpen || SafetyOfferOpen || GearReminderOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             SetLoadout(Loadout);
             if (!LoadoutFits) return false;
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
@@ -193,7 +220,7 @@ namespace DivingPrototype
             Hydrox.Equip(ItemCatalog.Find(Loadout.Tank).TankSeconds);
             LoadoutOpen = false;
             GameState.Playtest.BeginDive(Loadout);
-            GetComponent<OceanTutorial>()?.BeginExcursion();
+            tutorial?.BeginExcursion();
             RecordCarriedOre();
             swimmer.SetMovementLocked(false);
             UpdateSpeed();
@@ -387,7 +414,8 @@ namespace DivingPrototype
 
         private void Update()
         {
-            if (Time.timeScale == 0f || PauseManager.BlocksInput || ReturnConfirmationOpen || Time.frameCount <= resumeInputFrame) return;
+            if (Time.timeScale == 0f || PauseManager.BlocksInput || ReturnConfirmationOpen || TutorialBlocksInput
+                || Time.frameCount <= resumeInputFrame) return;
             if (panel != null && panel.activeSelf) { CancelProspect(); return; }
             if (Time.time > messageUntil) Message = "";
             if (transitioning || LoadoutOpen || InsideSubmarine) return;
@@ -599,6 +627,8 @@ namespace DivingPrototype
                 {
                     if (GameState.Playtest.ActiveDive is { } attempt) attempt.deliveriesCollected++;
                     RemainingDeliveryCount--;
+                    if (item.TankSeconds > 0 || item.Id is ItemCatalog.Machine or ItemCatalog.Stimulant or ItemCatalog.Flippers or ItemCatalog.Camera)
+                        ItemCatalog.ChangeCount(collectedPurchasedGear, item.Id, Closest.itemCount);
                     DeliveryCollected?.Invoke(RemainingDeliveryCount);
                 }
                 Notify(item.Name + " collected.");
@@ -651,7 +681,7 @@ namespace DivingPrototype
             if (!corpse && !GameState.passkeyHintSeen) return "You see something in the abyss.";
             if (!corpse && !EquippedCameraCarried) return "Equip a camera module to photograph the Eye.";
             string id = corpse ? ItemCatalog.Fungus : ItemCatalog.EyePhoto;
-            if (CarriedCount(id) > 0 || ItemCatalog.Count(GameState.inventory, id) > 0)
+            if (RecoveredCount(id) > 0 || ItemCatalog.Count(GameState.inventory, id) > 0)
                 return "You already collected this.";
             return null;
         }
@@ -736,8 +766,10 @@ namespace DivingPrototype
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Stimulant,
                     -Mathf.RoundToInt(CarriedCount(ItemCatalog.Stimulant) * Random.Range(.2f, .5f)));
             }
-            bool recoveredFungus = GameState.dayFgfsCollected < 0 && CarriedCount(ItemCatalog.Fungus) > 0;
+            bool recoveredFungus = GameState.dayFgfsCollected < 0 && RecoveredCount(ItemCatalog.Fungus) > 0;
             StoreCarriedItems();
+            foreach (var pair in collectedPurchasedGear)
+                ItemCatalog.ChangeCount(GameState.pendingGearReminder, pair.Key, pair.Value);
             if (recoveredFungus) GameState.Playtest.Milestone("Fungus recovered");
             foreach (var item in deliveries)
                 if (item != null) item.gameObject.SetActive(false);
@@ -756,26 +788,30 @@ namespace DivingPrototype
         /// <summary>Reconciles the selected equipment with the non-ore items remaining in the excursion bag.</summary>
         private void StoreCarriedItems()
         {
-            StoreCarriedItem(ItemCatalog.Machine, Loadout.Machines);
-            StoreCarriedItem(ItemCatalog.Stimulant, Loadout.Stimulants);
-            StoreCarriedItem(ItemCatalog.Flippers, Loadout.Flippers ? 1 : 0);
-            StoreCarriedItem(ItemCatalog.Camera, Loadout.Camera ? 1 : 0);
-            foreach (var pair in carried)
-                if (pair.Key != ItemCatalog.Ore && pair.Key != ItemCatalog.Machine && pair.Key != ItemCatalog.Stimulant
-                    && pair.Key != ItemCatalog.Flippers && pair.Key != ItemCatalog.Camera)
-                    ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
-            foreach (var pair in deposited)
-                if (pair.Key != ItemCatalog.Ore && pair.Key != ItemCatalog.Machine && pair.Key != ItemCatalog.Stimulant)
-                    ItemCatalog.ChangeCount(GameState.inventory, pair.Key, pair.Value);
-            if (CarriedCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
+            var storedItems = carried.Keys.Concat(deposited.Keys)
+                .Concat(new[] { ItemCatalog.Machine, ItemCatalog.Stimulant, ItemCatalog.Flippers, ItemCatalog.Camera })
+                .Distinct();
+            foreach (string itemId in storedItems)
+            {
+                if (itemId == ItemCatalog.Ore) continue;
+                int packed = itemId switch
+                {
+                    ItemCatalog.Machine => Loadout.Machines,
+                    ItemCatalog.Stimulant => Loadout.Stimulants,
+                    ItemCatalog.Flippers => Loadout.Flippers ? 1 : 0,
+                    ItemCatalog.Camera => Loadout.Camera ? 1 : 0,
+                    _ => 0
+                };
+                ItemCatalog.ChangeCount(GameState.inventory, itemId, RecoveredCount(itemId) - packed);
+            }
+            if (RecoveredCount(ItemCatalog.Fungus) > 0 && GameState.dayFgfsCollected < 0)
                 GameState.dayFgfsCollected = GameState.days;
-            if (CarriedCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
+            if (RecoveredCount(ItemCatalog.Medicine) > 0) GameState.medicineDelivered = true;
             GameState.lastLoadout = Loadout;
         }
 
-        /// <summary>Applies the net change from the quantity packed to the quantity still carried.</summary>
-        private void StoreCarriedItem(string id, int packed) =>
-            ItemCatalog.ChangeCount(GameState.inventory, id, CarriedCount(id) + ItemCatalog.Count(deposited, id) - packed);
+        /// <summary>Counts the units of a catalog item still carried or secured in the submarine.</summary>
+        private int RecoveredCount(string id) => CarriedCount(id) + ItemCatalog.Count(deposited, id);
 
         /// <summary>Captures the live ore count after the excursion bag changes.</summary>
         private void RecordCarriedOre()
@@ -790,14 +826,21 @@ namespace DivingPrototype
             return true;
         }
 
-        public bool CanDeposit(ItemCatalog.Definition item) => item != null && CarriedCount(item.Id) > 0
-            && (item.Droppable || item.TankSeconds > 0);
+        /// <summary>Returns how many carried units can be deposited, reserving any equipped unit.</summary>
+        public int DepositableCount(ItemCatalog.Definition item)
+        {
+            if (item == null) return 0;
+            // The active tank is represented by the loadout, outside the carried bag.
+            bool reserveCarriedUnit = (item.Id == ItemCatalog.Flippers && Loadout.Flippers)
+                || (item.Id == ItemCatalog.Camera && Loadout.Camera);
+            return Mathf.Max(0, CarriedCount(item.Id) - (reserveCarriedUnit ? 1 : 0));
+        }
 
         public bool DepositItem(string itemName, int count)
         {
             if (!DepositOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             var item = ItemCatalog.Find(itemName);
-            if (!CanDeposit(item) || count < 1 || count > CarriedCount(item.Id)) return false;
+            if (count < 1 || count > DepositableCount(item)) return false;
             ItemCatalog.ChangeCount(carried, item.Id, -count);
             ItemCatalog.ChangeCount(deposited, item.Id, count);
             RecordCarriedOre();
@@ -809,7 +852,7 @@ namespace DivingPrototype
         public bool DropItem(string itemName, int count = 1)
         {
             if (PauseManager.BlocksInput || transitioning || ReturnConfirmationOpen || SceneChanger.IsTransitioning
-                || LoadoutOpen || Incapacitated || InsideSubmarine) return false;
+                || LoadoutOpen || Incapacitated || InsideSubmarine || TutorialBlocksInput) return false;
             var item = ItemCatalog.Find(itemName);
             if (item == null || !item.Droppable || count < 1 || count > CarriedCount(item.Id)) return false;
             
