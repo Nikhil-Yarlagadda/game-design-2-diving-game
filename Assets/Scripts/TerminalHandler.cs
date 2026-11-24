@@ -62,6 +62,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
 
     public void ShopClicked()
     {
+        
         SceneChanger.ChangeScene("Shop");
     }  
 

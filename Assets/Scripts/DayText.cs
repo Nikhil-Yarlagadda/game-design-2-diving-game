@@ -12,7 +12,10 @@ public class DayText : MonoBehaviour
 
     void Update()
     {
-        label.text = "Day: " + GameState.days;
+        if(GameState.days < 10)
+            label.text = "DAY 0" + GameState.days;
+        else
+            label.text = "DAY " + GameState.days;
     }
     public void OnClicked()
     {

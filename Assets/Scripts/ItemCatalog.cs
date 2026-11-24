@@ -73,14 +73,22 @@ public static class ItemCatalog
         else items.Remove(id);
     }
 
-    public static int RemainingStock(Definition item)
+    public static int RemainingStock(Definition item, Dictionary<string, int> cart = null)
     {
         if (item == null || item.Stock == 0) return 0;
         if (item.Id == Medicine && (GameState.days < 7 || GameState.medicineDelivered)) return 0;
+
+        int remaining;
         if (item.DailyStock)
-            return GameState.shopDay == GameState.days
+            remaining = GameState.shopDay == GameState.days
                 ? Math.Max(0, item.Stock - Count(GameState.dailyPurchases, item.Id))
                 : item.Stock;
-        return Math.Max(0, item.Stock - Count(GameState.inventory, item.Id) - Count(GameState.itemsBought, item.Id));
+        else
+            remaining = Math.Max(0, item.Stock - Count(GameState.inventory, item.Id) - Count(GameState.itemsBought, item.Id));
+
+        if (cart != null)
+            remaining = Math.Max(0, remaining - Count(cart, item.Id));
+
+        return remaining;
     }
 }
