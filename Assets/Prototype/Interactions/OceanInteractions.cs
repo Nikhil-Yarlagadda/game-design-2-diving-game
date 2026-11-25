@@ -57,7 +57,14 @@ namespace DivingPrototype
         public bool LoadoutOpen { get; private set; } = true;
         public bool Incapacitated => breathlessSeconds >= GraceSeconds;
         public float BreathingTimeLeft => Mathf.Max(0f, GraceSeconds - breathlessSeconds);
+        /// <summary>True once an incapacitated diver is shown the "Excursion Failed" screen.</summary>
+        public bool FailureScreenOpen { get; private set; }
+        /// <summary>The day-2 tutorial dive restarts instead of ending the day.</summary>
+        public bool FailureOffersRetry => GameState.days == 2;
+        private float timeScaleBeforeFailure = 1f;
         public float StimulantTimeLeft => Mathf.Max(0f, stimulantEnds - Time.time);
+        /// <summary>Remaining share of the stimulant effect (1 just after use, 0 when it can be used again).</summary>
+        public float StimulantCooldownFraction => StimulantTimeLeft / StimulantSeconds;
         public int WeightCapacity => ItemCatalog.Find(Loadout.Tank).WeightCapacity;
         public int CarriedWeight => LoadoutOpen ? LoadoutWeight : ItemCatalog.Find(Loadout.Tank).Weight
             + carried.Sum(pair => ItemCatalog.Find(pair.Key).Weight * pair.Value);
@@ -206,7 +213,7 @@ namespace DivingPrototype
 
         public bool BeginDive()
         {
-            if (!LoadoutOpen || SafetyOfferOpen || GearReminderOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            if (!LoadoutOpen || SafetyOfferOpen || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             SetLoadout(Loadout);
             if (!LoadoutFits) return false;
             if (swimmer == null) swimmer = GetComponent<SwimmerController>();
@@ -219,6 +226,7 @@ namespace DivingPrototype
 #endif
             Hydrox.Equip(ItemCatalog.Find(Loadout.Tank).TankSeconds);
             LoadoutOpen = false;
+            GameState.pendingGearReminder.Clear();
             GameState.Playtest.BeginDive(Loadout);
             tutorial?.BeginExcursion();
             RecordCarriedOre();
@@ -239,7 +247,7 @@ namespace DivingPrototype
             used += Slots(first, CarriedCount(first) + count) - Slots(first, CarriedCount(first));
             if (ore > 0) used += Slots(ItemCatalog.Ore, Tellurium + ore) - Slots(ItemCatalog.Ore, Tellurium);
             if (used <= inventorySlots) return true;
-            Notify("Inventory full. Make room before collecting.");
+            Notify(InventoryFullMessage);
             return false;
         }
 
@@ -433,11 +441,8 @@ namespace DivingPrototype
                 if (Incapacitated)
                 {
                     swimmer.SetMovementLocked(true);
-                    if (!sceneUnavailable && (incapacitatedSeconds += Time.deltaTime) >= 1.5f)
-                    {
-                        if (GameState.days == 2) RetryTutorial();
-                        else EndExcursion(true);
-                    }
+                    if (!sceneUnavailable && !FailureScreenOpen && (incapacitatedSeconds += Time.deltaTime) >= 1.5f)
+                        OpenFailureScreen();
                     return;
                 }
             }
@@ -579,6 +584,12 @@ namespace DivingPrototype
             CancelProspect();
             StopProspectSweep();
             if (ReturnConfirmationOpen) CancelReturn();
+            if (FailureScreenOpen && !transitioning)
+            {
+                // Leaving the scene another way must not keep the whole game frozen.
+                FailureScreenOpen = false;
+                PauseManager.RestoreGameplayTimeScale(timeScaleBeforeFailure); // Keeps an open pause menu's saved scale correct.
+            }
         }
         private void OnDestroy()
         {
@@ -686,6 +697,7 @@ namespace DivingPrototype
             return null;
         }
 
+        public const string InventoryFullMessage = "Inventory full. Make room before collecting.";
         public void Notify(string message) { Message = message; messageUntil = Time.time + 3f; }
 
         public bool RequestEnterSubmarine()
@@ -723,6 +735,30 @@ namespace DivingPrototype
             if (!ReturnConfirmationOpen || DepositOpen || TutorialBlocksReturn || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
             CancelReturn();
             return EndExcursion(false);
+        }
+
+        /// <summary>Freezes the dive behind the "Excursion Failed" screen until the player picks an option.</summary>
+        private void OpenFailureScreen()
+        {
+            FailureScreenOpen = true;
+            timeScaleBeforeFailure = Time.timeScale;
+            Time.timeScale = 0f;
+        }
+
+        /// <summary>
+        /// Leaves the failure screen: day 2 (the tutorial dive) restarts the excursion; other days settle the
+        /// incapacitation penalty and continue to the results. Returns false if the transition could not start.
+        /// </summary>
+        public bool ResolveFailure()
+        {
+            if (!FailureScreenOpen || transitioning || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            // SceneChanger restores the scale captured when the fade starts, so resume normal time first.
+            Time.timeScale = timeScaleBeforeFailure;
+            if (FailureOffersRetry) RetryTutorial();
+            else EndExcursion(true);
+            if (transitioning) return true;
+            Time.timeScale = 0f;
+            return false;
         }
 
         private void RetryTutorial()

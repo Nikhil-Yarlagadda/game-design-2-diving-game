@@ -262,7 +262,7 @@ namespace DivingPrototype
                     require(Mathf.Abs(hud.minimapRoot.rect.width-180)<.01f,"Stable reference minimap size "+size);
                     var barCorners=new Vector3[4];hud.hydroxRoot.GetWorldCorners(barCorners);
                     require(barCorners.All(c=>camera.pixelRect.Contains(RectTransformUtility.WorldToScreenPoint(camera,c))),"Hydrox bar stays inside fitted viewport "+size);
-                    require(Mathf.Abs(hud.hydroxFill.anchorMax.x-ocean.Hydrox.NormalizedFill)<.01f,"Live Hydrox fill tracks remaining capacity "+size);
+                    require(Mathf.Abs(hud.hydroxFill.anchorMax.y-ocean.Hydrox.NormalizedFill)<.01f,"Live Hydrox fill tracks remaining capacity "+size);
                 }
                 PlayModeWindow.SetCustomRenderingResolution(1920,1200,"Ocean Demo Check");await Task.Delay(250);
                 jump(mine.transform.position);
