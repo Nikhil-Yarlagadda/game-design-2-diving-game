@@ -9233,6 +9233,7 @@ GameObject:
   - component: {fileID: 570103292}
   - component: {fileID: 990000001}
   - component: {fileID: 990000002}
+  - component: {fileID: 990000003}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -15084,6 +15085,18 @@ MonoBehaviour:
   corpses:
   - {fileID: 787223}
   - {fileID: 1483562625}
+--- !u!114 &990000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 570103283}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 576fcd2be247bb441af3ce374d5628e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DivingPrototype.OceanGameFeel
 --- !u!1 &990000100
 GameObject:
   m_ObjectHideFlags: 0

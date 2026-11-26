@@ -62,6 +62,7 @@ namespace DivingPrototype
         /// <summary>The day-2 tutorial dive restarts instead of ending the day.</summary>
         public bool FailureOffersRetry => GameState.days == 2;
         private float timeScaleBeforeFailure = 1f;
+        public float BreathlessGraceSeconds => GraceSeconds;
         public float StimulantTimeLeft => Mathf.Max(0f, stimulantEnds - Time.time);
         /// <summary>Remaining share of the stimulant effect (1 just after use, 0 when it can be used again).</summary>
         public float StimulantCooldownFraction => StimulantTimeLeft / StimulantSeconds;
@@ -79,6 +80,18 @@ namespace DivingPrototype
         public event System.Action<int> ScanCompleted;
         public event System.Action MachinePlaced, PositiveRetrieval, ExcursionEnded;
         public event System.Action<OceanTarget> OreProduced;
+        /// <summary>Raised after a machine is picked up, with its spot and the tellurium it yielded.</summary>
+        public event System.Action<OceanTarget, int> MachineRetrieved;
+        /// <summary>Raised when the prospect sweep reveals a mining spot.</summary>
+        public event System.Action<OceanTarget> SpotRevealed;
+        /// <summary>Raised after a wreck is salvaged, with its spot and the tellurium recovered.</summary>
+        public event System.Action<OceanTarget, int> WreckSalvaged;
+        /// <summary>Raised after a collected item is fully processed, with its pose and pickup snapshot.</summary>
+        public event System.Action<Vector3, int, string, bool> ItemCollected;
+        /// <summary>Raised after a quest sample is collected; the flag is true for the Eye photograph.</summary>
+        public event System.Action<OceanTarget, string, bool> QuestItemCollected;
+        /// <summary>Raised when a pickup is rejected because the bag is full, with the target position.</summary>
+        public event System.Action<Vector3> CarryBlocked;
         private float scanStarted;
         private const float ProspectSweepDuration = .7f;
         private readonly List<(OceanTarget target, float distance)> pendingScanHits = new();
@@ -248,6 +261,7 @@ namespace DivingPrototype
             if (ore > 0) used += Slots(ItemCatalog.Ore, Tellurium + ore) - Slots(ItemCatalog.Ore, Tellurium);
             if (used <= inventorySlots) return true;
             Notify(InventoryFullMessage);
+            CarryBlocked?.Invoke(Closest != null ? Closest.transform.position : transform.position);
             return false;
         }
 
@@ -564,6 +578,7 @@ namespace DivingPrototype
                 if (!target.IsProspected && GameState.Playtest.ActiveDive is { } attempt) attempt.spotsRevealed++;
                 target.Reveal(now);
                 sweepHits++;
+                SpotRevealed?.Invoke(target);
             }
 
             if (progress < 1f) return;
@@ -628,9 +643,11 @@ namespace DivingPrototype
                 var item = ItemCatalog.Find(Closest.itemName);
                 if (item == null || Closest.itemCount < 1 || (item.InteriorOnly && item.Id != ItemCatalog.Medicine)) return;
                 if (!CanCarry(item.Id, Closest.itemCount)) return;
+                Vector3 position = Closest.transform.position;
+                int count = Closest.itemCount;
                 bool isDelivery = deliveries.Remove(Closest);
                 ItemsCollected++;
-                ItemCatalog.ChangeCount(carried, item.Id, Closest.itemCount);
+                ItemCatalog.ChangeCount(carried, item.Id, count);
                 if (item.Id == ItemCatalog.Medicine) GameState.Playtest.Milestone("Medicine picked up");
                 UpdateSpeed();
                 Closest.gameObject.SetActive(false);
@@ -643,6 +660,7 @@ namespace DivingPrototype
                     DeliveryCollected?.Invoke(RemainingDeliveryCount);
                 }
                 Notify(item.Name + " collected.");
+                ItemCollected?.Invoke(position, count, item.Name, isDelivery);
             }
             else if (Closest.HasWreck)
             {
@@ -653,6 +671,7 @@ namespace DivingPrototype
                 if (GameState.Playtest.ActiveDive is { } attempt) attempt.salvaged += ore;
                 UpdateSpeed();
                 Notify($"Wreck salvaged. +{ore} tellurium.");
+                WreckSalvaged?.Invoke(Closest, ore);
             }
             else if (Closest.kind is OceanTarget.TargetKind.Corpse or OceanTarget.TargetKind.AbyssEye)
             {
@@ -668,6 +687,7 @@ namespace DivingPrototype
                 GameState.Playtest.Milestone(id == ItemCatalog.Fungus ? "Fungus picked up" : "Eye photo captured");
                 UpdateSpeed();
                 Notify(id == ItemCatalog.Fungus ? "Fungus sample collected." : "Photograph taken.");
+                QuestItemCollected?.Invoke(Closest, ItemCatalog.Find(id).Name, id == ItemCatalog.EyePhoto);
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot && Closest.HasMachine)
             {
@@ -678,6 +698,7 @@ namespace DivingPrototype
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Machine, 1);
                 UpdateSpeed();
                 if (amount > 0) PositiveRetrieval?.Invoke();
+                MachineRetrieved?.Invoke(Closest, amount);
                 Notify("Machine retrieved. +" + amount + " tellurium.");
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
