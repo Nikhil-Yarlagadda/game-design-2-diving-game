@@ -84,14 +84,10 @@ namespace DivingPrototype
         public event System.Action<OceanTarget, int> MachineRetrieved;
         /// <summary>Raised when the prospect sweep reveals a mining spot.</summary>
         public event System.Action<OceanTarget> SpotRevealed;
-        /// <summary>Raised after a wreck is salvaged, with its spot and the tellurium recovered.</summary>
-        public event System.Action<OceanTarget, int> WreckSalvaged;
         /// <summary>Raised after a collected item is fully processed, with its pose and pickup snapshot.</summary>
         public event System.Action<Vector3, int, string, bool> ItemCollected;
         /// <summary>Raised after a quest sample is collected; the flag is true for the Eye photograph.</summary>
         public event System.Action<OceanTarget, string, bool> QuestItemCollected;
-        /// <summary>Raised when a pickup is rejected because the bag is full, with the target position.</summary>
-        public event System.Action<Vector3> CarryBlocked;
         private float scanStarted;
         private const float ProspectSweepDuration = .7f;
         private readonly List<(OceanTarget target, float distance)> pendingScanHits = new();
@@ -261,7 +257,6 @@ namespace DivingPrototype
             if (ore > 0) used += Slots(ItemCatalog.Ore, Tellurium + ore) - Slots(ItemCatalog.Ore, Tellurium);
             if (used <= inventorySlots) return true;
             Notify(InventoryFullMessage);
-            CarryBlocked?.Invoke(Closest != null ? Closest.transform.position : transform.position);
             return false;
         }
 
@@ -671,7 +666,6 @@ namespace DivingPrototype
                 if (GameState.Playtest.ActiveDive is { } attempt) attempt.salvaged += ore;
                 UpdateSpeed();
                 Notify($"Wreck salvaged. +{ore} tellurium.");
-                WreckSalvaged?.Invoke(Closest, ore);
             }
             else if (Closest.kind is OceanTarget.TargetKind.Corpse or OceanTarget.TargetKind.AbyssEye)
             {

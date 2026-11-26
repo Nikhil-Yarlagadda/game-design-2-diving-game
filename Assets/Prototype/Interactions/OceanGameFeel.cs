@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -10,9 +9,9 @@ namespace DivingPrototype
 {
     /// <summary>
     /// Experimental "game feel" layer for excursions. It only listens to gameplay events and adds
-    /// feedback (camera shake, drop/squash, floating numbers, prospect/item/wreck flourishes, a
-    /// photo flash, an out-of-hydrox heartbeat), so it never changes gameplay rules. Press F8 to
-    /// toggle it for before/after comparisons.
+    /// world feedback (camera shake and thud, metal drop, sediment/bubbles, prospect punch, a weak
+    /// photo flash, and an out-of-hydrox heartbeat), so it never changes gameplay rules.
+    /// Press F8 to toggle it for before/after comparisons.
     ///
     /// Pattern for adding new effects:
     /// 1. Add a [Serializable] settings class with a public `enabled` bool and Inspector tuning fields.
@@ -48,7 +47,7 @@ namespace DivingPrototype
         [Serializable]
         public sealed class PlaceMachineSettings
         {
-            [Tooltip("Enable heavy drop, impact squash, sediment ring, bubble burst, and camera trauma on machine placement.")]
+            [Tooltip("Enable the ease-in drop, sediment ring, bubble burst, and directional camera thud on machine placement.")]
             public bool enabled = true;
 
             [Header("Drop")]
@@ -57,16 +56,6 @@ namespace DivingPrototype
 
             [Min(0f), Tooltip("Starting height above the spot before dropping (world units).")]
             public float fallHeight = 1.2f;
-
-            [Range(0f, 0.4f), Tooltip("Optional vertical stretch while falling (0 = rigid heavy metal).")]
-            public float fallStretch = 0f;
-
-            [Header("Impact squash")]
-            [Range(0f, 0.4f), Tooltip("Single landing squash magnitude; recovers monotonically with ease-out and never overshoots.")]
-            public float squashAmount = 0.1f;
-
-            [Min(0f), Tooltip("Time to settle monotonically from impact squash back to rest scale (seconds).")]
-            public float squashDuration = 0.2f;
 
             [Header("Sediment ring")]
             [Range(0, 80), Tooltip("Number of sand particles kicked out sideways on impact.")]
@@ -99,47 +88,23 @@ namespace DivingPrototype
             [Tooltip("Color of the seabed sediment puff.")]
             public Color sedimentColor = new Color(0.78f, 0.72f, 0.6f, 0.85f);
 
-            [Header("Bubbles & camera")]
+            [Header("Bubbles")]
             [Range(0, 64), Tooltip("Number of bubbles released when the machine hits the seabed.")]
             public int bubbleCount = 18;
 
-            [Range(0f, 1f), Tooltip("Camera trauma added on landing impact.")]
-            public float trauma = 0.5f;
+            [Header("Camera thud")]
+            [Min(0f), Tooltip("Downward world-space camera offset at the moment of impact.")]
+            public float thudOffset = 0.15f;
+
+            [Min(0.01f), Tooltip("Time for the camera to return monotonically to its rest position (seconds).")]
+            public float thudDuration = 0.22f;
         }
 
         [Serializable]
         public sealed class RetrieveSettings
         {
-            [Tooltip("Enable floating tellurium text, bubble burst, and camera trauma on machine retrieval.")]
+            [Tooltip("Enable the bubble burst and slight camera trauma when retrieving a machine.")]
             public bool enabled = true;
-
-            [Header("Floating text")]
-            [Min(0.05f), Tooltip("Lifetime of the floating text (seconds).")]
-            public float textDuration = 1.1f;
-
-            [Tooltip("Initial vertical offset above the mining spot.")]
-            public float textStartY = 0.9f;
-
-            [Min(0f), Tooltip("Upward travel distance over the text lifetime.")]
-            public float textRiseDistance = 1.2f;
-
-            [Range(1f, 3f), Tooltip("Initial pop-in scale multiplier before settling to 1.")]
-            public float textPopScale = 1.6f;
-
-            [Range(0.01f, 0.5f), Tooltip("Normalized fraction of duration spent popping from textPopScale down to 1.")]
-            public float textPopFraction = 0.15f;
-
-            [Range(1f, 15f), Tooltip("TextMeshPro font size.")]
-            public float textFontSize = 5f;
-
-            [Header("Layout")]
-            public FloatingTextLayout textLayout = new();
-
-            [Tooltip("Text color when tellurium > 0 is retrieved.")]
-            public Color positiveColor = new Color(0.55f, 0.95f, 1f, 1f);
-
-            [Tooltip("Text color when the retrieved machine yielded 0 tellurium.")]
-            public Color emptyColor = new Color(0.7f, 0.7f, 0.7f, 1f);
 
             [Header("Bubbles & camera")]
             [Range(0, 64), Tooltip("Minimum bubbles emitted when retrieving positive tellurium.")]
@@ -196,44 +161,6 @@ namespace DivingPrototype
         }
 
         [Serializable]
-        public sealed class FloatingTextLayout
-        {
-            [Tooltip("World-space Z offset so floating text stays in front of the target.")]
-            public float zOffset = -0.2f;
-
-            [Tooltip("Sorting order of the floating text renderer.")]
-            public int sortingOrder = 40;
-
-            [Tooltip("Local size of the text box before TextMeshPro renders the string.")]
-            public Vector2 boxSize = new Vector2(5f, 1f);
-        }
-
-        [Serializable]
-        public sealed class FloatingTextTuning
-        {
-            [Min(0.05f), Tooltip("Lifetime of the floating text (seconds).")]
-            public float duration = 1f;
-
-            [Tooltip("Initial vertical offset above the event position.")]
-            public float startY = 0.9f;
-
-            [Min(0f), Tooltip("Upward travel distance over the text lifetime.")]
-            public float riseDistance = 1f;
-
-            [Range(1f, 3f), Tooltip("Initial pop-in scale multiplier before settling to 1.")]
-            public float popScale = 1.5f;
-
-            [Range(0.01f, 0.5f), Tooltip("Normalized fraction of duration spent popping from popScale down to 1.")]
-            public float popFraction = 0.15f;
-
-            [Range(1f, 15f), Tooltip("TextMeshPro font size.")]
-            public float fontSize = 4.5f;
-
-            [Header("Layout")]
-            public FloatingTextLayout layout = new();
-        }
-
-        [Serializable]
         public sealed class SpotRevealSettings
         {
             [Tooltip("Enable the scale punch and bubble ring when the prospect sweep reveals a spot.")]
@@ -270,91 +197,28 @@ namespace DivingPrototype
         }
 
         [Serializable]
-        public sealed class WreckSalvageSettings
+        public sealed class ItemPickupSettings
         {
-            [Tooltip("Enable floating tellurium text, sediment dust, and camera trauma when salvaging a wreck.")]
+            [Tooltip("Enable a small bubble puff when picking up an item or order.")]
             public bool enabled = true;
-
-            [Header("Floating text")]
-            public FloatingTextTuning text = new();
-
-            [Tooltip("Color of the recovered-tellurium text.")]
-            public Color textColor = new Color(0.55f, 0.95f, 1f, 1f);
-
-            [Header("Sediment")]
-            [Range(0, 80), Tooltip("Number of sand particles kicked out by the salvage.")]
-            public int sedimentCount = 18;
-
-            [Min(0f), Tooltip("Initial radial offset from the wreck center.")]
-            public float sedimentRadius = 0.2f;
-
-            [Range(0.1f, 1f), Tooltip("Vertical flattening of the ring so it reads as seabed floor dust.")]
-            public float sedimentFlattenY = 0.5f;
-
-            [Min(0f), Tooltip("Minimum outward speed of sediment particles.")]
-            public float sedimentSpeedMin = 1.2f;
-
-            [Min(0f), Tooltip("Maximum outward speed of sediment particles.")]
-            public float sedimentSpeedMax = 1.8f;
-
-            [Min(0.01f), Tooltip("Minimum sediment particle size.")]
-            public float sedimentSizeMin = 0.07f;
-
-            [Min(0.01f), Tooltip("Maximum sediment particle size.")]
-            public float sedimentSizeMax = 0.13f;
-
-            [Min(0.05f), Tooltip("Minimum sediment particle lifetime (seconds).")]
-            public float sedimentLifetimeMin = 0.4f;
-
-            [Min(0.05f), Tooltip("Maximum sediment particle lifetime (seconds).")]
-            public float sedimentLifetimeMax = 0.8f;
-
-            [Tooltip("Color of the salvage sediment puff.")]
-            public Color sedimentColor = new Color(0.78f, 0.72f, 0.6f, 0.85f);
-
-            [Header("Camera")]
-            [Range(0f, 1f), Tooltip("Camera trauma added on a successful salvage.")]
-            public float trauma = 0.12f;
-        }
-
-        [Serializable]
-        public sealed class ItemCollectSettings
-        {
-            [Tooltip("Enable floating item text and a small bubble puff when picking up an item or order.")]
-            public bool enabled = true;
-
-            [Header("Floating text")]
-            public FloatingTextTuning text = new();
-
-            [Tooltip("Color of regular pickup text.")]
-            public Color textColor = new Color(0.85f, 1f, 0.85f, 1f);
-
-            [Tooltip("Color used when the pickup is a purchased order.")]
-            public Color deliveryTextColor = new Color(1f, 0.84f, 0.35f, 1f);
 
             [Header("Bubbles")]
-            [Range(0, 32), Tooltip("Small bubbles emitted at the pickup position.")]
+            [Range(0, 32), Tooltip("Bubbles emitted at the pickup position.")]
             public int bubbleCount = 5;
         }
 
         [Serializable]
         public sealed class QuestItemSettings
         {
-            [Tooltip("Enable the Eye camera flash and the Fungus pickup text.")]
+            [Tooltip("Enable the Eye photo flash. Fungus pickups have no game-feel overlay.")]
             public bool enabled = true;
 
-            [Header("Fungus text")]
-            public FloatingTextTuning text = new();
-
-            [Tooltip("Color of the Fungus sample text.")]
-            public Color fungusTextColor = new Color(0.6f, 1f, 0.65f, 1f);
-
             [Header("Eye photo flash")]
-            [Range(0f, 1f), Tooltip("Peak opacity of the full-screen camera flash.")]
-            public float flashAlpha = 0.85f;
+            [Range(0f, 1f), Tooltip("Peak opacity of the world-space camera flash.")]
+            public float flashAlpha = 0.3f;
 
-            [Min(0.05f), Tooltip("Duration of the full-screen flash (seconds, unscaled).")]
-            public float flashDuration = 0.22f;
+            [Min(0.01f), Tooltip("Duration of the flash (seconds, unscaled).")]
+            public float flashDuration = 0.12f;
 
             [Tooltip("Tint of the camera flash overlay.")]
             public Color flashColor = Color.white;
@@ -363,34 +227,58 @@ namespace DivingPrototype
         [Serializable]
         public sealed class OreProductionSettings
         {
-            [Tooltip("Enable a small bubble puff when a machine in view produces ore.")]
+            [Tooltip("Enable the machine settle and silver metal sparkles when a machine in view produces ore.")]
             public bool enabled = true;
 
-            [Min(0.1f), Tooltip("Minimum seconds between production puffs, so many machines stay subtle.")]
+            [Min(0.1f), Tooltip("Minimum seconds between production feedback, so many machines stay subtle.")]
             public float minInterval = 2.5f;
 
-            [Range(0, 32), Tooltip("Bubbles emitted per production puff.")]
-            public int bubbleCount = 3;
-        }
+            [Header("Machine settle")]
+            [Min(0f), Tooltip("Small downward offset of the machine sprite before it returns to rest (world units).")]
+            public float settleDistance = 0.05f;
 
-        [Serializable]
-        public sealed class CarryBlockedSettings
-        {
-            [Tooltip("Enable the red 'Inventory full' text when a pickup is rejected.")]
-            public bool enabled = true;
+            [Min(0.01f), Tooltip("Total duration of the machine settle (seconds).")]
+            public float settleDuration = 0.18f;
 
-            [Header("Floating text")]
-            public FloatingTextTuning text = new();
+            [Range(0.05f, 0.9f), Tooltip("Normalized fraction of settleDuration spent moving down before returning.")]
+            public float settleDownFraction = 0.35f;
 
-            [Tooltip("Color of the rejected-pickup text.")]
-            public Color textColor = new Color(1f, 0.35f, 0.3f, 1f);
+            [Header("Metal sparkles")]
+            [Range(0, 32), Tooltip("Number of silver-white sparkle sprites emitted per production puff.")]
+            public int sparkleCount = 6;
 
-            [Header("Horizontal shake")]
-            [Min(0f), Tooltip("Maximum horizontal text offset in world units.")]
-            public float shakeAmplitude = 0.12f;
+            [Tooltip("Silver-white tint of the metal sparkles.")]
+            public Color sparkleColor = new Color(0.95f, 0.98f, 1f, 1f);
 
-            [Range(0f, 20f), Tooltip("Horizontal shake frequency in cycles per second.")]
-            public float shakeFrequency = 14f;
+            [Min(0.005f), Tooltip("Minimum sparkle sprite size.")]
+            public float sparkleSizeMin = 0.08f;
+
+            [Min(0.005f), Tooltip("Maximum sparkle sprite size.")]
+            public float sparkleSizeMax = 0.13f;
+
+            [Min(0.05f), Tooltip("Minimum sparkle lifetime (seconds).")]
+            public float sparkleLifetimeMin = 0.35f;
+
+            [Min(0.05f), Tooltip("Maximum sparkle lifetime (seconds).")]
+            public float sparkleLifetimeMax = 0.6f;
+
+            [Min(0f), Tooltip("Minimum upward drift speed of sparkles.")]
+            public float sparkleRiseSpeedMin = 0.35f;
+
+            [Min(0f), Tooltip("Maximum upward drift speed of sparkles.")]
+            public float sparkleRiseSpeedMax = 0.7f;
+
+            [Min(0f), Tooltip("Maximum horizontal drift speed of sparkles.")]
+            public float sparkleDriftSpeed = 0.15f;
+
+            [Min(0f), Tooltip("Radial spread of sparkle spawn positions around the machine.")]
+            public float sparkleSpread = 0.4f;
+
+            [Min(0f), Tooltip("Initial upward offset from the machine center so sparkles read against the sprite.")]
+            public float sparkleSpawnHeight = 0.55f;
+
+            [Tooltip("World sprite sorting order; keep below the HUD canvas (100).")]
+            public int sparkleSortingOrder = 90;
         }
 
         [Serializable]
@@ -440,11 +328,9 @@ namespace DivingPrototype
         [SerializeField] private RetrieveSettings retrieve = new();
         [SerializeField] private OutOfHydroxSettings outOfHydrox = new();
         [SerializeField] private SpotRevealSettings spotReveal = new();
-        [SerializeField] private WreckSalvageSettings wreckSalvage = new();
-        [SerializeField] private ItemCollectSettings itemCollect = new();
+        [SerializeField] private ItemPickupSettings itemPickup = new();
         [SerializeField] private QuestItemSettings questItem = new();
         [SerializeField] private OreProductionSettings oreProduction = new();
-        [SerializeField] private CarryBlockedSettings carryBlocked = new();
 
         [Header("Shared particle style")]
         [SerializeField] private BubbleBurstStyle bubbleBurst = new();
@@ -471,16 +357,20 @@ namespace DivingPrototype
         private Vector3 lastOffset;
         private float trauma, beatTime, toggleShownUntil;
         private bool cameraDirty;
-        private readonly Dictionary<Transform, (Vector3 scale, Vector3 position, Coroutine run)> squashing = new();
+        private float thudElapsed = float.PositiveInfinity;
+        private readonly Dictionary<Transform, (Vector3 position, Coroutine run)> machineDrops = new();
         private readonly Dictionary<Transform, (Vector3 scale, Coroutine run)> revealPunches = new();
-        private readonly List<(GameObject go, Coroutine run)> floatingTexts = new();
-        private readonly List<(GameObject go, Coroutine run)> wreckTexts = new();
-        private readonly List<(GameObject go, Coroutine run)> itemTexts = new();
-        private readonly List<(GameObject go, Coroutine run)> questTexts = new();
-        private readonly List<(GameObject go, Coroutine run)> carryTexts = new();
+        private readonly Dictionary<Transform, (Vector3 position, Coroutine run)> oreSettles = new();
+        private readonly List<(GameObject go, Coroutine run)> sparkles = new();
         private readonly System.Random presentationRandom = new();
         private float photoFlashStart = -1f;
-        private float nextOreBubbleTime;
+        private float nextOreFeedbackTime;
+        private UnityEngine.UI.Image photoFlash;
+        private Sprite whiteSprite;
+        private Texture2D whiteTexture;
+
+        private bool CameraThudActive => placeMachine.enabled && placeMachine.thudOffset > 0f
+            && placeMachine.thudDuration > 0f && thudElapsed < placeMachine.thudDuration;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -509,11 +399,9 @@ namespace DivingPrototype
             ocean.MachinePlaced += OnMachinePlaced;
             ocean.MachineRetrieved += OnMachineRetrieved;
             ocean.SpotRevealed += OnSpotRevealed;
-            ocean.WreckSalvaged += OnWreckSalvaged;
             ocean.ItemCollected += OnItemCollected;
             ocean.QuestItemCollected += OnQuestItemCollected;
             ocean.OreProduced += OnOreProduced;
-            ocean.CarryBlocked += OnCarryBlocked;
         }
 
         private void OnDisable()
@@ -523,13 +411,19 @@ namespace DivingPrototype
                 ocean.MachinePlaced -= OnMachinePlaced;
                 ocean.MachineRetrieved -= OnMachineRetrieved;
                 ocean.SpotRevealed -= OnSpotRevealed;
-                ocean.WreckSalvaged -= OnWreckSalvaged;
                 ocean.ItemCollected -= OnItemCollected;
                 ocean.QuestItemCollected -= OnQuestItemCollected;
                 ocean.OreProduced -= OnOreProduced;
-                ocean.CarryBlocked -= OnCarryBlocked;
             }
             CleanupAllEffects();
+        }
+
+        private void OnDestroy()
+        {
+            CleanupOreProduction();
+            if (photoFlash != null) Destroy(photoFlash.gameObject);
+            if (whiteSprite != null) Destroy(whiteSprite);
+            if (whiteTexture != null) Destroy(whiteTexture);
         }
 
         private void OnValidate()
@@ -560,29 +454,25 @@ namespace DivingPrototype
                 CleanupAllEffects();
                 return;
             }
-            if (!placeMachine.enabled && squashing.Count > 0) CleanupPlaceMachine();
-            if (!retrieve.enabled && floatingTexts.Count > 0) CleanupRetrieve();
+            if (!placeMachine.enabled && (machineDrops.Count > 0 || CameraThudActive)) CleanupPlaceMachine();
             if (!spotReveal.enabled && revealPunches.Count > 0) CleanupSpotReveal();
-            if (!wreckSalvage.enabled && wreckTexts.Count > 0) CleanupWreckSalvage();
-            if (!itemCollect.enabled && itemTexts.Count > 0) CleanupItemCollect();
-            if (!questItem.enabled && (questTexts.Count > 0 || photoFlashStart >= 0f)) CleanupQuestItem();
-            if (!oreProduction.enabled) nextOreBubbleTime = 0f;
-            if (!carryBlocked.enabled && carryTexts.Count > 0) CleanupCarryBlocked();
+            if (!questItem.enabled && photoFlashStart >= 0f) CleanupPhotoFlash();
+            if (!oreProduction.enabled)
+            {
+                if (oreSettles.Count > 0 || sparkles.Count > 0) CleanupOreProduction();
+                nextOreFeedbackTime = 0f;
+            }
             if (!outOfHydrox.enabled) beatTime = 0f;
             if (!cameraShake.enabled) trauma = 0f;
-            if (!cameraShake.enabled && !outOfHydrox.enabled) ResetCamera();
+            if (!cameraShake.enabled && !outOfHydrox.enabled && !CameraThudActive) ResetCamera();
         }
 
         private void CleanupAllEffects()
         {
             CleanupPlaceMachine();
-            CleanupRetrieve();
             CleanupSpotReveal();
-            CleanupWreckSalvage();
-            CleanupItemCollect();
-            CleanupQuestItem();
-            CleanupCarryBlocked();
-            nextOreBubbleTime = 0f;
+            CleanupOreProduction();
+            CleanupPhotoFlash();
             beatTime = 0f;
             trauma = 0f;
             ResetCamera();
@@ -590,19 +480,15 @@ namespace DivingPrototype
 
         private void CleanupPlaceMachine()
         {
-            foreach (var pair in squashing)
+            foreach (var pair in machineDrops)
             {
                 if (pair.Value.run != null) StopCoroutine(pair.Value.run);
-                if (pair.Key != null)
-                {
-                    pair.Key.localScale = pair.Value.scale;
-                    pair.Key.localPosition = pair.Value.position;
-                }
+                if (pair.Key != null) pair.Key.localPosition = pair.Value.position;
             }
-            squashing.Clear();
+            machineDrops.Clear();
+            thudElapsed = float.PositiveInfinity;
+            ResetCamera();
         }
-
-        private void CleanupRetrieve() => CleanupTexts(floatingTexts);
 
         private void CleanupSpotReveal()
         {
@@ -614,26 +500,27 @@ namespace DivingPrototype
             revealPunches.Clear();
         }
 
-        private void CleanupWreckSalvage() => CleanupTexts(wreckTexts);
-
-        private void CleanupItemCollect() => CleanupTexts(itemTexts);
-
-        private void CleanupQuestItem()
+        private void CleanupOreProduction()
         {
-            CleanupTexts(questTexts);
-            photoFlashStart = -1f;
-        }
-
-        private void CleanupCarryBlocked() => CleanupTexts(carryTexts);
-
-        private void CleanupTexts(List<(GameObject go, Coroutine run)> group)
-        {
-            foreach (var entry in group)
+            foreach (var pair in oreSettles)
+            {
+                if (pair.Value.run != null) StopCoroutine(pair.Value.run);
+                if (pair.Key != null) pair.Key.localPosition = pair.Value.position;
+            }
+            oreSettles.Clear();
+            foreach (var entry in sparkles)
             {
                 if (entry.run != null) StopCoroutine(entry.run);
                 if (entry.go != null) Destroy(entry.go);
             }
-            group.Clear();
+            sparkles.Clear();
+            nextOreFeedbackTime = 0f;
+        }
+
+        private void CleanupPhotoFlash()
+        {
+            photoFlashStart = -1f;
+            if (photoFlash != null) photoFlash.enabled = false;
         }
 
         // ---------------------------------------------------------------- 1. Placing a machine
@@ -649,68 +536,64 @@ namespace DivingPrototype
 
         private void DropIn(Transform target, Vector3 spotPosition)
         {
-            // Remember the true rest pose so a re-trigger mid-animation never leaves the machine distorted.
-            var rest = (target.localScale, target.localPosition);
-            if (squashing.TryGetValue(target, out var running))
+            // Remember the true rest position so re-triggers never leave the machine offset.
+            bool hadDrop = machineDrops.TryGetValue(target, out var running);
+            var restPosition = hadDrop ? running.position : target.localPosition;
+            if (hadDrop && running.run != null) StopCoroutine(running.run);
+            if (oreSettles.TryGetValue(target, out var settling))
             {
-                rest = (running.scale, running.position);
-                if (running.run != null) StopCoroutine(running.run);
+                if (!hadDrop) restPosition = settling.position;
+                if (settling.run != null) StopCoroutine(settling.run);
+                oreSettles.Remove(target);
             }
-            // Register first: a zero-duration fall/squash can finish synchronously and remove itself.
-            squashing[target] = (rest.Item1, rest.Item2, null);
-            var run = StartCoroutine(DropAndSquash(target, rest.Item1, rest.Item2, spotPosition));
-            if (squashing.ContainsKey(target)) squashing[target] = (rest.Item1, rest.Item2, run);
+            // Register first: a zero-duration drop can finish synchronously and remove itself.
+            machineDrops[target] = (restPosition, null);
+            var run = StartCoroutine(DropMachine(target, restPosition, spotPosition));
+            if (machineDrops.ContainsKey(target)) machineDrops[target] = (restPosition, run);
         }
 
-        /// <summary>
-        /// Heavy drop -> landing impact -> monotonic settle: falls with ease-in acceleration, lands with
-        /// sediment, bubbles, and trauma, then settles monotonically from a single squash back to rest.
-        /// </summary>
-        private IEnumerator DropAndSquash(Transform target, Vector3 restScale, Vector3 restPosition, Vector3 spotPosition)
+        /// <summary>Ease-in metal drop onto the seabed; the machine never scales or squashes.</summary>
+        private IEnumerator DropMachine(Transform target, Vector3 restPosition, Vector3 spotPosition)
         {
             float fallTime = placeMachine.fallTime;
             float fallHeight = placeMachine.fallHeight;
-            float fallStretch = placeMachine.fallStretch;
             if (fallTime > 0f && fallHeight > 0f)
             {
                 for (float t = 0f; t < fallTime && target != null; t += Time.deltaTime)
                 {
                     float k = Mathf.Clamp01(t / fallTime);
                     float height = fallHeight * (1f - k * k); // ease-in: accelerates like it's heavy
-                    float stretch = fallStretch * k;
                     target.localPosition = restPosition + Vector3.up * height;
-                    target.localScale = new Vector3(restScale.x * (1f - stretch), restScale.y * (1f + stretch), restScale.z);
                     yield return null;
                 }
             }
-            if (target == null) { squashing.Remove(target); yield break; }
+            if (target == null) { machineDrops.Remove(target); yield break; }
 
             target.localPosition = restPosition;
             LandingImpact(spotPosition);
-
-            float squashAmount = placeMachine.squashAmount;
-            float squashDuration = placeMachine.squashDuration;
-            if (squashAmount > 0f && squashDuration > 0f)
-            {
-                for (float t = 0f; t < squashDuration && target != null; t += Time.deltaTime)
-                {
-                    float k = Mathf.Clamp01(t / squashDuration);
-                    // Monotonic ease-out recovery from impact squash back to rest (never overshoots or wobbles).
-                    float easeOut = 1f - Mathf.Pow(1f - k, 3f);
-                    float squash = squashAmount * (1f - easeOut);
-                    target.localScale = new Vector3(restScale.x * (1f + squash), restScale.y * (1f - squash), restScale.z);
-                    yield return null;
-                }
-            }
-            if (target != null) target.localScale = restScale;
-            squashing.Remove(target);
+            machineDrops.Remove(target);
         }
 
         private void LandingImpact(Vector3 position)
         {
             SedimentRing(position);
             BubbleBurst(position, placeMachine.bubbleCount);
-            AddTrauma(placeMachine.trauma);
+            StartCameraThud();
+        }
+
+        private void StartCameraThud()
+        {
+            if (!effectsEnabled || !placeMachine.enabled || placeMachine.thudOffset <= 0f
+                || placeMachine.thudDuration <= 0f) return;
+            thudElapsed = 0f;
+        }
+
+        /// <summary>Single downward camera bump that returns monotonically to rest with ease-out.</summary>
+        private float CameraThudOffset()
+        {
+            if (!CameraThudActive) return 0f;
+            float k = Mathf.Clamp01(thudElapsed / Mathf.Max(0.0001f, placeMachine.thudDuration));
+            return -placeMachine.thudOffset * Mathf.Pow(1f - k, 3f);
         }
 
         /// <summary>A flat ring of sediment kicked out sideways by the impact.</summary>
@@ -761,92 +644,12 @@ namespace DivingPrototype
 
         private void OnMachineRetrieved(OceanTarget spot, int amount)
         {
-            if (!effectsEnabled || !retrieve.enabled || spot == null) return;
-            string text = amount > 0 ? $"+{amount} Te" : "Empty";
-            Color color = amount > 0 ? retrieve.positiveColor : retrieve.emptyColor;
-            StartFloatingText(spot.transform.position, text, color, RetrieveStyle(), floatingTexts);
-            if (amount <= 0) return;
-
+            if (!effectsEnabled || !retrieve.enabled || spot == null || amount <= 0) return;
             int minBubbles = Mathf.Min(retrieve.minBubbleCount, retrieve.maxBubbleCount);
             int maxBubbles = Mathf.Max(retrieve.minBubbleCount, retrieve.maxBubbleCount);
             int count = Mathf.Clamp(minBubbles + amount * retrieve.bubblesPerTellurium, minBubbles, maxBubbles);
             BubbleBurst(spot.transform.position, count);
             AddTrauma(retrieve.trauma);
-        }
-
-        private FloatingTextStyle RetrieveStyle() => new(
-            retrieve.textDuration, retrieve.textStartY, retrieve.textRiseDistance,
-            retrieve.textPopScale, retrieve.textPopFraction, retrieve.textFontSize, retrieve.textLayout);
-
-        private static FloatingTextStyle Style(FloatingTextTuning tuning, float shakeAmplitude = 0f, float shakeFrequency = 0f) => new(
-            tuning.duration, tuning.startY, tuning.riseDistance,
-            tuning.popScale, tuning.popFraction, tuning.fontSize, tuning.layout, shakeAmplitude, shakeFrequency);
-
-        private void StartFloatingText(Vector3 origin, string text, Color color, FloatingTextStyle style,
-            List<(GameObject go, Coroutine run)> group)
-        {
-            var go = new GameObject("Juice Floating Text", typeof(TextMeshPro));
-            // Register first: a zero-duration text can finish synchronously and remove itself.
-            group.Add((go, null));
-            var run = StartCoroutine(FloatingText(go, origin, text, color, style, group));
-            for (int i = group.Count - 1; i >= 0; i--)
-                if (group[i].go == go) { group[i] = (go, run); break; }
-        }
-
-        /// <summary>Pops in larger than normal, then rises with ease-out and fades away.</summary>
-        private IEnumerator FloatingText(GameObject go, Vector3 origin, string text, Color color, FloatingTextStyle style,
-            List<(GameObject go, Coroutine run)> group)
-        {
-            var label = go.GetComponent<TextMeshPro>();
-            label.text = text;
-            label.fontSize = style.FontSize;
-            label.fontStyle = FontStyles.Bold;
-            label.alignment = TextAlignmentOptions.Center;
-            label.textWrappingMode = TextWrappingModes.NoWrap;
-            label.rectTransform.sizeDelta = style.BoxSize;
-            label.GetComponent<MeshRenderer>().sortingOrder = style.SortingOrder;
-
-            float duration = Mathf.Max(0.05f, style.Duration);
-            float popFraction = Mathf.Clamp(style.PopFraction, 0.01f, 0.99f);
-            for (float t = 0f; t < duration && go != null; t += Time.deltaTime)
-            {
-                float k = Mathf.Clamp01(t / duration);
-                float rise = 1f - Mathf.Pow(1f - k, 3f); // ease-out cubic
-                float pop = k < popFraction ? Mathf.Lerp(style.PopScale, 1f, k / popFraction) : 1f;
-                // Only the text shakes, and only horizontally, so the camera stays steady.
-                float shake = style.ShakeAmplitude * (1f - k) * Mathf.Sin(t * style.ShakeFrequency * Mathf.PI * 2f);
-                go.transform.position = origin + new Vector3(shake, style.StartY + style.RiseDistance * rise, style.ZOffset);
-                go.transform.localScale = Vector3.one * pop;
-                label.color = new Color(color.r, color.g, color.b, color.a * (1f - k * k));
-                yield return null;
-            }
-            for (int i = group.Count - 1; i >= 0; i--)
-                if (group[i].go == go) group.RemoveAt(i);
-            if (go != null) Destroy(go);
-        }
-
-        private readonly struct FloatingTextStyle
-        {
-            public readonly float Duration, StartY, RiseDistance, PopScale, PopFraction, FontSize, ShakeAmplitude, ShakeFrequency;
-            public readonly float ZOffset;
-            public readonly int SortingOrder;
-            public readonly Vector2 BoxSize;
-
-            public FloatingTextStyle(float duration, float startY, float riseDistance, float popScale, float popFraction,
-                float fontSize, FloatingTextLayout layout, float shakeAmplitude = 0f, float shakeFrequency = 0f)
-            {
-                Duration = duration;
-                StartY = startY;
-                RiseDistance = riseDistance;
-                PopScale = popScale;
-                PopFraction = popFraction;
-                FontSize = fontSize;
-                ShakeAmplitude = shakeAmplitude;
-                ShakeFrequency = shakeFrequency;
-                ZOffset = layout.zOffset;
-                SortingOrder = layout.sortingOrder;
-                BoxSize = layout.boxSize;
-            }
         }
 
         private void BubbleBurst(Vector3 position, int count)
@@ -878,7 +681,7 @@ namespace DivingPrototype
             }
         }
 
-        // ---------------------------------------------------------------- 4. Prospect reveal
+        // ---------------------------------------------------------------- 3. Prospect reveal
 
         private void OnSpotRevealed(OceanTarget spot)
         {
@@ -894,7 +697,7 @@ namespace DivingPrototype
                 if (visual == null) continue;
                 var target = visual.transform;
                 if (target == spot.transform) continue;
-                // The machine has its own drop/squash effect; leave it alone to avoid fighting over scale.
+                // The machine has its own placement and production feedback; leave it alone.
                 if (spot.machine != null && target == spot.machine.transform) continue;
                 if (target.GetComponent<Collider2D>() != null || target.GetComponent<Collider>() != null) continue;
                 StartScalePunch(target, peak, duration, riseFraction);
@@ -973,68 +776,208 @@ namespace DivingPrototype
             }
         }
 
-        // ---------------------------------------------------------------- 5. Wreck salvage
+        // ---------------------------------------------------------------- 4. Item pickup
 
-        private void OnWreckSalvaged(OceanTarget spot, int ore)
+        private void OnItemCollected(Vector3 position, int _count, string _itemName, bool _isDelivery)
         {
-            if (!effectsEnabled || !wreckSalvage.enabled || spot == null) return;
-            StartFloatingText(spot.transform.position, $"+{ore} Te", wreckSalvage.textColor,
-                Style(wreckSalvage.text), wreckTexts);
-            SedimentPuff(spot.transform.position, wreckSalvage.sedimentCount, wreckSalvage.sedimentRadius,
-                wreckSalvage.sedimentFlattenY, wreckSalvage.sedimentSpeedMin, wreckSalvage.sedimentSpeedMax,
-                wreckSalvage.sedimentSizeMin, wreckSalvage.sedimentSizeMax,
-                wreckSalvage.sedimentLifetimeMin, wreckSalvage.sedimentLifetimeMax, wreckSalvage.sedimentColor);
-            AddTrauma(wreckSalvage.trauma);
+            // Counts, names, and order state belong to the HUD; only the world bubble remains here.
+            if (!effectsEnabled || !itemPickup.enabled) return;
+            BubbleBurst(position, itemPickup.bubbleCount);
         }
 
-        // ---------------------------------------------------------------- 6. Item pickup
+        // ---------------------------------------------------------------- 5. Eye photo flash
 
-        private void OnItemCollected(Vector3 position, int count, string itemName, bool isDelivery)
+        private void OnQuestItemCollected(OceanTarget _spot, string _itemName, bool isEyePhoto)
         {
-            if (!effectsEnabled || !itemCollect.enabled) return;
-            string text = $"+{count} {itemName}";
-            Color color = isDelivery ? itemCollect.deliveryTextColor : itemCollect.textColor;
-            StartFloatingText(position, text, color, Style(itemCollect.text), itemTexts);
-            BubbleBurst(position, itemCollect.bubbleCount);
+            if (!effectsEnabled || !questItem.enabled || !isEyePhoto) return;
+            EnsureWhiteSprite();
+            EnsurePhotoFlash();
+            if (photoFlash == null) return;
+            photoFlashStart = Time.unscaledTime;
+            photoFlash.enabled = true;
+            UpdatePhotoFlash();
         }
 
-        // ---------------------------------------------------------------- 7. Quest items
-
-        private void OnQuestItemCollected(OceanTarget spot, string itemName, bool isEyePhoto)
+        private void EnsureWhiteSprite()
         {
-            if (!effectsEnabled || !questItem.enabled) return;
-            if (isEyePhoto)
+            if (whiteSprite != null) return;
+            whiteTexture = new Texture2D(1, 1, TextureFormat.RGBA32, false)
             {
-                photoFlashStart = Time.unscaledTime;
+                name = "Juice White Pixel",
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear
+            };
+            whiteTexture.SetPixel(0, 0, Color.white);
+            whiteTexture.Apply();
+            whiteSprite = Sprite.Create(whiteTexture, new Rect(0f, 0f, 1f, 1f),
+                new Vector2(0.5f, 0.5f), 1f, 0, SpriteMeshType.FullRect);
+            whiteSprite.name = "Juice White Sprite";
+            whiteSprite.hideFlags = HideFlags.HideAndDontSave;
+        }
+
+        private void EnsurePhotoFlash()
+        {
+            if (photoFlash != null || whiteSprite == null) return;
+            var hud = FindAnyObjectByType<OceanHud>();
+            var canvas = hud != null ? hud.GetComponentInParent<Canvas>() : null;
+            if (canvas == null) return;
+            var go = new GameObject("Juice Photo Flash", typeof(RectTransform), typeof(UnityEngine.UI.Image))
+            {
+                hideFlags = HideFlags.DontSave
+            };
+            var rect = go.GetComponent<RectTransform>();
+            rect.SetParent(canvas.transform, false);
+            rect.SetAsFirstSibling();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            photoFlash = go.GetComponent<UnityEngine.UI.Image>();
+            photoFlash.sprite = whiteSprite;
+            photoFlash.color = Color.clear;
+            photoFlash.raycastTarget = false;
+            photoFlash.enabled = false;
+        }
+
+        /// <summary>
+        /// Updates a full-viewport flash image. It is the first child of the HUD canvas, so it covers the
+        /// world viewport but renders below every HUD element.
+        /// </summary>
+        private void UpdatePhotoFlash()
+        {
+            if (photoFlashStart < 0f || photoFlash == null) return;
+            float duration = Mathf.Max(0.01f, questItem.flashDuration);
+            float elapsed = Time.unscaledTime - photoFlashStart;
+            if (elapsed < 0f || elapsed >= duration)
+            {
+                CleanupPhotoFlash();
                 return;
             }
-            if (spot == null) return;
-            StartFloatingText(spot.transform.position, "+1 " + itemName, questItem.fungusTextColor,
-                Style(questItem.text), questTexts);
+
+            float fade = 1f - elapsed / duration;
+            var tint = questItem.flashColor;
+            photoFlash.color = new Color(tint.r, tint.g, tint.b, tint.a * questItem.flashAlpha * fade * fade);
+            photoFlash.enabled = true;
         }
 
-        // ---------------------------------------------------------------- 8. Ore production
+        // ---------------------------------------------------------------- 6. Ore production
 
         private void OnOreProduced(OceanTarget spot)
         {
             if (!effectsEnabled || !oreProduction.enabled || spot == null || view == null) return;
-            if (Time.time < nextOreBubbleTime) return;
+            if (Time.time < nextOreFeedbackTime) return;
             Vector3 viewport = view.WorldToViewportPoint(spot.transform.position);
             if (viewport.z <= 0f || viewport.x < 0f || viewport.x > 1f || viewport.y < 0f || viewport.y > 1f) return;
-            nextOreBubbleTime = Time.time + Mathf.Max(0.1f, oreProduction.minInterval);
-            BubbleBurst(spot.transform.position, oreProduction.bubbleCount);
+            nextOreFeedbackTime = Time.time + Mathf.Max(0.1f, oreProduction.minInterval);
+            StartOreSettle(spot);
+            EmitMetalSparkles(spot);
         }
 
-        // ---------------------------------------------------------------- 9. Inventory full
-
-        private void OnCarryBlocked(Vector3 position)
+        private void StartOreSettle(OceanTarget spot)
         {
-            if (!effectsEnabled || !carryBlocked.enabled) return;
-            var style = Style(carryBlocked.text, carryBlocked.shakeAmplitude, carryBlocked.shakeFrequency);
-            StartFloatingText(position, "Inventory full", carryBlocked.textColor, style, carryTexts);
+            if (oreProduction.settleDistance <= 0f || oreProduction.settleDuration <= 0f) return;
+            var machine = spot.machine;
+            if (machine == null) return;
+            var target = machine.transform;
+            if (machineDrops.ContainsKey(target)) return;
+
+            var restPosition = target.localPosition;
+            if (oreSettles.TryGetValue(target, out var running))
+            {
+                restPosition = running.position;
+                if (running.run != null) StopCoroutine(running.run);
+            }
+            // Register first: a zero-duration settle can finish synchronously and remove itself.
+            oreSettles[target] = (restPosition, null);
+            var run = StartCoroutine(SettleMachine(target, restPosition, oreProduction.settleDistance,
+                oreProduction.settleDuration, oreProduction.settleDownFraction));
+            if (oreSettles.ContainsKey(target)) oreSettles[target] = (restPosition, run);
         }
 
-        // ---------------------------------------------------------------- 10. Out-of-hydrox heartbeat
+        /// <summary>Small downward dip and monotonic return; the machine never scales or overshoots.</summary>
+        private IEnumerator SettleMachine(Transform target, Vector3 restPosition, float distance, float duration,
+            float downFraction)
+        {
+            duration = Mathf.Max(0.01f, duration);
+            float downTime = duration * Mathf.Clamp(downFraction, 0.05f, 0.9f);
+            for (float t = 0f; t < duration && target != null; t += Time.deltaTime)
+            {
+                float offset;
+                if (t < downTime)
+                {
+                    float k = t / downTime;
+                    offset = -distance * k * k;
+                }
+                else
+                {
+                    float k = Mathf.Clamp01((t - downTime) / Mathf.Max(0.0001f, duration - downTime));
+                    offset = -distance * Mathf.Pow(1f - k, 3f);
+                }
+                target.localPosition = restPosition + Vector3.up * offset;
+                yield return null;
+            }
+            if (target != null) target.localPosition = restPosition;
+            oreSettles.Remove(target);
+        }
+
+        private void EmitMetalSparkles(OceanTarget spot)
+        {
+            if (oreProduction.sparkleCount <= 0) return;
+            EnsureWhiteSprite();
+            if (whiteSprite == null) return;
+            Vector3 center = spot.machine != null ? spot.machine.transform.position : spot.transform.position;
+            float minSize = Mathf.Min(oreProduction.sparkleSizeMin, oreProduction.sparkleSizeMax);
+            float maxSize = Mathf.Max(oreProduction.sparkleSizeMin, oreProduction.sparkleSizeMax);
+            float minLife = Mathf.Min(oreProduction.sparkleLifetimeMin, oreProduction.sparkleLifetimeMax);
+            float maxLife = Mathf.Max(oreProduction.sparkleLifetimeMin, oreProduction.sparkleLifetimeMax);
+            float minRise = Mathf.Min(oreProduction.sparkleRiseSpeedMin, oreProduction.sparkleRiseSpeedMax);
+            float maxRise = Mathf.Max(oreProduction.sparkleRiseSpeedMin, oreProduction.sparkleRiseSpeedMax);
+
+            for (int i = 0; i < oreProduction.sparkleCount; i++)
+            {
+                var go = new GameObject("Juice Metal Sparkle", typeof(SpriteRenderer)) { hideFlags = HideFlags.DontSave };
+                var sprite = go.GetComponent<SpriteRenderer>();
+                sprite.sprite = whiteSprite;
+                sprite.sortingOrder = oreProduction.sparkleSortingOrder;
+                sprite.color = oreProduction.sparkleColor;
+
+                float angle = PresentationValue() * Mathf.PI * 2f;
+                var offset = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle))
+                    * PresentationRange(0f, oreProduction.sparkleSpread);
+                go.transform.position = center + Vector3.up * oreProduction.sparkleSpawnHeight + (Vector3)offset;
+                go.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+                float size = PresentationRange(minSize, maxSize);
+                go.transform.localScale = Vector3.one * size;
+
+                var velocity = new Vector2(PresentationRange(-oreProduction.sparkleDriftSpeed, oreProduction.sparkleDriftSpeed),
+                    PresentationRange(minRise, maxRise));
+                float lifetime = PresentationRange(minLife, maxLife);
+                // Register first: a zero-duration sparkle can finish synchronously and remove itself.
+                sparkles.Add((go, null));
+                var run = StartCoroutine(AnimateSparkle(go, sprite, velocity, size, lifetime, oreProduction.sparkleColor));
+                for (int j = sparkles.Count - 1; j >= 0; j--)
+                    if (sparkles[j].go == go) { sparkles[j] = (go, run); break; }
+            }
+        }
+
+        private IEnumerator AnimateSparkle(GameObject go, SpriteRenderer sprite, Vector2 velocity, float size,
+            float lifetime, Color color)
+        {
+            float duration = Mathf.Max(0.01f, lifetime);
+            for (float t = 0f; t < duration && go != null; t += Time.deltaTime)
+            {
+                float k = Mathf.Clamp01(t / duration);
+                go.transform.position += (Vector3)(velocity * Time.deltaTime);
+                sprite.color = new Color(color.r, color.g, color.b, color.a * (1f - k) * (1f - k));
+                go.transform.localScale = Vector3.one * (size * Mathf.Lerp(1f, 0.55f, k));
+                yield return null;
+            }
+            for (int i = sparkles.Count - 1; i >= 0; i--)
+                if (sparkles[i].go == go) sparkles.RemoveAt(i);
+            if (go != null) Destroy(go);
+        }
+
+        // ---------------------------------------------------------------- 7. Out-of-hydrox heartbeat
 
         /// <summary>
         /// Runs only during the breathless grace period after the tank is empty: the heartbeat speeds up
@@ -1090,6 +1033,7 @@ namespace DivingPrototype
         {
             if (view == null) return;
             SyncEnabledStates();
+            UpdatePhotoFlash();
             bool active = effectsEnabled && Time.timeScale > 0f && ocean != null && !ocean.InsideSubmarine && !ocean.LoadoutOpen;
             if (!active) { trauma = 0f; beatTime = 0f; ResetCamera(); return; }
 
@@ -1097,12 +1041,14 @@ namespace DivingPrototype
             float zoom = HeartbeatZoom(dt);
             trauma = cameraShake.enabled ? Mathf.Max(0f, trauma - cameraShake.traumaDecay * dt) : 0f;
 
+            bool thudActive = CameraThudActive;
             // Idle: leave the camera alone so other code (and the editor play checks) own it.
-            if (trauma <= 0f && zoom <= 0f) { ResetCamera(); return; }
+            if (trauma <= 0f && zoom <= 0f && !thudActive) { ResetCamera(); return; }
             cameraDirty = true;
             float shake = cameraShake.enabled ? trauma * trauma : 0f;
             float time = Time.time * cameraShake.shakeFrequency;
             var offset = new Vector3(Noise(time, 0f), Noise(time, 10f), 0f) * (cameraShake.maxShakeOffset * shake);
+            if (thudActive) offset += Vector3.up * CameraThudOffset();
             float angle = Noise(time, 20f) * cameraShake.maxShakeAngle * shake;
 
             // CenteredCamera rewrites the position every frame; otherwise remove last frame's offset.
@@ -1111,6 +1057,8 @@ namespace DivingPrototype
             lastOffset = offset;
             view.transform.rotation = baseRotation * Quaternion.Euler(0f, 0f, angle);
             view.orthographicSize = baseSize * (1f - zoom);
+
+            if (thudActive) thudElapsed += dt;
         }
 
         /// <summary>Smooth random value in [-1, 1]; Perlin noise keeps the shake from looking jittery.</summary>
@@ -1119,6 +1067,7 @@ namespace DivingPrototype
         /// <summary>Restores the camera once, when an effect ends; does nothing while idle.</summary>
         private void ResetCamera()
         {
+            thudElapsed = float.PositiveInfinity;
             if (view == null || !cameraDirty) return;
             cameraDirty = false;
             if (!followsTarget) view.transform.position -= lastOffset;
@@ -1129,29 +1078,8 @@ namespace DivingPrototype
 
         private void OnGUI()
         {
-            DrawPhotoFlash();
             if (Time.unscaledTime > toggleShownUntil) return;
             GUI.Label(new Rect(12, 12, 240, 24), effectsEnabled ? "Game Feel: ON  (F8)" : "Game Feel: OFF  (F8)");
-        }
-
-        /// <summary>A simple full-screen white flash over the game view; no HUD or scene objects are touched.</summary>
-        private void DrawPhotoFlash()
-        {
-            if (!effectsEnabled || !questItem.enabled || photoFlashStart < 0f) return;
-            float duration = Mathf.Max(0.01f, questItem.flashDuration);
-            float elapsed = Time.unscaledTime - photoFlashStart;
-            if (elapsed < 0f || elapsed >= duration)
-            {
-                photoFlashStart = -1f;
-                return;
-            }
-            if (Event.current == null || Event.current.type != EventType.Repaint) return;
-            float fade = 1f - elapsed / duration;
-            var tint = questItem.flashColor;
-            var previous = GUI.color;
-            GUI.color = new Color(tint.r, tint.g, tint.b, tint.a * questItem.flashAlpha * fade * fade);
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = previous;
         }
     }
 }
