@@ -121,13 +121,14 @@ namespace DivingPrototype
                     .All(r=>r.sharedMaterial.shader.name=="Diving Prototype/Ocean Flashlight"),
                     "Play mode replaces preview materials with gameplay flashlight");
                 require(hud.GetComponent<Canvas>().sortingOrder>=100,"HUD draws above terrain sprites");
+                float maxSpeed = new SerializedObject(swimmer).FindProperty("maxSpeed").floatValue;
                 jump(new Vector2(0,-5)); keys(new[]{Key.D}); await Task.Delay(2900);
                 float openSpeed = body.linearVelocity.magnitude;
-                require(Mathf.Abs(openSpeed-2.5f)<.05f, "Open-water speed uses teammate tuning: " + openSpeed);
+                require(Mathf.Abs(openSpeed - maxSpeed) < .05f, "Open-water speed matches configured maxSpeed (" + maxSpeed + "): " + openSpeed);
                 keys(Array.Empty<Key>()); await Task.Delay(150);
                 jump(new Vector2(-26f,17.2f)); keys(new[]{Key.D}); await Task.Delay(1550);
                 float kelpSpeed = body.linearVelocity.magnitude;
-                require(swimmer.SpeedMultiplier==.5f && Mathf.Abs(kelpSpeed-1.25f)<.05f, "Kelp passes at half speed");
+                require(swimmer.SpeedMultiplier == .5f && Mathf.Abs(kelpSpeed - maxSpeed * .5f) < .05f, "Kelp passes at half speed");
                 keys(Array.Empty<Key>()); await Task.Delay(150);
                 foreach(string name in new[]{"Rock 12","Chasm 4"})
                 {
