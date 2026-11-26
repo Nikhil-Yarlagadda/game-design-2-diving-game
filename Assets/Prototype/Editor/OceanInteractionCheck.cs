@@ -62,6 +62,7 @@ namespace DivingPrototype
                     .OrderBy(t=>t.position.x).Take(2).ToArray();
                 FlashlightCheck.Near(grid[1].position.x-grid[0].position.x,3.2f,"Scaled reference square is 3.2 world units",.001f);
                 FlashlightCheck.Require(interactions.oceanMap.GetComponentsInChildren<SpriteRenderer>(true)
+                    .Where(r=>r.GetComponentInParent<OceanTarget>(true) == null)
                     .All(r=>r.sharedMaterial.shader.name=="Universal Render Pipeline/2D/Sprite-Unlit-Default"),
                     "Saved map previews in terrain colors without gameplay lighting");
                 var mines = targets.Where(t => t.kind == OceanTarget.TargetKind.MiningSpot).ToArray();

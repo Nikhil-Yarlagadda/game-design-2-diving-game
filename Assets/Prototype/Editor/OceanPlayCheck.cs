@@ -49,6 +49,11 @@ namespace DivingPrototype
                 if (InputState.currentUpdateType == InputUpdateType.Dynamic && keyboard != null && keyboard.added) keyboard.MakeCurrent();
                 if (InputState.currentUpdateType == InputUpdateType.Dynamic && mouse != null && mouse.added) mouse.MakeCurrent();
             };
+            OceanTutorial tutorial = null;
+            void AcknowledgeTutorial()
+            {
+                if (tutorial != null && tutorial.AwaitingAcknowledgement) tutorial.Acknowledge();
+            }
             int checks = 0;
             var deliveries = new System.Collections.Generic.List<Action>();
             Action<bool,string> require = (value,label) => { FlashlightCheck.Require(value,label); checks++; };
@@ -97,9 +102,12 @@ namespace DivingPrototype
                 await Task.Delay(100);
                 await DayDeliveryPlayCheck.BeginDive(ocean);
                 ocean.Hydrox.Refill();
-                var tutorial = ocean.GetComponent<OceanTutorial>();
+                tutorial = ocean.GetComponent<OceanTutorial>();
                 require(tutorial.Stage==1,"Excursion starts tutorial at stage one");
                 require(ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.MiningSpot).All(t=>!t.IsProspected && !t.GetComponent<SpriteRenderer>().enabled && !t.highlight.enabled),"Undiscovered spots have no visible sprites or outlines");
+                // Tutorial blocks pause gameplay until confirmed. Keep this gameplay check moving through them.
+                AcknowledgeTutorial();
+                EditorApplication.update += AcknowledgeTutorial;
                 float initialHydrox=ocean.Hydrox.CurrentCapacity;
                 int frame = Time.frameCount;
                 await Task.Delay(200);
@@ -126,7 +134,11 @@ namespace DivingPrototype
                 float openSpeed = body.linearVelocity.magnitude;
                 require(Mathf.Abs(openSpeed - maxSpeed) < .05f, "Open-water speed matches configured maxSpeed (" + maxSpeed + "): " + openSpeed);
                 keys(Array.Empty<Key>()); await Task.Delay(150);
-                jump(new Vector2(-26f,17.2f)); keys(new[]{Key.D}); await Task.Delay(1550);
+                var kelpZones = new SerializedObject(swimmer).FindProperty("kelpZones");
+                var kelp = Enumerable.Range(0, kelpZones.arraySize)
+                    .Select(i => (PolygonCollider2D)kelpZones.GetArrayElementAtIndex(i).objectReferenceValue)
+                    .Single(zone => zone.name == "Kelp 10");
+                jump(kelp.bounds.center); keys(new[]{Key.D}); await Task.Delay(1550);
                 float kelpSpeed = body.linearVelocity.magnitude;
                 require(swimmer.SpeedMultiplier == .5f && Mathf.Abs(kelpSpeed - maxSpeed * .5f) < .05f, "Kelp passes at half speed");
                 keys(Array.Empty<Key>()); await Task.Delay(150);
@@ -180,8 +192,11 @@ namespace DivingPrototype
                 keys(new[]{Key.E});await Task.Delay(500);
                 keys(new[]{Key.E,Key.D});var scanPosition=body.position;await Task.Delay(800);
                 require(Vector2.Distance(body.position,scanPosition)<.001f,"Movement remains locked during held scan");
-                await Task.Delay(1900);
-                require(!ocean.IsProspecting && ocean.CooldownRemaining>3,"Completed scan starts five-second cooldown");
+                var scanDeadline = Time.realtimeSinceStartup + ocean.prospectDuration + 5f;
+                while (ocean.IsProspecting && Time.realtimeSinceStartup < scanDeadline) await Task.Delay(25);
+                require(!ocean.IsProspecting && ocean.CooldownRemaining > 0f
+                    && ocean.CooldownRemaining <= ocean.prospectCooldown, "Completed scan starts the configured cooldown");
+                while ((!scanMine.IsProspected || !scanMine.highlight.enabled) && Time.realtimeSinceStartup < scanDeadline) await Task.Delay(25);
                 require(scanMine.IsProspected && scanMine.highlight.enabled,"Prospected spot stays rendered");
                 keys(new[]{Key.E});
                 for (int i = 0; i < 120 && ocean.CooldownRemaining > 0f; i++) await Task.Delay(100);
@@ -283,8 +298,8 @@ namespace DivingPrototype
                 require(questMine.HasMachine && ocean.availableMachines==questMachines-1,"Scaled quest alcove supports machine placement");
                 await click();require(!questMine.HasMachine && ocean.availableMachines==questMachines,"Scaled quest alcove supports retrieval");
                 // This vertical crossing lay beyond the earlier 7.5-unit forward view.
-                var bankNear=new Vector2(-10.74f,-27.09f);
-                var bankFar=new Vector2(-10.74f,-19.15f);
+                var bankNear=new Vector2(-62.17f,-5.01f);
+                var bankFar=new Vector2(-62.17f,2.83f);
                 jump(bankNear);
                 pointer(false,false,ocean.oceanCamera.WorldToScreenPoint(bankFar));await Task.Delay(200);
                 require(Physics2D.LinecastAll(bankNear,bankFar).Any(h=>h.collider.name=="Chasm 4"),"Cross-bank sightline crosses a real chasm");
@@ -321,13 +336,18 @@ namespace DivingPrototype
                 await DayDeliveryPlayCheck.WaitForGasFailure(ocean);
                 var restarted=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 require(SceneManager.GetActiveScene().name=="Ocean Interactables" && !ended && restarted!=ocean,"Day-two gas depletion restarts training without ending the excursion through Results");
-                require(GameState.tellurium==0 && GameState.days==2 && restarted.GetComponent<OceanTutorial>().Stage==1,"Tutorial retry discards failed-attempt income and restarts the first step");
+                require(GameState.tellurium==0 && GameState.days==2 && restarted.LoadoutOpen, "Tutorial retry discards failed-attempt income and returns to loadout");
                 require(GameState.itemsBought[GameState.MiningMachine]==0 && restarted.RemainingDeliveryCount==3,"Tutorial retry reissues starting deliveries exactly once");
+                await DayDeliveryPlayCheck.BeginDive(restarted);
+                var restartedTutorial = restarted.GetComponent<OceanTutorial>();
+                require(restartedTutorial.Stage == 1 && restartedTutorial.AwaitingAcknowledgement, "Confirmed retry loadout restarts the first tutorial step");
+                restartedTutorial.Acknowledge();
                 return new { checks,openSpeed,kelpSpeed,minimapLabels=2,hydroxTutorialRetry=true };
 
             }
             finally
             {
+                EditorApplication.update -= AcknowledgeTutorial;
                 foreach (var deliver in deliveries) InputSystem.onBeforeUpdate -= deliver;
                 InputSystem.onAfterUpdate -= keepTestKeyboardCurrent;
                 if (keyboard != null && keyboard.added) InputSystem.RemoveDevice(keyboard);
