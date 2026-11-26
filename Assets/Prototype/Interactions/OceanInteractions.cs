@@ -87,7 +87,7 @@ namespace DivingPrototype
         private float sweepStarted, sweepRange;
         private int sweepHits;
         private float messageUntil, nextProspect;
-        private bool transitioning, sceneUnavailable;
+        private bool transitioning, sceneUnavailable, outcomeCommitted;
         private HydroxTank hydrox;
         private bool CanSwim => Time.timeScale > 0f && !PauseManager.BlocksInput && !SceneChanger.IsTransitioning
             && !InsideSubmarine && !transitioning && !ReturnConfirmationOpen && !LoadoutOpen && !Incapacitated && !TutorialBlocksInput;
@@ -743,6 +743,8 @@ namespace DivingPrototype
             FailureScreenOpen = true;
             timeScaleBeforeFailure = Time.timeScale;
             Time.timeScale = 0f;
+            if (!FailureOffersRetry)
+                CommitExcursionOutcome(incapacitated: true);
         }
 
         /// <summary>
@@ -759,6 +761,33 @@ namespace DivingPrototype
             if (transitioning) return true;
             Time.timeScale = 0f;
             return false;
+        }
+
+        /// <summary>
+        /// Returns to the Title Screen from the failure modal. Day 2 discards the failed tutorial attempt;
+        /// regular failure has already persisted its pending Result state to prevent save-scumming.
+        /// </summary>
+        public bool ReturnToMainMenuFromFailure()
+        {
+            if (!FailureScreenOpen || transitioning || PauseManager.BlocksInput || SceneChanger.IsTransitioning) return false;
+            Time.timeScale = 1f;
+            if (FailureOffersRetry)
+            {
+                GameState.miningSpots = tutorialStartMining;
+                GameState.itemsBought = tutorialStartOrders;
+            }
+            else
+            {
+                CommitExcursionOutcome(incapacitated: true);
+            }
+            if (!SaveManager.ReturnToTitleMenu())
+            {
+                Time.timeScale = 0f;
+                return false;
+            }
+            transitioning = true;
+            StopOceanControls();
+            return true;
         }
 
         private void RetryTutorial()
@@ -787,6 +816,16 @@ namespace DivingPrototype
             }
             transitioning = true;
             StopOceanControls();
+            CommitExcursionOutcome(incapacitated);
+            InsideSubmarine = true;
+            return true;
+        }
+
+        /// <summary>Applies end-of-dive penalties/recoveries once and persists the pending Result checkpoint.</summary>
+        private void CommitExcursionOutcome(bool incapacitated)
+        {
+            if (outcomeCommitted) return;
+            outcomeCommitted = true;
             int abandoned = DeployedMachineCount;
             int missed = RemainingDeliveryCount;
             foreach (var target in targets)
@@ -813,12 +852,11 @@ namespace DivingPrototype
             RemainingDeliveryCount = 0;
             Closest = null;
             ExcursionEnded?.Invoke();
-            InsideSubmarine = true;
             GameState.excursionIncapacitated = incapacitated;
             GameState.tellurium = Tellurium - GameState.oreLost + DepositedTellurium;
             GameState.Playtest.FinishDive(incapacitated ? "Incapacitated" : "Returned",
                 Tellurium, GameState.oreLost, abandoned, missed);
-            return true;
+            SaveManager.SavePendingResult();
         }
 
         /// <summary>Reconciles the selected equipment with the non-ore items remaining in the excursion bag.</summary>

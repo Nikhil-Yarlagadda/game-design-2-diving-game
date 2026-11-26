@@ -3,12 +3,14 @@ using UnityEngine;
 
 public static class GameState
 {
+    [System.Serializable]
     public struct MiningSpotState
     {
         public bool IsProspected;
         public int DisplayedTier, ActualTier, TierOutput, WreckOre;
         public bool HasWreck;
     }
+    [System.Serializable]
     public struct DiveLoadout
     {
         public string Tank;
@@ -23,6 +25,7 @@ public static class GameState
     public static int days;
     public static int credits;
     internal static PlaytestReport Playtest { get; private set; }
+    internal static void RestorePlaytest(PlaytestReport report) => Playtest = report;
     public static int tellurium;
     internal static bool interiorDayResults;
     public static HashSet<string> npcsTalks;

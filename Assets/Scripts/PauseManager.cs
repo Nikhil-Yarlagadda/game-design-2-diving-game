@@ -55,6 +55,7 @@ public class PauseManager : MonoBehaviour
             foreach (var listener in root.GetComponentsInChildren<AudioListener>(true)) listener.enabled = false;
             foreach (var clicks in root.GetComponentsInChildren<ClickHandler>(true)) clicks.enabled = false;
         }
+        PauseMenuUI.AttachToScene(gameObject.scene);
     }
 
     /// <summary>Handles Escape from the gameplay scene or the active pause menu.</summary>
@@ -80,6 +81,8 @@ public class PauseManager : MonoBehaviour
     {
         if (isPaused || statsSourceUi != null || sceneOperation != null || SceneChanger.IsTransitioning ||
             InventoryButton.IsLoading || !CanLoad(MenuScene)) return;
+        var ocean = FindAnyObjectByType<DivingPrototype.OceanInteractions>();
+        if (ocean != null && (ocean.FailureScreenOpen || (ocean.Incapacitated && !ocean.FailureOffersRetry))) return;
         inputFrame = Time.frameCount;
         previousTimeScale = Time.timeScale;
         isPaused = true;

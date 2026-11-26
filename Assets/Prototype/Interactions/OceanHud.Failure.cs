@@ -49,8 +49,7 @@ namespace DivingPrototype
             // Figma button icons: arrow for CONTINUE, circular arrow for RETRY, list for MAIN MENU.
             continueIcon = ArrowIcon(ButtonIcon(action.transform, failureAction), Theme.Navy);
             retryIcon = RetryIcon(ButtonIcon(action.transform, failureAction), Theme.Navy);
-            // Not wired yet: returning to the title would abandon the run, and there is no save system.
-            var menu = Theme.Button("MAIN MENU", layout, font, 26, Theme.ButtonStyle.Outline, () => { }, 2f);
+            var menu = Theme.Button("MAIN MENU", layout, font, 26, Theme.ButtonStyle.Outline, ReturnToMainMenu, 2f);
             menu.name = "Main Menu";
             At((RectTransform)menu.transform, 347, 538, 330, 62);
             failureMenuRect = (RectTransform)menu.transform;
@@ -101,6 +100,7 @@ namespace DivingPrototype
         }
 
         private void ResolveFailure() => interactions.ResolveFailure();
+        private void ReturnToMainMenu() => interactions.ReturnToMainMenuFromFailure();
 
         private void UpdateFailure()
         {

@@ -9,9 +9,9 @@ public class SceneChanger : MonoBehaviour
     private float previousTimeScale;
     private bool ownsTransition;
 
-    public static bool ChangeSceneWithFade(string sceneName, System.Action beforeLoad = null)
+    public static bool ChangeSceneWithFade(string sceneName, System.Action beforeLoad = null, bool ignoreOverlays = false)
     {
-        if (IsTransitioning || PauseManager.BlocksInput || InventoryButton.IsOpen) return false;
+        if (IsTransitioning || (!ignoreOverlays && (PauseManager.BlocksInput || InventoryButton.IsOpen))) return false;
         if (!Application.CanStreamedLevelBeLoaded(sceneName))
         {
             Debug.LogError("Scene is unavailable: " + sceneName);

@@ -50,7 +50,15 @@ public class ResultsText : MonoBehaviour
             GameState.interiorDayResults = false;
             if (interiorDay) GameState.npcsTalks.Clear();
             GameState.days++;
-            if (next != "Ending") GameState.Playtest.StartDay(GameState.days, GameState.credits);
+            if (next != "Ending")
+            {
+                GameState.Playtest.StartDay(GameState.days, GameState.credits);
+                SaveManager.CaptureAndSaveDayStart(next);
+            }
+            else
+            {
+                SaveManager.SaveEnding();
+            }
 #if UNITY_EDITOR
             if (next != "Ending") GameStateDebugger.CaptureDayStart(next);
 #endif

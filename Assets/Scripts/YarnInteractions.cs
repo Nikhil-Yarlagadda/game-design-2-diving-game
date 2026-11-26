@@ -18,6 +18,7 @@ public class WorldInteractions : MonoBehaviour
             };
             GameState.oreLost = 0;
             GameState.excursionIncapacitated = false;
+            SaveManager.SavePendingResult();
         });
     }
 
