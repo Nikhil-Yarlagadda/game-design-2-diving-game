@@ -18,6 +18,11 @@ namespace DivingPrototype
 
         internal static async Task BeginDive(OceanInteractions ocean)
         {
+            if (ocean.GearReminderOpen)
+            {
+                ocean.ResolveGearReminder(equip: false);
+                await Task.Delay(80);
+            }
             var hud = UnityEngine.Object.FindAnyObjectByType<OceanHud>();
             var begin = hud.GetComponentsInChildren<UnityEngine.UI.Button>()
                 .Single(button => button.name == "Begin dive");
@@ -138,6 +143,11 @@ namespace DivingPrototype
                     GameState.days == day + 1 && GameState.credits == total && GameState.tellurium == 0,
                     "Continuing from interior Results settles credits once and starts the next dive");
             };
+            async Task WaitPastAcknowledgement()
+            {
+                int frame = Time.frameCount;
+                do { await Task.Delay(10); } while (Time.frameCount == frame);
+            }
             Action<Vector2> jump=point=> {
                 ocean.transform.position=point;
                 var body=ocean.GetComponent<Rigidbody2D>(); body.position=point; body.linearVelocity=Vector2.zero;
@@ -155,8 +165,8 @@ namespace DivingPrototype
                 check(ocean.DeliveredItemCount==0 && ocean.targets.All(t=>t.kind!=OceanTarget.TargetKind.Item),"No free test pickups without purchases");
                 float full = ocean.Hydrox.CurrentCapacity;
                 await Task.Delay(200);
-                check(ocean.LoadoutOpen && ocean.Hydrox.CurrentCapacity == full && ocean.Loadout.Machines == 4
-                    && ocean.Loadout.Tank == ItemCatalog.LightTank, "First loadout starts with four machines and does not consume gas before confirming");
+                check(ocean.LoadoutOpen && ocean.Hydrox.CurrentCapacity == full && ocean.Loadout.Machines == GameState.lastLoadout.Machines
+                    && ocean.Loadout.Tank == ItemCatalog.LightTank, "First loadout uses the starting machine selection and preserves gas until confirmed");
                 await BeginDive(ocean);
                 check(ocean.GetComponent<OceanTutorial>().Mode == OceanTutorial.TutorialMode.Mining, "Beginning the dive starts the day-two mining tutorial");
                 var knownSpot=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot && t.level==5);
@@ -165,7 +175,10 @@ namespace DivingPrototype
                 knownSpot.Reveal(Time.time);
                 jump(knownSpot.transform.position);
                 var training = ocean.GetComponent<OceanTutorial>();
+                training.Acknowledge();
                 training.Advance(0);
+                training.Acknowledge();
+                await WaitPastAcknowledgement();
                 check(ocean.PlaceMachine(), "One carried machine is deployed before testing overnight damage");
                 typeof(OceanTarget).GetField("nextTick",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).SetValue(knownSpot,Time.time-150.1f);
                 knownSpot.AdvanceMining(Time.time);
@@ -174,11 +187,13 @@ namespace DivingPrototype
                 jump(ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.Submarine).transform.position);
                 training.Advance(0);
                 training.OnScan(1); training.Advance(0);
-                training.OnPlaced(); training.Advance(5);
-                training.OnProduced(knownSpot); training.Advance(5);
-                training.OnRetrieved(); training.Advance(5);
-                training.OnPlaced(); training.Advance(5);
-                training.Advance(30); training.Advance(30);
+                training.Acknowledge(); training.OnPlaced(); training.Advance(5);
+                training.Acknowledge(); training.OnProduced(knownSpot); training.Advance(5);
+                training.Acknowledge(); training.OnRetrieved(); training.Advance(5);
+                training.Acknowledge(); training.OnPlaced(); training.Advance(5);
+                training.Acknowledge(); training.Advance(30);
+                training.Acknowledge(); training.Advance(30);
+                await WaitPastAcknowledgement();
                 check(training.IsMiningComplete,"Complete training milestones before testing later-day deliveries");
                 jump(ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.Submarine).transform.position);
                 check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && ocean.ConfirmReturn(),"First excursion ends through confirmation and Results");
@@ -215,6 +230,10 @@ namespace DivingPrototype
                 await sleepAndContinue();
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 await BeginDive(ocean);
+                var tutorial=ocean.GetComponent<OceanTutorial>();
+                check(tutorial.Mode==OceanTutorial.TutorialMode.Delivery && tutorial.Text==OceanTutorial.DeliveryMessage && GameState.deliveryTutorialShown,"First purchase excursion displays exact delivery message once");
+                tutorial.Acknowledge();
+                await WaitPastAcknowledgement();
                 var restoredSpot=ocean.targets.First(t=>t.PersistentId==knownId);
                 var hiddenSpot=ocean.targets.First(t=>t.PersistentId==hiddenId);
                 check(restoredSpot.IsProspected && restoredSpot.DisplayedTier==5 && restoredSpot.ActualTier==3,"Day four retains the discovered tier and applies the overnight downgrade");
@@ -232,7 +251,6 @@ namespace DivingPrototype
                 restoredSpot.Retrieve(Time.time+195.1f);
                 restoredSpot.Reveal(Time.time);
                 check(restoredSpot.DisplayedTier==3,"Re-prospecting refreshes the restored spot to its actual tier");
-                var tutorial=ocean.GetComponent<OceanTutorial>();
                 var hud=UnityEngine.Object.FindAnyObjectByType<OceanHud>();
                 var items=ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item).ToArray();
                 Vector2 center=ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.Submarine).transform.position;
@@ -242,7 +260,6 @@ namespace DivingPrototype
                 check(items.All(item => hud.minimapRoot.Find(item.name + " Minimap Marker").gameObject.activeSelf),
                     "Both deliveries appear on the existing minimap");
                 check(items.SelectMany(t=>t.GetComponentsInChildren<SpriteRenderer>(true)).All(r=>r.sharedMaterial.shader.name=="Diving Prototype/Ocean Flashlight"),"Runtime delivery sprites are cached by flashlight");
-                check(tutorial.Mode==OceanTutorial.TutorialMode.Delivery && tutorial.Text==OceanTutorial.DeliveryMessage && GameState.deliveryTutorialShown,"First purchase excursion displays exact delivery message once");
                 tutorial.Advance(1000);
                 check(tutorial.IsVisible,"Delivery guidance has no time limit");
                 var panel=(RectTransform)hud.status.transform.parent.Find("Excursion Tutorial");
@@ -276,8 +293,10 @@ namespace DivingPrototype
                 jump(items[1].transform.position); ocean.Interact();
                 check(ocean.RemainingDeliveryCount == 0 && tutorial.Mode == OceanTutorial.TutorialMode.Markers && tutorial.Text.Contains("SPACE"),
                     "Final collection starts day-four marker guidance");
-                tutorial.Advance(30);
-                tutorial.Advance(30);
+                tutorial.Acknowledge(); tutorial.Advance(30);
+                tutorial.Acknowledge(); tutorial.Advance(30);
+                tutorial.Acknowledge();
+                await WaitPastAcknowledgement();
                 check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Marker and depletion timeouts lead to inventory guidance");
                 var inventory = UnityEngine.Object.FindAnyObjectByType<ExcursionInventory>();
                 inventory.Open();
@@ -288,7 +307,8 @@ namespace DivingPrototype
                 check(tutorial.Mode == OceanTutorial.TutorialMode.Inventory, "Deposit guidance waits ten seconds after closing inventory");
                 tutorial.Advance(.02f);
                 check(tutorial.Mode == OceanTutorial.TutorialMode.Deposit && tutorial.Text.Contains("cannot be re-equipped"), "Closing inventory leads to deposit guidance");
-                tutorial.Advance(30);
+                tutorial.Acknowledge(); tutorial.Advance(30);
+                await WaitPastAcknowledgement();
                 check(!tutorial.IsVisible, "Day-four guidance ends thirty seconds after the deposit message");
                 ocean.Interact();
                 check(ocean.availableMachines==machines+2 && ocean.ItemsCollected==2 && collectionEvents==2,"Duplicate clicks cannot grant extra packages or events");
@@ -417,26 +437,33 @@ namespace DivingPrototype
                 check(ocean.Loadout.Tank == ItemCatalog.HeavyTank && ocean.Loadout.Camera && ocean.Loadout.Flippers
                     && ocean.Loadout.Stimulants == 1, "Next dive remembers the loadout and clamps consumables to remaining stock");
                 GameState.reset(); GameState.days=2; GameState.credits=73;
+                int startingOwnedMachines = GameState.inventory[GameState.MiningMachine];
                 GameState.itemsBought["Camera Module"]=1; GameState.itemsBought[GameState.MiningMachine]=1;
                 await loadOcean(true);
+                int startingCarriedMachines = ocean.availableMachines;
+                var retryTutorial = ocean.GetComponent<OceanTutorial>();
+                retryTutorial.Acknowledge();
+                await WaitPastAcknowledgement();
                 foreach(var delivery in ocean.targets.Where(t=>t.kind==OceanTarget.TargetKind.Item).ToArray())
                 { jump(delivery.transform.position); ocean.Interact(); }
-                check(ocean.CarriedCount(ItemCatalog.Camera) == 1 && ocean.availableMachines == 5, "Tutorial attempt collects generic and machine orders");
+                check(ocean.CarriedCount(ItemCatalog.Camera) == 1 && ocean.availableMachines == startingCarriedMachines + 1, "Tutorial attempt collects generic and machine orders");
                 ocean.targets.First(t=>t.kind==OceanTarget.TargetKind.MiningSpot).Reveal(Time.time);
                 await WaitForGasFailure(ocean);
                 ocean=UnityEngine.Object.FindAnyObjectByType<OceanInteractions>();
                 check(ocean!=null && GameState.days==2 && GameState.credits==73,"Tutorial gas exhaustion retries without settlement");
-                check(!GameState.inventory.ContainsKey(ItemCatalog.Camera) && GameState.inventory[GameState.MiningMachine]==4 && GameState.tellurium==0,
+                check(!GameState.inventory.ContainsKey(ItemCatalog.Camera) && GameState.inventory[GameState.MiningMachine] == startingOwnedMachines && GameState.tellurium==0,
                     "Retry restores the starting inventory without duplicating pickups");
                 check(ocean.RemainingDeliveryCount==2 && GameState.itemsBought.Values.All(c=>c==0) && GameState.miningSpots.Count==0,"Retry reissues orders once and restores mining discoveries");
-                var tank = ocean.Hydrox;
                 await BeginDive(ocean);
+                ocean.GetComponent<OceanTutorial>().Acknowledge();
+                await WaitPastAcknowledgement();
+                var tank = ocean.Hydrox;
                 jump(center);
                 tank.Refill();
-                tank.Advance(tank.MaxCapacity * .85f / tank.ConsumptionRate);
+                tank.Advance(tank.MaxCapacity * .849f / tank.ConsumptionRate);
                 check(ocean.RequestEnterSubmarine() && ocean.ReturnConfirmationOpen && !ocean.ConfirmReturn(),
-                    "An unfinished tutorial opens the submarine but blocks ending the excursion at exactly 15% Hydrox");
-                tank.Advance(.1f);
+                    "An unfinished tutorial opens the submarine but blocks ending the excursion just above 15% Hydrox");
+                tank.Advance(tank.MaxCapacity * .002f / tank.ConsumptionRate);
                 check(ocean.ConfirmReturn(),"Less than 15% Hydrox permits ending an unfinished tutorial excursion");
                 await WaitForIdle();
                 check(SceneManager.GetActiveScene().name=="Result","Low-gas return reaches Results");

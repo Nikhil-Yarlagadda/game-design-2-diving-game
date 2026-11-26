@@ -30,12 +30,16 @@ namespace DivingPrototype
             float oldSize = camera.orthographicSize;
             bool oldPaused = EditorApplication.isPaused;
             var oldMouse = Mouse.current;
+            var waterOverlay = controller.GetComponent<OceanVfx>()?.WaterOverlay;
+            bool waterOverlayWasEnabled = waterOverlay != null && waterOverlay.enabled;
             Mouse mouse = null;
             RenderTexture target = null;
             Texture2D pixels = null;
             try
             {
                 EditorApplication.isPaused = true;
+                // Sample flashlight lighting without the animated water tint composited over it.
+                if (waterOverlay != null) waterOverlay.enabled = false;
                 mouse = InputSystem.AddDevice<Mouse>();
                 mouse.MakeCurrent();
                 target = new RenderTexture(1024, 1024, 24, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
@@ -80,7 +84,8 @@ namespace DivingPrototype
                 controller.RefreshLighting();
                 FlashlightCheck.Near(material.GetFloat("_PlayerLightRadius"), .1f, "Sprite scaling does not override configured radius");
                 controller.transform.localScale = oldScale;
-                Set(settings, "playerLightRadius", oldRadius);
+                // Check the forward cone and its shadows independently of the soft player halo.
+                Set(settings, "playerLightRadius", 0f);
                 controller.RefreshLighting();
                 FlashlightCheck.Render(camera, target, pixels);
                 var darkness = Pixel(camera, pixels, new Vector2(-3f, 0f));
@@ -143,6 +148,7 @@ namespace DivingPrototype
                 camera.transform.position = oldCameraPosition;
                 controller.RefreshLighting();
                 camera.backgroundColor = oldBackground;
+                if (waterOverlay != null) waterOverlay.enabled = waterOverlayWasEnabled;
                 EditorApplication.isPaused = oldPaused;
                 if (pixels != null) UnityEngine.Object.DestroyImmediate(pixels);
                 if (target != null) { target.Release(); UnityEngine.Object.DestroyImmediate(target); }
