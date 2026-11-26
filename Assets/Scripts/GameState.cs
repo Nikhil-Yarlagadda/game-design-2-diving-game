@@ -35,6 +35,7 @@ public static class GameState
     public static DiveLoadout lastLoadout;
     public static bool excursionIncapacitated;
     public static int oreLost;
+    public static HashSet<string> emailsRead = new HashSet<string>();
     
 
     public static bool checkTerminal;

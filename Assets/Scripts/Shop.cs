@@ -26,7 +26,7 @@ public class Shop : MonoBehaviour
     {
         item = null;
         notification.SetActive(false);
-    notificationButton.onClick.AddListener(() => notification.SetActive(false));
+        notificationButton.onClick.AddListener(() => notification.SetActive(false));
         instance = this;
         cart.Clear();
         RefreshCart();

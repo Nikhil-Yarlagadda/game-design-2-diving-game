@@ -5,7 +5,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
 {
     public TextMeshProUGUI description;
     public Button admin;
-
+    public Image notif;
     public GameObject popup;            // InboxPopup
     public TextMeshProUGUI popupText;   // PopupText
     public Button popupButton;          // the Button on InboxPopup
@@ -15,7 +15,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
     void Start()
     {
 
-        if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
+        /*if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
         {
             popupButton.onClick.AddListener(ClosePopup);
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Administrator Access available.";
@@ -37,6 +37,19 @@ public class TerminalHandler : MonoBehaviour, IClickable
         {
             description.text = "Admin Access";
             admin.interactable = true;
+        }*/
+
+        notif.gameObject.SetActive(false);
+        if(!GameState.emailsRead.Contains("intro")){
+            notif.gameObject.SetActive(true);
+        }
+        if(GameState.days == 7 && !GameState.emailsRead.Contains("medicine")){
+            notif.gameObject.SetActive(true);
+        }
+        if(GameState.evidenceRequestDay >= 0
+                    && GameState.days >= GameState.evidenceRequestDay + 2
+                    && !GameState.emailsRead.Contains("photo")){
+            notif.gameObject.SetActive(true);
         }
     }
 
@@ -74,5 +87,10 @@ public class TerminalHandler : MonoBehaviour, IClickable
     public void AdminClicked()
     {
         SceneChanger.ChangeScene("AdminTab");
+    }
+
+    public void LocalClicked()
+    {
+        SceneChanger.ChangeScene("Local");
     }
 }
