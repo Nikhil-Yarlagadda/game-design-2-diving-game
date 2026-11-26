@@ -35,8 +35,10 @@ namespace DivingPrototype
         internal static async Task WaitForGasFailure(OceanInteractions ocean)
         {
             ocean.Hydrox.Advance(ocean.Hydrox.MaxCapacity);
-            for (int i = 0; i < 250 && ocean != null && !ocean.IsTransitioning; i++) await Task.Delay(100);
-            FlashlightCheck.Require(ocean == null || ocean.IsTransitioning, "Gas failure transitions after the grace window");
+            for (int i = 0; i < 250 && ocean != null && !ocean.FailureScreenOpen; i++) await Task.Delay(100);
+            FlashlightCheck.Require(ocean != null && ocean.FailureScreenOpen, "Gas failure opens the failure screen after the grace window");
+            ocean.ResolveFailure();
+            FlashlightCheck.Require(ocean == null || ocean.IsTransitioning, "Gas failure transitions after the failure screen");
             await WaitForIdle();
         }
 

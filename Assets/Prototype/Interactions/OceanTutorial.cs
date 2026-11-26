@@ -18,6 +18,7 @@ namespace DivingPrototype
         private const float ReadingSeconds = 30f, AfterInventorySeconds = 10f;
         public int Stage { get; private set; }
         public bool IsMiningComplete => Mode == TutorialMode.Mining && Stage > Messages.Length;
+        public static int MiningMessageCount => Messages.Length;
         public bool HighlightHydrox => Mode == TutorialMode.Mining && Stage == 6;
         public float VisibleSeconds { get; private set; }
         private bool discovered, placed, produced, retrieved, placedAgain;
