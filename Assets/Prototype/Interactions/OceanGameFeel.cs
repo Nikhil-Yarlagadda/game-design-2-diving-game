@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace DivingPrototype
@@ -163,21 +164,36 @@ namespace DivingPrototype
         [Serializable]
         public sealed class SpotRevealSettings
         {
-            [Tooltip("Enable the scale punch and bubble ring when the prospect sweep reveals a spot.")]
+            [Tooltip("Enable the expanding reveal ring and bubble ring when the prospect sweep reveals a spot.")]
             public bool enabled = true;
 
-            [Header("Scale punch")]
-            [Min(0f), Tooltip("Extra scale at DisplayedTier 0; higher tiers add scalePunchPerTier on top.")]
-            public float scalePunch = 0.12f;
+            [Header("Expanding ring")]
+            [Min(0f), Tooltip("Final ring radius at DisplayedTier 0 (world units).")]
+            public float ringRadius = 1f;
 
-            [Min(0f), Tooltip("Additional scale punch per DisplayedTier above 0 (1-5 reads as stronger info).")]
-            public float scalePunchPerTier = 0.025f;
+            [Min(0f), Tooltip("Additional final ring radius per DisplayedTier above 0.")]
+            public float ringRadiusPerTier = 0.12f;
 
-            [Min(0.05f), Tooltip("Total duration of the scale punch (seconds).")]
-            public float punchDuration = 0.28f;
+            [Range(0f, 1f), Tooltip("Ring opacity at DisplayedTier 0.")]
+            public float ringAlpha = 0.8f;
 
-            [Range(0.05f, 0.9f), Tooltip("Normalized fraction of duration spent growing to the peak before settling back.")]
-            public float punchRiseFraction = 0.35f;
+            [Range(0f, 1f), Tooltip("Additional ring opacity per DisplayedTier above 0.")]
+            public float ringAlphaPerTier = 0.05f;
+
+            [Min(0.05f), Tooltip("Lifetime of the expanding ring (seconds).")]
+            public float ringDuration = 0.5f;
+
+            [Range(0.05f, 1f), Tooltip("Starting diameter as a fraction of the final diameter.")]
+            public float ringStartScale = 0.25f;
+
+            [Tooltip("Tint the ring with the revealed spot's tier color.")]
+            public bool ringUsesTierColor = true;
+
+            [Tooltip("Fallback ring color when tier tinting is disabled.")]
+            public Color ringColor = Color.white;
+
+            [Tooltip("Sorting order of the reveal ring; keep it below the tier text.")]
+            public int ringSortingOrder = 18;
 
             [Header("Bubble ring")]
             [Range(0, 64), Tooltip("Ring bubbles at DisplayedTier 0; higher tiers add bubbleCountPerTier.")]
@@ -186,10 +202,10 @@ namespace DivingPrototype
             [Range(0, 16), Tooltip("Additional ring bubbles per DisplayedTier above 0.")]
             public int bubbleCountPerTier = 1;
 
-            [Min(0f), Tooltip("Ring radius at DisplayedTier 0 (world units).")]
+            [Min(0f), Tooltip("Bubble ring radius at DisplayedTier 0 (world units).")]
             public float bubbleRadius = 0.3f;
 
-            [Min(0f), Tooltip("Additional ring radius per DisplayedTier above 0.")]
+            [Min(0f), Tooltip("Additional bubble ring radius per DisplayedTier above 0.")]
             public float bubbleRadiusPerTier = 0.025f;
 
             [Tooltip("Tint ring bubbles with the spot tier color so the revealed tier reads at a glance.")]
@@ -214,8 +230,8 @@ namespace DivingPrototype
             public bool enabled = true;
 
             [Header("Eye photo flash")]
-            [Range(0f, 1f), Tooltip("Peak opacity of the world-space camera flash.")]
-            public float flashAlpha = 0.3f;
+            [Range(0f, 1f), Tooltip("Linear-space peak alpha. 0.08 reads as roughly 0.3 perceived brightness over a dark Linear scene.")]
+            public float flashAlpha = 0.08f;
 
             [Min(0.01f), Tooltip("Duration of the flash (seconds, unscaled).")]
             public float flashDuration = 0.12f;
@@ -344,23 +360,34 @@ namespace DivingPrototype
             {
                 if (effectsEnabled == value) return;
                 effectsEnabled = value;
-                if (!effectsEnabled) CleanupAllEffects();
+                if (!effectsEnabled)
+                {
+                    CleanupAllEffects();
+                    UnsubscribeCameraRendering();
+                }
+                else SubscribeCameraRendering();
             }
         }
 
         private OceanInteractions ocean;
         private OceanVfx vfx;
         private Camera view;
-        private bool followsTarget;
-        private float baseSize;
-        private Quaternion baseRotation;
-        private Vector3 lastOffset;
         private float trauma, beatTime, toggleShownUntil;
-        private bool cameraDirty;
         private float thudElapsed = float.PositiveInfinity;
+        private Vector3 renderOffset;
+        private float renderAngle, renderZoom;
+        private bool renderCallbacksSubscribed;
+        private bool cameraEffectApplied;
+        private Vector3 savedCameraPosition;
+        private Quaternion savedCameraRotation;
+        private float savedCameraSize;
+        private bool overlayEffectApplied;
+        private Vector3 savedOverlayPosition;
+        private Vector3 savedOverlayScale;
+        private Canvas hudCanvas;
         private readonly Dictionary<Transform, (Vector3 position, Coroutine run)> machineDrops = new();
-        private readonly Dictionary<Transform, (Vector3 scale, Coroutine run)> revealPunches = new();
         private readonly Dictionary<Transform, (Vector3 position, Coroutine run)> oreSettles = new();
+        private readonly List<(GameObject go, Coroutine run)> revealRings = new();
         private readonly List<(GameObject go, Coroutine run)> sparkles = new();
         private readonly System.Random presentationRandom = new();
         private float photoFlashStart = -1f;
@@ -368,9 +395,14 @@ namespace DivingPrototype
         private UnityEngine.UI.Image photoFlash;
         private Sprite whiteSprite;
         private Texture2D whiteTexture;
+        private Sprite ringSprite;
+        private Texture2D ringTexture;
 
         private bool CameraThudActive => placeMachine.enabled && placeMachine.thudOffset > 0f
             && placeMachine.thudDuration > 0f && thudElapsed < placeMachine.thudDuration;
+
+        private bool HasActiveCameraEffect => renderOffset.sqrMagnitude > 0.00000001f
+            || Mathf.Abs(renderAngle) > 0.00001f || Mathf.Abs(renderZoom) > 0.00001f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
@@ -391,6 +423,7 @@ namespace DivingPrototype
         {
             ocean = GetComponent<OceanInteractions>();
             vfx = GetComponent<OceanVfx>();
+            view = ocean != null ? ocean.oceanCamera : null;
         }
 
         private void OnEnable()
@@ -402,6 +435,7 @@ namespace DivingPrototype
             ocean.ItemCollected += OnItemCollected;
             ocean.QuestItemCollected += OnQuestItemCollected;
             ocean.OreProduced += OnOreProduced;
+            if (effectsEnabled) SubscribeCameraRendering();
         }
 
         private void OnDisable()
@@ -415,15 +449,19 @@ namespace DivingPrototype
                 ocean.QuestItemCollected -= OnQuestItemCollected;
                 ocean.OreProduced -= OnOreProduced;
             }
+            UnsubscribeCameraRendering();
             CleanupAllEffects();
         }
 
         private void OnDestroy()
         {
-            CleanupOreProduction();
+            UnsubscribeCameraRendering();
+            CleanupAllEffects();
             if (photoFlash != null) Destroy(photoFlash.gameObject);
             if (whiteSprite != null) Destroy(whiteSprite);
             if (whiteTexture != null) Destroy(whiteTexture);
+            if (ringSprite != null) Destroy(ringSprite);
+            if (ringTexture != null) Destroy(ringTexture);
         }
 
         private void OnValidate()
@@ -434,10 +472,15 @@ namespace DivingPrototype
         private void Start()
         {
             view = ocean != null ? ocean.oceanCamera : null;
-            if (view == null) { enabled = false; return; }
-            followsTarget = view.TryGetComponent<CenteredCamera>(out _);
-            baseSize = view.orthographicSize;
-            baseRotation = view.transform.rotation;
+            if (view == null) enabled = false;
+            CacheHudCanvas();
+        }
+
+        private void CacheHudCanvas()
+        {
+            if (hudCanvas != null) return;
+            var hud = FindAnyObjectByType<OceanHud>();
+            hudCanvas = hud != null ? hud.GetComponentInParent<Canvas>() : null;
         }
 
         /// <summary>Adds camera trauma; the visible shake is trauma squared, so small hits stay subtle.</summary>
@@ -451,11 +494,13 @@ namespace DivingPrototype
         {
             if (!effectsEnabled)
             {
+                UnsubscribeCameraRendering();
                 CleanupAllEffects();
                 return;
             }
-            if (!placeMachine.enabled && (machineDrops.Count > 0 || CameraThudActive)) CleanupPlaceMachine();
-            if (!spotReveal.enabled && revealPunches.Count > 0) CleanupSpotReveal();
+            SubscribeCameraRendering();
+            if (!placeMachine.enabled) CleanupPlaceMachine();
+            if (!spotReveal.enabled && revealRings.Count > 0) CleanupSpotReveal();
             if (!questItem.enabled && photoFlashStart >= 0f) CleanupPhotoFlash();
             if (!oreProduction.enabled)
             {
@@ -464,7 +509,6 @@ namespace DivingPrototype
             }
             if (!outOfHydrox.enabled) beatTime = 0f;
             if (!cameraShake.enabled) trauma = 0f;
-            if (!cameraShake.enabled && !outOfHydrox.enabled && !CameraThudActive) ResetCamera();
         }
 
         private void CleanupAllEffects()
@@ -475,7 +519,11 @@ namespace DivingPrototype
             CleanupPhotoFlash();
             beatTime = 0f;
             trauma = 0f;
-            ResetCamera();
+            thudElapsed = float.PositiveInfinity;
+            renderOffset = Vector3.zero;
+            renderAngle = 0f;
+            renderZoom = 0f;
+            RestoreCameraEffect();
         }
 
         private void CleanupPlaceMachine()
@@ -487,17 +535,16 @@ namespace DivingPrototype
             }
             machineDrops.Clear();
             thudElapsed = float.PositiveInfinity;
-            ResetCamera();
         }
 
         private void CleanupSpotReveal()
         {
-            foreach (var pair in revealPunches)
+            foreach (var entry in revealRings)
             {
-                if (pair.Value.run != null) StopCoroutine(pair.Value.run);
-                if (pair.Key != null) pair.Key.localScale = pair.Value.scale;
+                if (entry.run != null) StopCoroutine(entry.run);
+                if (entry.go != null) Destroy(entry.go);
             }
-            revealPunches.Clear();
+            revealRings.Clear();
         }
 
         private void CleanupOreProduction()
@@ -644,12 +691,36 @@ namespace DivingPrototype
 
         private void OnMachineRetrieved(OceanTarget spot, int amount)
         {
-            if (!effectsEnabled || !retrieve.enabled || spot == null || amount <= 0) return;
+            if (!effectsEnabled || spot == null) return;
+            CancelMachineMotion(spot);
+            if (!retrieve.enabled || amount <= 0) return;
             int minBubbles = Mathf.Min(retrieve.minBubbleCount, retrieve.maxBubbleCount);
             int maxBubbles = Mathf.Max(retrieve.minBubbleCount, retrieve.maxBubbleCount);
             int count = Mathf.Clamp(minBubbles + amount * retrieve.bubblesPerTellurium, minBubbles, maxBubbles);
             BubbleBurst(spot.transform.position, count);
             AddTrauma(retrieve.trauma);
+        }
+
+        /// <summary>Stops a machine's placement drop or production settle and restores its recorded rest position.</summary>
+        private void CancelMachineMotion(OceanTarget spot)
+        {
+            var machine = spot != null ? spot.machine : null;
+            if (machine == null) return;
+            var target = machine.transform;
+            bool restored = false;
+            if (machineDrops.TryGetValue(target, out var drop))
+            {
+                if (drop.run != null) StopCoroutine(drop.run);
+                machineDrops.Remove(target);
+                target.localPosition = drop.position;
+                restored = true;
+            }
+            if (oreSettles.TryGetValue(target, out var settle))
+            {
+                if (settle.run != null) StopCoroutine(settle.run);
+                oreSettles.Remove(target);
+                if (!restored) target.localPosition = settle.position;
+            }
         }
 
         private void BubbleBurst(Vector3 position, int count)
@@ -687,65 +758,91 @@ namespace DivingPrototype
         {
             if (!effectsEnabled || !spotReveal.enabled || spot == null) return;
             int tier = Mathf.Clamp(spot.DisplayedTier, 0, 5);
-            float peak = 1f + Mathf.Max(0f, spotReveal.scalePunch + spotReveal.scalePunchPerTier * tier);
-            float duration = Mathf.Max(0.05f, spotReveal.punchDuration);
-            float riseFraction = Mathf.Clamp(spotReveal.punchRiseFraction, 0.05f, 0.9f);
 
-            // Scale only visual children; the root keeps its position and any collider/Closest behavior.
-            foreach (var visual in spot.GetComponentsInChildren<Renderer>(true))
-            {
-                if (visual == null) continue;
-                var target = visual.transform;
-                if (target == spot.transform) continue;
-                // The machine has its own placement and production feedback; leave it alone.
-                if (spot.machine != null && target == spot.machine.transform) continue;
-                if (target.GetComponent<Collider2D>() != null || target.GetComponent<Collider>() != null) continue;
-                StartScalePunch(target, peak, duration, riseFraction);
-            }
+            Color ringColor = spotReveal.ringUsesTierColor ? spot.TierColor : spotReveal.ringColor;
+            ringColor.a = Mathf.Clamp01(spotReveal.ringAlpha + spotReveal.ringAlphaPerTier * tier);
+            float ringRadius = Mathf.Max(0f, spotReveal.ringRadius + spotReveal.ringRadiusPerTier * tier);
+            SpawnRevealRing(spot.transform.position, ringRadius, ringColor);
 
-            Color color = spotReveal.tintBubblesByTier ? spot.TierColor : bubbleBurst.color;
-            color.a = bubbleBurst.color.a;
+            Color bubbleColor = spotReveal.tintBubblesByTier ? spot.TierColor : bubbleBurst.color;
+            bubbleColor.a = bubbleBurst.color.a;
             int count = Mathf.Max(0, spotReveal.bubbleCount + spotReveal.bubbleCountPerTier * tier);
             float radius = Mathf.Max(0f, spotReveal.bubbleRadius + spotReveal.bubbleRadiusPerTier * tier);
-            BubbleRing(spot.transform.position, count, radius, color);
+            BubbleRing(spot.transform.position, count, radius, bubbleColor);
         }
 
-        private void StartScalePunch(Transform target, float peak, float duration, float riseFraction)
+        /// <summary>
+        /// Spawns an independent expanding ring. It never touches OceanTarget's own renderers, so the
+        /// PR #16 tier pill and label keep their authored sizes while the text changes.
+        /// </summary>
+        private void SpawnRevealRing(Vector3 position, float radius, Color color)
         {
-            // Keep the true rest pose so repeated reveals never leave a distorted visual.
-            var rest = target.localScale;
-            if (revealPunches.TryGetValue(target, out var running))
-            {
-                rest = running.scale;
-                if (running.run != null) StopCoroutine(running.run);
-            }
-            // Register first: a zero-duration punch can finish synchronously and remove itself.
-            revealPunches[target] = (rest, null);
-            var run = StartCoroutine(ScalePunch(target, rest, peak, duration, riseFraction));
-            if (revealPunches.ContainsKey(target)) revealPunches[target] = (rest, run);
+            if (radius <= 0f || spotReveal.ringDuration <= 0f) return;
+            EnsureRingSprite();
+            if (ringSprite == null) return;
+
+            var go = new GameObject("Juice Reveal Ring", typeof(SpriteRenderer)) { hideFlags = HideFlags.DontSave };
+            var sprite = go.GetComponent<SpriteRenderer>();
+            sprite.sprite = ringSprite;
+            sprite.sortingOrder = spotReveal.ringSortingOrder;
+            sprite.color = color;
+            go.transform.position = position;
+            float startDiameter = radius * 2f * Mathf.Clamp(spotReveal.ringStartScale, 0.05f, 1f);
+            go.transform.localScale = Vector3.one * startDiameter;
+            // Register first: a zero-duration ring can finish synchronously and remove itself.
+            revealRings.Add((go, null));
+            var run = StartCoroutine(AnimateRevealRing(go, sprite, radius * 2f, color, spotReveal.ringDuration));
+            for (int i = revealRings.Count - 1; i >= 0; i--)
+                if (revealRings[i].go == go) { revealRings[i] = (go, run); break; }
         }
 
-        private IEnumerator ScalePunch(Transform target, Vector3 rest, float peak, float duration, float riseFraction)
+        private IEnumerator AnimateRevealRing(GameObject go, SpriteRenderer sprite, float endDiameter, Color color,
+            float duration)
         {
-            float riseTime = duration * Mathf.Clamp(riseFraction, 0.01f, 0.99f);
-            for (float t = 0f; t < duration && target != null; t += Time.deltaTime)
+            duration = Mathf.Max(0.01f, duration);
+            float startDiameter = go.transform.localScale.x;
+            for (float t = 0f; t < duration && go != null; t += Time.deltaTime)
             {
-                float scale;
-                if (t < riseTime)
-                {
-                    float k = t / riseTime;
-                    scale = Mathf.LerpUnclamped(1f, peak, 1f - Mathf.Pow(1f - k, 3f));
-                }
-                else
-                {
-                    float k = Mathf.Clamp01((t - riseTime) / Mathf.Max(0.0001f, duration - riseTime));
-                    scale = Mathf.LerpUnclamped(peak, 1f, 1f - Mathf.Pow(1f - k, 3f));
-                }
-                target.localScale = rest * scale;
+                float k = Mathf.Clamp01(t / duration);
+                float expand = 1f - Mathf.Pow(1f - k, 2f); // ease-out expansion
+                go.transform.localScale = Vector3.one * Mathf.Lerp(startDiameter, endDiameter, expand);
+                sprite.color = new Color(color.r, color.g, color.b, color.a * (1f - k) * (1f - k));
                 yield return null;
             }
-            if (target != null) target.localScale = rest;
-            revealPunches.Remove(target);
+            for (int i = revealRings.Count - 1; i >= 0; i--)
+                if (revealRings[i].go == go) revealRings.RemoveAt(i);
+            if (go != null) Destroy(go);
+        }
+
+        private void EnsureRingSprite()
+        {
+            if (ringSprite != null) return;
+            const int size = 128;
+            const float thickness = 0.04f;
+            ringTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "Juice Reveal Ring",
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float u = (x + 0.5f) / size - 0.5f;
+                float v = (y + 0.5f) / size - 0.5f;
+                float radial = Mathf.Sqrt(u * u + v * v);
+                float outer = Mathf.Clamp01((0.5f - radial) * size + 0.5f);
+                float inner = Mathf.Clamp01((radial - (0.5f - thickness)) * size + 0.5f);
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)(Mathf.Min(outer, inner) * 255f));
+            }
+            ringTexture.SetPixels32(pixels);
+            ringTexture.Apply(false, false);
+            ringSprite = Sprite.Create(ringTexture, new Rect(0, 0, size, size), Vector2.one * 0.5f, size,
+                0, SpriteMeshType.FullRect);
+            ringSprite.name = "Juice Reveal Ring Sprite";
+            ringSprite.hideFlags = HideFlags.HideAndDontSave;
         }
 
         private void BubbleRing(Vector3 position, int count, float radius, Color color)
@@ -818,15 +915,14 @@ namespace DivingPrototype
         private void EnsurePhotoFlash()
         {
             if (photoFlash != null || whiteSprite == null) return;
-            var hud = FindAnyObjectByType<OceanHud>();
-            var canvas = hud != null ? hud.GetComponentInParent<Canvas>() : null;
-            if (canvas == null) return;
+            CacheHudCanvas();
+            if (hudCanvas == null) return;
             var go = new GameObject("Juice Photo Flash", typeof(RectTransform), typeof(UnityEngine.UI.Image))
             {
                 hideFlags = HideFlags.DontSave
             };
             var rect = go.GetComponent<RectTransform>();
-            rect.SetParent(canvas.transform, false);
+            rect.SetParent(hudCanvas.transform, false);
             rect.SetAsFirstSibling();
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -1017,6 +1113,76 @@ namespace DivingPrototype
 
         // ---------------------------------------------------------------- Camera & input
 
+        private void SubscribeCameraRendering()
+        {
+            if (renderCallbacksSubscribed || view == null) return;
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+            renderCallbacksSubscribed = true;
+        }
+
+        private void UnsubscribeCameraRendering()
+        {
+            if (renderCallbacksSubscribed)
+            {
+                RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+                RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+                renderCallbacksSubscribed = false;
+            }
+            RestoreCameraEffect();
+        }
+
+        /// <summary>Applies the juice offset only while this camera is being rendered.</summary>
+        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (!effectsEnabled || camera != view || cameraEffectApplied || !HasActiveCameraEffect) return;
+            savedCameraPosition = camera.transform.position;
+            savedCameraRotation = camera.transform.rotation;
+            savedCameraSize = camera.orthographicSize;
+            cameraEffectApplied = true;
+
+            camera.transform.position = savedCameraPosition + renderOffset;
+            camera.transform.rotation = savedCameraRotation * Quaternion.Euler(0f, 0f, renderAngle);
+            if (camera.orthographic)
+                camera.orthographicSize = savedCameraSize * (1f - Mathf.Clamp(renderZoom, 0f, 0.9f));
+
+            overlayEffectApplied = false;
+            if (vfx != null && vfx.WaterOverlay != null)
+            {
+                var overlay = vfx.WaterOverlay.transform;
+                savedOverlayPosition = overlay.position;
+                savedOverlayScale = overlay.localScale;
+                overlay.position += renderOffset;
+                overlay.localScale = savedOverlayScale * (1f - Mathf.Clamp(renderZoom, 0f, 0.9f));
+                overlayEffectApplied = true;
+            }
+        }
+
+        private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (!cameraEffectApplied || camera != view) return;
+            RestoreCameraEffect();
+        }
+
+        /// <summary>Restores the exact pre-render camera and water-overlay values.</summary>
+        private void RestoreCameraEffect()
+        {
+            if (cameraEffectApplied && view != null)
+            {
+                view.transform.position = savedCameraPosition;
+                view.transform.rotation = savedCameraRotation;
+                view.orthographicSize = savedCameraSize;
+            }
+            cameraEffectApplied = false;
+            if (overlayEffectApplied && vfx != null && vfx.WaterOverlay != null)
+            {
+                var overlay = vfx.WaterOverlay.transform;
+                overlay.position = savedOverlayPosition;
+                overlay.localScale = savedOverlayScale;
+            }
+            overlayEffectApplied = false;
+        }
+
         private void Update()
         {
             SyncEnabledStates();
@@ -1034,47 +1200,35 @@ namespace DivingPrototype
             if (view == null) return;
             SyncEnabledStates();
             UpdatePhotoFlash();
+            if (cameraEffectApplied) RestoreCameraEffect();
+
             bool active = effectsEnabled && Time.timeScale > 0f && ocean != null && !ocean.InsideSubmarine && !ocean.LoadoutOpen;
-            if (!active) { trauma = 0f; beatTime = 0f; ResetCamera(); return; }
+            if (!active)
+            {
+                trauma = 0f;
+                beatTime = 0f;
+                thudElapsed = float.PositiveInfinity;
+                renderOffset = Vector3.zero;
+                renderAngle = 0f;
+                renderZoom = 0f;
+                return;
+            }
 
             float dt = Time.deltaTime;
-            float zoom = HeartbeatZoom(dt);
+            renderZoom = HeartbeatZoom(dt);
             trauma = cameraShake.enabled ? Mathf.Max(0f, trauma - cameraShake.traumaDecay * dt) : 0f;
 
             bool thudActive = CameraThudActive;
-            // Idle: leave the camera alone so other code (and the editor play checks) own it.
-            if (trauma <= 0f && zoom <= 0f && !thudActive) { ResetCamera(); return; }
-            cameraDirty = true;
             float shake = cameraShake.enabled ? trauma * trauma : 0f;
             float time = Time.time * cameraShake.shakeFrequency;
-            var offset = new Vector3(Noise(time, 0f), Noise(time, 10f), 0f) * (cameraShake.maxShakeOffset * shake);
-            if (thudActive) offset += Vector3.up * CameraThudOffset();
-            float angle = Noise(time, 20f) * cameraShake.maxShakeAngle * shake;
-
-            // CenteredCamera rewrites the position every frame; otherwise remove last frame's offset.
-            if (!followsTarget) view.transform.position -= lastOffset;
-            view.transform.position += offset;
-            lastOffset = offset;
-            view.transform.rotation = baseRotation * Quaternion.Euler(0f, 0f, angle);
-            view.orthographicSize = baseSize * (1f - zoom);
-
+            renderOffset = new Vector3(Noise(time, 0f), Noise(time, 10f), 0f) * (cameraShake.maxShakeOffset * shake);
+            if (thudActive) renderOffset += Vector3.up * CameraThudOffset();
+            renderAngle = Noise(time, 20f) * cameraShake.maxShakeAngle * shake;
             if (thudActive) thudElapsed += dt;
         }
 
         /// <summary>Smooth random value in [-1, 1]; Perlin noise keeps the shake from looking jittery.</summary>
         private static float Noise(float time, float seed) => Mathf.PerlinNoise(time, seed) * 2f - 1f;
-
-        /// <summary>Restores the camera once, when an effect ends; does nothing while idle.</summary>
-        private void ResetCamera()
-        {
-            thudElapsed = float.PositiveInfinity;
-            if (view == null || !cameraDirty) return;
-            cameraDirty = false;
-            if (!followsTarget) view.transform.position -= lastOffset;
-            lastOffset = Vector3.zero;
-            view.transform.rotation = baseRotation;
-            view.orthographicSize = baseSize;
-        }
 
         private void OnGUI()
         {

@@ -692,8 +692,8 @@ namespace DivingPrototype
                 ItemCatalog.ChangeCount(carried, ItemCatalog.Machine, 1);
                 UpdateSpeed();
                 if (amount > 0) PositiveRetrieval?.Invoke();
-                MachineRetrieved?.Invoke(Closest, amount);
                 Notify("Machine retrieved. +" + amount + " tellurium.");
+                MachineRetrieved?.Invoke(Closest, amount);
             }
             else if (Closest.kind == OceanTarget.TargetKind.MiningSpot) PlaceMachine();
             RecordCarriedOre();
