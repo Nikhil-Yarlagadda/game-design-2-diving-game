@@ -77,6 +77,12 @@ public class Shop : MonoBehaviour
         RefreshCart();
     }
 
+     public void ClearCart()
+    {
+        cart.Clear();
+        RefreshCart();
+    }
+
     public void buyClicked()
     {
         if (!CanBuy()) return;

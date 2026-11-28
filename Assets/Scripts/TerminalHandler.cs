@@ -3,8 +3,6 @@ using TMPro;
 using UnityEngine.UI;
 public class TerminalHandler : MonoBehaviour, IClickable
 {
-    public TextMeshProUGUI description;
-    public Button admin;
     public Image notif;
     public GameObject popup;            // InboxPopup
     public TextMeshProUGUI popupText;   // PopupText
@@ -15,7 +13,7 @@ public class TerminalHandler : MonoBehaviour, IClickable
     void Start()
     {
 
-        /*if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
+        if(!GameState.infectionPhoto && ItemCatalog.Count(GameState.inventory, ItemCatalog.CrewPhoto) > 0)
         {
             popupButton.onClick.AddListener(ClosePopup);
             popupText.text = "Camera module connected. Uploading files on disk…\nFiles uploaded successfully. Administrator Access available.";
@@ -32,12 +30,6 @@ public class TerminalHandler : MonoBehaviour, IClickable
             GameState.abyssPhoto = true;
             GameState.Playtest.Milestone("Eye photo uploaded");
         }
-
-        if(GameState.infectionPhoto)
-        {
-            description.text = "Admin Access";
-            admin.interactable = true;
-        }*/
 
         notif.gameObject.SetActive(false);
         if(!GameState.emailsRead.Contains("intro")){
@@ -68,9 +60,9 @@ public class TerminalHandler : MonoBehaviour, IClickable
     {
         Debug.Log("Terminal hit");
         if(GameState.days > 1)
-            SceneChanger.ChangeScene("Terminal");
+            SceneChanger.ChangeScene("Shop");
         else
-            SceneChanger.ChangeScene("Introduction");
+            SceneChanger.ChangeScene("Contact Management");
     }  
 
     public void ShopClicked()

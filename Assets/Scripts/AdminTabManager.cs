@@ -1,49 +1,51 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class AdminTabManager : MonoBehaviour
 {
-    public TextMeshProUGUI description;
+    public Button tab;
+    public TextMeshProUGUI buttonText;
 
-    private const string UnlockedFiles = @"Encrypted files: Unlocked
-
-Image recognition passkey: Success
-
-(Encrypted file contents):
-
-Trident Intelligence - Hadal Organism Research Branch
-
-Dormant <i>Mucor amentia</i> spores have been found in sediment samples collected from various locations on the abyssal plain. This parasitic organism follows a unique life cycle in four stages.
-
-In its juvenile stage, <i>Mucor amentia</i> takes the form of microscopic spores. These spores can remain dormant indefinitely when submerged in water. When removed from water, they spread rapidly through the air to be inhaled by potential hosts. When many of these spores coalesce in one location, they form a viscous mass with an orange-yellow hue.
-
-When occupying a human host, <i>Mucor amentia</i> is able to mature into its second life stage. Growths may eventually appear on the host’s skin, and host’s behavior will gradually shift as <i>Mucor amentia</i> compels them to seek deep open water. The host may appear manic and unnaturally invigorated.
-
-When <i>Mucor amentia</i> has matured as much as possible in its human host, it enters stage three of its life cycle, where it’s no longer contagious to other humans. The host will be urgently compelled to submerge themself in deep open water at any cost. They will gain an unnatural ability to travel large distances underwater, seemingly without needing any oxygen at all. The growths will become very large and eventually immobilize the host at this stage.
-
-This behavior allows <i>Mucor amentia</i> to use its human host as bait for very large marine organisms (codenamed Leviathans). Only when <i>Mucor amentia</i> is consumed by a Leviathan may it reach its final life stage and reproduce.
-
-Since Leviathans are few and far between in the ocean, <i>Mucor amentia</i> has adapted itself to spread across as wide of an area as possible. Stage three <i>Mucor amentia</i> are highly territorial to other members of the species. When even just a severed piece of stage three <i>Mucor amentia</i> is confined in a space with younger members of the species, the younger <i>Mucor amentia</i> will all rapidly die, and any hosts will fully recover from the infection.";
+    public GameObject textPanel;
+    public Image lockIcon;
+    public GameObject lockPanel;
+    public GameObject hintPanel;
 
     /// <summary>Shows the passkey hint or unlocks the files after the Eye photo is uploaded.</summary>
     void Start()
     {
-        if (!GameState.infectionPhoto)
-        {
-            description.text = "Encrypted files: Locked";
-            return;
-        }
+        hintPanel.SetActive(false);
+        textPanel.SetActive(false);
+        if (ColorUtility.TryParseHtmlString("#A4DDDB", out Color temp))
+                temp.a = Mathf.Clamp01(0.9f);
+                Debug.Log("Change button color next");
+                tab.image.color = temp;
+                if (ColorUtility.TryParseHtmlString("#04302D", out Color text))
+                {
+                    Debug.Log("Change text color next");
+                    buttonText.color = text;
+                }
 
-        if (!GameState.abyssPhoto)
+
+
+        lockIcon.gameObject.SetActive(true);
+        lockPanel.SetActive(true);
+        if (GameState.infectionPhoto)
         {
+            hintPanel.SetActive(true);
             GameState.passkeyHintSeen = true;
             GameState.Playtest.Milestone("Passkey hint viewed");
-            description.text = "Encrypted files: Locked\nImage recognition passkey: Failed. Invalid image contents. View passkey hint?\n(Hint):\nMeet the void’s gaze, somewhere on the abyssal plain.";
-            return;
         }
 
-        GameState.adminUnlocked = true;
-        GameState.Playtest.Milestone("Admin files unlocked");
-        description.text = UnlockedFiles;
+        if (GameState.abyssPhoto)
+        {
+            lockIcon.gameObject.SetActive(false);
+            lockPanel.SetActive(false);
+            hintPanel.SetActive(false);
+            textPanel.SetActive(true);
+            GameState.adminUnlocked = true;
+            GameState.Playtest.Milestone("Admin files unlocked");
+        }
     }
 }
